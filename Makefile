@@ -853,7 +853,7 @@ define CODEMAP_RULES
 $$(CODEMAPSDIR)/codemap_$(V).svg: $(V_OBJ) $(V_CI)
 	$$(strip ./scripts/codemapsvg.py $$^ \
 		--title="$(V) code %(code)s stack %(stack)s ctx %(ctx)s" \
-		-W1750 -H750 \
+		-W1125 -H525 \
 		$$(CODEMAP_COLORS) \
 		$$(CODEMAPFLAGS) \
 		-o$$@ \
@@ -1143,7 +1143,7 @@ plot-vs-lfs2-logging-usage: \
 # plot rules
 
 # plot bench_rbyd config
-PLOT_RBYD_FLAGS += -W1750 -H750
+PLOT_RBYD_FLAGS += -W1500 -H700
 PLOT_RBYD_FLAGS += --y2 --yunits=B
 PLOT_RBYD_FLAGS += \
 		--subplot=" \
@@ -1295,7 +1295,7 @@ $(PLOTSDIR)/bench_rbyd_id.svg: \
 
 
 # plot bench_btree config
-PLOT_BTREE_FLAGS += -W1750 -H750
+PLOT_BTREE_FLAGS += -W1500 -H700
 PLOT_BTREE_FLAGS += --y2 --yunits=B
 PLOT_BTREE_FLAGS += \
 		--subplot=" \
@@ -1491,7 +1491,7 @@ $(PLOTSDIR)/bench_btree_namedbtree.svg: \
 
 
 # plot bench_mtree config
-PLOT_MTREE_FLAGS += -W1750 -H750
+PLOT_MTREE_FLAGS += -W1500 -H700
 PLOT_MTREE_FLAGS += --y2 --yunits=B
 PLOT_MTREE_FLAGS += \
 		--subplot=" \
@@ -1656,7 +1656,7 @@ $(PLOTSDIR)/bench_mtree.svg: \
 
 
 # plot bench_many config
-PLOT_MANY_FLAGS += -W1750 -H750
+PLOT_MANY_FLAGS += -W1500 -H700
 PLOT_MANY_FLAGS += --y2 --yunits=B
 PLOT_MANY_FLAGS += \
 		--subplot=" \
@@ -1851,7 +1851,7 @@ $(PLOTSDIR)/bench_many_dirs.svg: \
 
 
 # plot bench_fwrite config
-PLOT_FWRITE_FLAGS += -W1750 -H750
+PLOT_FWRITE_FLAGS += -W1500 -H700
 PLOT_FWRITE_FLAGS += --x2 --xunits=B
 PLOT_FWRITE_FLAGS += --y2 --yunits=B
 PLOT_FWRITE_FLAGS += \
@@ -2341,7 +2341,7 @@ $(PLOTSDIR)/bench_fwrite_tune_ct_random.svg: \
 # vs lfs plot rules!
 
 # plot vs lfs2 config
-PLOT_VS_LFS2_FLAGS += -W1750 -H750
+PLOT_VS_LFS2_FLAGS += -W1500 -H700
 PLOT_VS_LFS2_FLAGS += \
 		--subplot=" \
 				-DBLOCK_SIZE='$(EMMC_LFS3_BLOCK_SIZE)$(,)$\
