@@ -52,7 +52,7 @@ void bench_fresult(const char *m, uintmax_t n, double result);
 
 
 // generated bench configurations
-struct lfs3_config;
+struct lfs3_cfg;
 
 enum bench_flags {
     BENCH_INTERNAL  = 0x1,
@@ -76,7 +76,7 @@ struct bench_case {
     size_t permutations;
 
     bool (*if_)(void);
-    void (*run)(struct lfs3_config *cfg);
+    void (*run)(struct lfs3_cfg *cfg);
 };
 
 struct bench_suite {
@@ -108,11 +108,15 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_PERMUTATION(i, buffer, size) bench_permutation(i, buffer, size)
 
 
-// ifdef macro for LFS3 vs LFS2
-#ifdef LFS3
+// ifdef macros for filesystem version
+#if defined(LFS3)
 #define BENCH_IFDEF_LFS3(a, b) (a)
-#else
+#define BENCH_IFDEF_LFS2(a, b) (b)
+#elif defined(LFS2)
 #define BENCH_IFDEF_LFS3(a, b) (b)
+#define BENCH_IFDEF_LFS2(a, b) (a)
+#else
+#error "No filesystem version defined?"
 #endif
 
 
@@ -124,15 +128,16 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(PROG_SIZE,          1                                      ) \
     BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
     BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
-    BENCH_DEFINE(DISK_SIZE,          2*1024*1024                            ) \
+    BENCH_DEFINE(DISK_SIZE,          1024*1024                              ) \
     BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
     BENCH_DEFINE(RCACHE_SIZE,        LFS3_MAX(16, READ_SIZE)                ) \
     BENCH_DEFINE(PCACHE_SIZE,        LFS3_MAX(16, PROG_SIZE)                ) \
     /* NOTE this max is not necessary, but levels the playing field        */ \
-    /* vs littlefs v2                                                      */ \
+    /* vs littlefs v2 (was 16)                                             */ \
     BENCH_DEFINE(FILE_CACHE_SIZE,    LFS3_MAX(16, \
                                         LFS3_MAX(READ_SIZE, PROG_SIZE))     ) \
     BENCH_DEFINE(LOOKAHEAD_SIZE,     16                                     ) \
+    BENCH_DEFINE(TREEDIFF_SIZE,      16                                     ) \
     BENCH_DEFINE(GC_FLAGS,           0                                      ) \
     BENCH_DEFINE(GC_STEPS,           0                                      ) \
     BENCH_DEFINE(GC_COMPACT_THRESH,  0                                      ) \
@@ -141,7 +146,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(FRAGMENT_SIZE,      LFS3_MIN(BLOCK_SIZE/16, 512)           ) \
     /* TODO should max-prog_size be enforced in lfs3_init? */                 \
     BENCH_DEFINE(CRYSTAL_THRESH,     LFS3_MAX(BLOCK_SIZE/16, PROG_SIZE)     ) \
-    BENCH_DEFINE(FRAGMENT_THRESH,    -1                                     ) \
+    BENCH_DEFINE(BMAP_SCAN_THRESH,   BLOCK_COUNT/4                          ) \
     BENCH_DEFINE(ERASE_VALUE,        0xff                                   ) \
     BENCH_DEFINE(ERASE_CYCLES,       0                                      ) \
     BENCH_DEFINE(BADBLOCK_BEHAVIOR,  LFS3_EMUBD_BADBLOCK_PROGERROR          ) \
@@ -154,7 +159,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(PROG_SIZE,          1                                      ) \
     BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
     BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
-    BENCH_DEFINE(DISK_SIZE,          2*1024*1024                            ) \
+    BENCH_DEFINE(DISK_SIZE,          1024*1024                              ) \
     BENCH_DEFINE(BLOCK_CYCLES,       -1                                     ) \
     BENCH_DEFINE(CACHE_SIZE,         LFS3_MAX(16, \
                                         LFS3_MAX(READ_SIZE, PROG_SIZE))     ) \
@@ -188,15 +193,23 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     .pcache_size        = PCACHE_SIZE,          \
     .file_cache_size    = FILE_CACHE_SIZE,      \
     .lookahead_size     = LOOKAHEAD_SIZE,       \
+    BENCH_BMAP_CFG                              \
     BENCH_GC_CFG                                \
     .gc_compact_thresh  = GC_COMPACT_THRESH,    \
     .inline_size        = INLINE_SIZE,          \
     .fragment_size      = FRAGMENT_SIZE,        \
-    .crystal_thresh     = CRYSTAL_THRESH,       \
-    .fragment_thresh    = FRAGMENT_THRESH,
+    .crystal_thresh     = CRYSTAL_THRESH,
+
+#ifdef LFS3_BMAP
+#define BENCH_BMAP_CFG \
+    .treediff_size      = TREEDIFF_SIZE,        \
+    .bmap_scan_thresh   = BMAP_SCAN_THRESH,
+#else
+#define BENCH_BMAP_CFG
+#endif
 
 #ifdef LFS3_GC
-#define BENCH_GC_CFG                            \
+#define BENCH_GC_CFG \
     .gc_flags           = GC_FLAGS,             \
     .gc_steps           = GC_STEPS,
 #else
@@ -204,6 +217,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #endif
 
 #else
+
 #define BENCH_CFG \
     .read_size          = READ_SIZE,            \
     .prog_size          = PROG_SIZE,            \
@@ -215,7 +229,9 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     .compact_thresh     = COMPACT_THRESH,       \
     .metadata_max       = METADATA_MAX,         \
     .inline_max         = INLINE_MAX,
+
 #endif
+
 
 #define BENCH_BDCFG \
     .erase_value        = ERASE_VALUE,          \

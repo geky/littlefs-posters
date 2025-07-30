@@ -612,12 +612,12 @@ typedef struct bench_record {
     lfs3_emubd_io_t last_erased;
 } bench_record_t;
 
-static struct lfs3_config *bench_cfg = NULL;
+static struct lfs3_cfg *bench_cfg = NULL;
 static bench_record_t *bench_records;
 size_t bench_record_count;
 size_t bench_record_capacity;
 
-void bench_reset(struct lfs3_config *cfg) {
+void bench_reset(struct lfs3_cfg *cfg) {
     bench_cfg = cfg;
     bench_record_count = 0;
 }
@@ -863,6 +863,8 @@ static void summary(void) {
         for (size_t i = 0; i < bench_suite_count; i++) {
             bench_define_suite(&bench_ids[t], bench_suites[i]);
 
+            size_t cases_ = 0;
+
             for (size_t j = 0; j < bench_suites[i]->case_count; j++) {
                 // does neither suite nor case name match?
                 if (bench_ids[t].name && !(
@@ -874,12 +876,18 @@ static void summary(void) {
                 }
 
                 cases += 1;
+                cases_ += 1;
                 case_forperm(
                         &bench_ids[t],
                         bench_suites[i],
                         &bench_suites[i]->cases[j],
                         perm_count,
                         &perms);
+            }
+
+            // no benches found?
+            if (!cases_) {
+                continue;
             }
 
             suites += 1;
@@ -1338,7 +1346,7 @@ void perm_run(
     lfs3_emubd_t bd;
 
     #ifdef LFS3
-    struct lfs3_config cfg = {
+    struct lfs3_cfg cfg = {
         .context            = &bd,
         .read               = lfs3_emubd_read,
         .prog               = lfs3_emubd_prog,
@@ -1367,7 +1375,7 @@ void perm_run(
     };
     #endif
 
-    struct lfs3_emubd_config bdcfg = {
+    struct lfs3_emubd_cfg bdcfg = {
         .disk_path          = bench_disk_path,
         .read_sleep         = bench_read_sleep,
         .prog_sleep         = bench_prog_sleep,
@@ -1375,7 +1383,7 @@ void perm_run(
         BENCH_BDCFG
     };
 
-    int err = lfs3_emubd_createcfg((struct lfs3_config*)&cfg,
+    int err = lfs3_emubd_createcfg((struct lfs3_cfg*)&cfg,
             bench_disk_path, &bdcfg);
     if (err) {
         fprintf(stderr, "error: could not create block device: %d\n", err);
@@ -1383,19 +1391,19 @@ void perm_run(
     }
 
     // run the bench
-    bench_reset((struct lfs3_config*)&cfg);
+    bench_reset((struct lfs3_cfg*)&cfg);
     printf("running ");
     perm_printid(suite, case_);
     printf("\n");
 
-    case_->run((struct lfs3_config*)&cfg);
+    case_->run((struct lfs3_cfg*)&cfg);
 
     printf("finished ");
     perm_printid(suite, case_);
     printf("\n");
 
     // cleanup
-    err = lfs3_emubd_destroy((struct lfs3_config*)&cfg);
+    err = lfs3_emubd_destroy((struct lfs3_cfg*)&cfg);
     if (err) {
         fprintf(stderr, "error: could not destroy block device: %d\n", err);
         exit(-1);
