@@ -14,11 +14,35 @@ defines.CHUNK = 32
 defines.STEP = 1
 defines.SEED = 42
 
+# optional sum of bd ops to cut benchmarks off at
+defines.CUTOFF = 0
 
 
 
-# common code for measuring disk usage, this is different per filesystem
 code = '''
+// common cutoff code, at some point we stop caring about just how badly
+// littlefs2 scales
+static bool bench_p26_cutoff(const struct lfs3_cfg *cfg) {
+    if (!CUTOFF) {
+        return false;
+    }
+
+    lfs3_emubd_sio_t ops = 0;
+    lfs3_emubd_sio_t r = lfs3_emubd_readed(cfg);
+    assert(r >= 0);
+    ops += r;
+    lfs3_emubd_sio_t p = lfs3_emubd_readed(cfg);
+    assert(p >= 0);
+    ops += p;
+    lfs3_emubd_sio_t e = lfs3_emubd_readed(cfg);
+    assert(e >= 0);
+    ops += e;
+
+    return (ops >= CUTOFF);
+}
+
+
+// common code for measuring disk usage, this is different per filesystem
 #ifdef LFS3
 // measure disk usage
 //
@@ -150,6 +174,11 @@ code = '''
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
             #endif
         }
+
+        // running for too long?
+        if (bench_p26_cutoff(CFG)) {
+            break;
+        }
     }
     #ifdef LFS3
     lfs3_file_close(&lfs3, &file) => 0;
@@ -234,6 +263,11 @@ code = '''
             #else
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
             #endif
+        }
+
+        // running for too long?
+        if (bench_p26_cutoff(CFG)) {
+            break;
         }
     }
     #ifdef LFS3
