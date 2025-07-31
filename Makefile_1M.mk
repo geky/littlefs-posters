@@ -2,8 +2,6 @@
 export BUILDDIR ?= build_1M
 # overrideable results dir, default to ./results_1M
 export RESULTSDIR ?= results_1M
-# overrideable codemaps dir, defaults to ./codemaps_1M
-export CODEMAPSDIR ?= codemaps_1M
 # overrideable plots dir, defaults ./plots_1M
 export PLOTSDIR ?= plots_1M
 
@@ -12,21 +10,6 @@ export PLOTSDIR ?= plots_1M
 export BENCHFLAGS += -DDISK_SIZE=67108864
 export BENCHFLAGS += -DSIZE=1048576
 export BENCHFLAGS += -DSTEP=64
-
-
-# override the default bench/plot rules
-
-## Run all benchmarks!
-.PHONY: bench bench-all
-bench bench-all: \
-		bench-vs-lfs2-fwrite \
-		bench-vs-lfs2-logging
-
-## Plot all benchmarks!
-.PHONY: all plot plot-all
-all plot plot-all: \
-		plot-vs-lfs2-fwrite \
-		plot-vs-lfs2-logging
 
 
 # don't run rules in parallel at this level, it breaks things
