@@ -29,6 +29,7 @@ EMMC_READ_SIZE  ?= 512
 EMMC_PROG_SIZE  ?= 512
 EMMC_ERASE_SIZE ?= 512
 EMMC_LFS3_BLOCK_SIZE ?= 2048 # v3 performs better with larger block sizes
+EMMC_LFS3NB_BLOCK_SIZE ?= 2048
 EMMC_LFS2_BLOCK_SIZE ?= 512  # but no reason to penalize v2
 EMMC_READ_TIME  ?= 31   # taken from w25n01gv, read time
 EMMC_PROG_TIME  ?= 156  # taken from w25n01gv, prog time + erase time
@@ -45,6 +46,7 @@ NOR_READ_SIZE  ?= 1
 NOR_PROG_SIZE  ?= 1
 NOR_ERASE_SIZE ?= 4096
 NOR_LFS3_BLOCK_SIZE ?= 4096
+NOR_LFS3NB_BLOCK_SIZE ?= 4096
 NOR_LFS2_BLOCK_SIZE ?= 4096
 NOR_READ_TIME  ?= 40    # fR=50 MHz, quad read (20 ns * 8/4)
 NOR_PROG_TIME  ?= 1582  # tPP=0.4 ms, page=256 (0.4 ms / 256 + bus)
@@ -61,6 +63,7 @@ NAND_READ_SIZE  ?= 512
 NAND_PROG_SIZE  ?= 512
 NAND_ERASE_SIZE ?= 131072
 NAND_LFS3_BLOCK_SIZE ?= 131072
+NAND_LFS3NB_BLOCK_SIZE ?= 131072
 NAND_LFS2_BLOCK_SIZE ?= 131072
 NAND_READ_TIME  ?= 31     # tRD1=25 us, p=2048, s=512 (25 us / 2048 + bus)
 NAND_PROG_TIME  ?= 141    # tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
@@ -111,6 +114,17 @@ BENCH_LFS3_PERF  := $(BENCH_LFS3_RUNNER:%=%.perf)
 BENCH_LFS3_TRACE := $(BENCH_LFS3_RUNNER:%=%.trace)
 BENCH_LFS3_CSV   := $(BENCH_LFS3_RUNNER:%=%.csv)
 
+# littlefs v3 no-bmap bench-runner
+BENCH_LFS3NB_RUNNER ?= $(BUILDDIR)/bench_lfs3nb_runner
+BENCH_LFS3NB_OBJ   := $(BENCH_LFS3_A:%.lfs3.b.a.c=%.lfs3nb.b.a.o)
+BENCH_LFS3NB_DEP   := $(BENCH_LFS3_A:%.lfs3.b.a.c=%.lfs3nb.b.a.d)
+BENCH_LFS3NB_CI    := $(BENCH_LFS3_A:%.lfs3.b.a.c=%.lfs3nb.b.a.ci)
+BENCH_LFS3NB_GCNO  := $(BENCH_LFS3_A:%.lfs3.b.a.c=%.lfs3nb.b.a.gcno) \
+BENCH_LFS3NB_GCDA  := $(BENCH_LFS3_A:%.lfs3.b.a.c=%.lfs3nb.b.a.gcda) \
+BENCH_LFS3NB_PERF  := $(BENCH_LFS3NB_RUNNER:%=%.perf)
+BENCH_LFS3NB_TRACE := $(BENCH_LFS3NB_RUNNER:%=%.trace)
+BENCH_LFS3NB_CSV   := $(BENCH_LFS3NB_RUNNER:%=%.csv)
+
 # littlefs v2 bench-runner
 BENCHES_LFS2 ?= benches/bench_p26.toml # TODO benches/bench_vs_lfs2.toml
 BENCH_LFS2_RUNNER ?= $(BUILDDIR)/bench_lfs2_runner
@@ -147,8 +161,6 @@ CFLAGS += -fcallgraph-info=su
 CFLAGS += -g3
 CFLAGS += -I. -Ilittlefs3 -Ilittlefs2
 CFLAGS += -std=c99 -Wall -Wextra -pedantic
-# enable the on-disk block-map
-CFLAGS += -DLFS3_YES_BMAP=1
 # labels are useful for debugging, in-function organization, etc
 CFLAGS += -Wno-unused-label
 CFLAGS += -Wno-unused-function
@@ -295,6 +307,9 @@ all: \
 $(BENCH_LFS3_RUNNER): $(BENCH_LFS3_OBJ)
 	$(CC) $(CFLAGS) $^ $(LFLAGS) -o$@
 
+$(BENCH_LFS3NB_RUNNER): $(BENCH_LFS3NB_OBJ)
+	$(CC) $(CFLAGS) $^ $(LFLAGS) -o$@
+
 $(BENCH_LFS2_RUNNER): $(BENCH_LFS2_OBJ)
 	$(CC) $(CFLAGS) $^ $(LFLAGS) -o$@
 
@@ -325,12 +340,21 @@ $(BUILDDIR)/thumb/%.rdonly.o $(BUILDDIR)/thumb/%.rdonly.ci: \
 		$(CODEMAP_CFLAGS) $< \
 		-o $(BUILDDIR)/thumb/$*.rdonly.o)
 
-# .lfs3 files need -DLFS3=1
+# .lfs3 files need -DLFS3=1 -DLFS3_YES_BMAP=1
 $(BUILDDIR)/%.lfs3.b.a.o $(BUILDDIR)/%.lfs3.b.a.ci: %.lfs3.b.a.c
-	$(CC) -c -MMD -DLFS3=1 $(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3.b.a.o
+	$(strip $(CC) -c -MMD -DLFS3=1 -DLFS3_YES_BMAP=1 \
+		$(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3.b.a.o)
 
 $(BUILDDIR)/%.lfs3.b.a.o $(BUILDDIR)/%.lfs3.b.a.ci: $(BUILDDIR)/%.lfs3.b.a.c
-	$(CC) -c -MMD -DLFS3=1 $(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3.b.a.o
+	$(strip $(CC) -c -MMD -DLFS3=1 -DLFS3_YES_BMAP=1 \
+		$(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3.b.a.o)
+
+# .lfs3nb files need -DLFS3=1
+$(BUILDDIR)/%.lfs3nb.b.a.o $(BUILDDIR)/%.lfs3nb.b.a.ci: %.lfs3.b.a.c
+	$(CC) -c -MMD -DLFS3=1 $(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3nb.b.a.o
+
+$(BUILDDIR)/%.lfs3nb.b.a.o $(BUILDDIR)/%.lfs3nb.b.a.ci: $(BUILDDIR)/%.lfs3.b.a.c
+	$(CC) -c -MMD -DLFS3=1 $(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3nb.b.a.o
 
 # .lfs2 files need -DLFS2=1
 $(BUILDDIR)/%.lfs2.b.a.o $(BUILDDIR)/%.lfs2.b.a.ci: %.lfs2.b.a.c
@@ -421,6 +445,7 @@ bench-p26-litmus: \
 bench-p26-litmus-linear: \
 		$(foreach SIM, emmc nor nand, \
 			$(RESULTSDIR)/bench_p26_litmus_linear.lfs3.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_litmus_linear.lfs3nb.$(SIM).csv \
 			$(RESULTSDIR)/bench_p26_litmus_linear.lfs2.$(SIM).csv)
 
 
@@ -463,6 +488,25 @@ $(eval $(call BENCH_P26_LITMUS_RULE,$\
 		$(NAND_READ_SIZE),$\
 		$(NAND_PROG_SIZE),$\
 		$(NAND_LFS3_BLOCK_SIZE)))
+
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs3nb.emmc.csv,$\
+		$(BENCH_LFS3NB_RUNNER),$\
+		$(EMMC_READ_SIZE),$\
+		$(EMMC_PROG_SIZE),$\
+		$(EMMC_LFS3NB_BLOCK_SIZE)))
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs3nb.nor.csv,$\
+		$(BENCH_LFS3NB_RUNNER),$\
+		$(NOR_READ_SIZE),$\
+		$(NOR_PROG_SIZE),$\
+		$(NOR_LFS3NB_BLOCK_SIZE)))
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs3nb.nand.csv,$\
+		$(BENCH_LFS3NB_RUNNER),$\
+		$(NAND_READ_SIZE),$\
+		$(NAND_PROG_SIZE),$\
+		$(NAND_LFS3NB_BLOCK_SIZE)))
 
 $(eval $(call BENCH_P26_LITMUS_RULE,$\
 		$(RESULTSDIR)/bench_p26_litmus_linear.lfs2.emmc.csv,$\
@@ -827,6 +871,7 @@ PLOT_P26_FLAGS += -W1500 -H700
 PLOT_P26_FLAGS += \
 		--subplot=" \
 				-DBLOCK_SIZE='$(EMMC_LFS3_BLOCK_SIZE)$(,)$\
+					$(EMMC_LFS3NB_BLOCK_SIZE)$(,)$\
 					$(EMMC_LFS2_BLOCK_SIZE)' \
 				-Dm=$1 \
 				$(if $(filter amor,$2),--ylabel=raw) \
@@ -836,6 +881,7 @@ PLOT_P26_FLAGS += \
 			$(if $2, \
 			--subplot-below=" \
 				-DBLOCK_SIZE='$(EMMC_LFS3_BLOCK_SIZE)$(,)$\
+					$(EMMC_LFS3NB_BLOCK_SIZE)$(,)$\
 					$(EMMC_LFS2_BLOCK_SIZE)' \
 				-Dm=$1+$2 \
 				$(if $(filter amor,$2),--ylabel=amortized) \
@@ -844,6 +890,7 @@ PLOT_P26_FLAGS += \
 				-H0.5",) \
 		--subplot-right=" \
 				-DBLOCK_SIZE='$(NOR_LFS3_BLOCK_SIZE)$(,)$\
+					$(NOR_LFS3NB_BLOCK_SIZE)$(,)$\
 					$(NOR_LFS2_BLOCK_SIZE)' \
 				-Dm=$1 \
 				--title=nor \
@@ -852,12 +899,14 @@ PLOT_P26_FLAGS += \
 			$(if $2, \
 			--subplot-below=\" \
 				-DBLOCK_SIZE='$(NOR_LFS3_BLOCK_SIZE)$(,)$\
+					$(NOR_LFS3NB_BLOCK_SIZE)$(,)$\
 					$(NOR_LFS2_BLOCK_SIZE)' \
 				-Dm=$1+$2 \
 				--ylim-stddev=3 \
 				-H0.5\",)" \
 		--subplot-right=" \
 				-DBLOCK_SIZE='$(NAND_LFS3_BLOCK_SIZE)$(,)$\
+					$(NAND_LFS3NB_BLOCK_SIZE)$(,)$\
 					$(NAND_LFS2_BLOCK_SIZE)' \
 				-Dm=$1 \
 				--title=nand \
@@ -866,6 +915,7 @@ PLOT_P26_FLAGS += \
 			$(if $2, \
 			--subplot-below=\" \
 				-DBLOCK_SIZE='$(NAND_LFS3_BLOCK_SIZE)$(,)$\
+					$(NAND_LFS3NB_BLOCK_SIZE)$(,)$\
 					$(NAND_LFS2_BLOCK_SIZE)' \
 				-Dm=$1+$2 \
 				--ylim-stddev=3 \
@@ -883,7 +933,7 @@ PLOT_P26_FLAGS += $(PLOT_COLORS_1BND)
 # $7 - extra plotmpl.py flags
 #
 define PLOT_P26_LITMUS_RULE
-$1: $$(foreach V, lfs3 lfs2, \
+$1: $$(foreach V, lfs3 lfs3nb lfs2, \
 		$$(foreach SIM, emmc nor nand, $2))
 	$$(strip ./scripts/plotmpl.py \
 		<(./scripts/csv.py $$^ \
@@ -895,14 +945,19 @@ $1: $$(foreach V, lfs3 lfs2, \
 			-f$4_bnd=$4_max \
 			-o-) \
 		--title=$3 \
-		-bV -SV \
+		-bV \
 		-xn \
 		-y$4_avg -y$4_bnd \
 		--legend \
-		-L'3,$4_avg=lfs3%n$\
+		-L'32,$4_avg=lfs3%n$\
 			- bs=$(EMMC_LFS3_BLOCK_SIZE)%n$\
 			- bs=$(NOR_LFS3_BLOCK_SIZE)%n$\
 			- bs=$(NAND_LFS3_BLOCK_SIZE)' \
+		-L'32,$4_bnd=' \
+		-L'3,$4_avg=lfs3nb%n$\
+			- bs=$(EMMC_LFS3NB_BLOCK_SIZE)%n$\
+			- bs=$(NOR_LFS3NB_BLOCK_SIZE)%n$\
+			- bs=$(NAND_LFS3NB_BLOCK_SIZE)' \
 		-L'3,$4_bnd=' \
 		-L'2,$4_avg=lfs2%n$\
 			- bs=$(EMMC_LFS2_BLOCK_SIZE)%n$\
@@ -915,12 +970,12 @@ $1: $$(foreach V, lfs3 lfs2, \
 		-o$$@)
 endef
 
-# lfs3 (no bmap) vs lfs2 - linear file writes
+# lfs3 vs lfs3nb vs lfs2 - linear file writes
 $(eval $(call PLOT_P26_LITMUS_RULE,$\
 		$(PLOTSDIR)/bench_p26_litmus_linear_r.svg,$\
 		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
 			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).amor.avg.csv,$\
-		"lfs3 (no bmap) vs lfs2 - linear file writes - reads",$\
+		"lfs3 vs lfs3nb vs lfs2 - linear file writes - reads",$\
 		bench_readed,$\
 		write,$\
 		amor,$\
@@ -929,7 +984,7 @@ $(eval $(call PLOT_P26_LITMUS_RULE,$\
 		$(PLOTSDIR)/bench_p26_litmus_linear_p.svg,$\
 		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
 			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).amor.avg.csv,$\
-		"lfs3 (no bmap) vs lfs2 - linear file writes - progs",$\
+		"lfs3 vs lfs3nb vs lfs2 - linear file writes - progs",$\
 		bench_proged,$\
 		write,$\
 		amor,$\
@@ -938,7 +993,7 @@ $(eval $(call PLOT_P26_LITMUS_RULE,$\
 		$(PLOTSDIR)/bench_p26_litmus_linear_e.svg,$\
 		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
 			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).amor.avg.csv,$\
-		"lfs3 (no bmap) vs lfs2 - linear file writes - erases",$\
+		"lfs3 vs lfs3nb vs lfs2 - linear file writes - erases",$\
 		bench_erased,$\
 		write,$\
 		amor,$\
@@ -947,7 +1002,7 @@ $(eval $(call PLOT_P26_LITMUS_RULE,$\
 		$(PLOTSDIR)/bench_p26_litmus_linear_u.svg,$\
 		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
 			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).per.avg.csv,$\
-		"lfs3 (no bmap) vs lfs2 - linear file usage",$\
+		"lfs3 vs lfs3nb vs lfs2 - linear file usage",$\
 		bench_readed,$\
 		usage,$\
 		per,$\
@@ -957,7 +1012,7 @@ $(eval $(call PLOT_P26_LITMUS_RULE,$\
 		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).sim.avg.csv $\
 			$(RESULTSDIR)/bench_p26_litmus_linear.$\
 				$$(V).$$(SIM).sim.amor.avg.csv,$\
-		"lfs3 (no bmap) vs lfs2 - linear file writes - simulated runtime",$\
+		"lfs3 vs lfs3nb vs lfs2 - linear file writes - simulated runtime",$\
 		bench_readed,$\
 		write+sim,$\
 		amor,$\

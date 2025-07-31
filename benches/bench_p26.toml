@@ -2,7 +2,7 @@
 
 
 # keep track of version in results
-defines.V = 'BENCH_IFDEF_LFS3(3, 2)'
+defines.V = 'BENCH_IFDEF_LFS3(LFS3_IFDEF_BMAP(32, 3), 2)'
 
 
 # common code for measuring disk usage, this is different per filesystem
