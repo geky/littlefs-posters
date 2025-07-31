@@ -325,87 +325,6 @@ $(BUILDDIR)/thumb/%.rdonly.o $(BUILDDIR)/thumb/%.rdonly.ci: \
 		$(CODEMAP_CFLAGS) $< \
 		-o $(BUILDDIR)/thumb/$*.rdonly.o)
 
-# other interesting codemap builds
-$(BUILDDIR)/thumb/%.kvonly.o $(BUILDDIR)/thumb/%.kvonly.ci: \
-		%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_KVONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.kvonly.o)
-$(BUILDDIR)/thumb/%.kvonly.o $(BUILDDIR)/thumb/%.kvonly.ci: \
-		$(BUILDDIR)/thumb/%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_KVONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.kvonly.o)
-
-$(BUILDDIR)/thumb/%.kvonly.rdonly.o $(BUILDDIR)/thumb/%.kvonly.rdonly.ci: \
-		%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_KVONLY -DLFS3_RDONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.kvonly.rdonly.o)
-$(BUILDDIR)/thumb/%.kvonly.rdonly.o $(BUILDDIR)/thumb/%.kvonly.rdonly.ci: \
-		$(BUILDDIR)/thumb/%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_KVONLY -DLFS3_RDONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.kvonly.rdonly.o)
-
-$(BUILDDIR)/thumb/%.2bonly.o $(BUILDDIR)/thumb/%.2bonly.ci: \
-		%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.o)
-$(BUILDDIR)/thumb/%.2bonly.o $(BUILDDIR)/thumb/%.2bonly.ci: \
-		$(BUILDDIR)/thumb/%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.o)
-
-$(BUILDDIR)/thumb/%.2bonly.rdonly.o $(BUILDDIR)/thumb/%.2bonly.rdonly.ci: \
-		%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY -DLFS3_RDONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.rdonly.o)
-$(BUILDDIR)/thumb/%.2bonly.rdonly.o $(BUILDDIR)/thumb/%.2bonly.rdonly.ci: \
-		$(BUILDDIR)/thumb/%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY -DLFS3_RDONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.rdonly.o)
-
-$(BUILDDIR)/thumb/%.2bonly.kvonly.o $(BUILDDIR)/thumb/%.2bonly.kvonly.ci: \
-		%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY -DLFS3_KVONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.kvonly.o)
-$(BUILDDIR)/thumb/%.2bonly.kvonly.o $(BUILDDIR)/thumb/%.2bonly.kvonly.ci: \
-		$(BUILDDIR)/thumb/%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY -DLFS3_KVONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.kvonly.o)
-
-$(BUILDDIR)/thumb/%.2bonly.kvonly.rdonly.o \
-			$(BUILDDIR)/thumb/%.2bonly.kvonly.rdonly.ci: \
-		%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY -DLFS3_KVONLY -DLFS3_RDONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.kvonly.rdonly.o)
-$(BUILDDIR)/thumb/%.2bonly.kvonly.rdonly.o \
-			$(BUILDDIR)/thumb/%.2bonly.kvonly.rdonly.ci: \
-		$(BUILDDIR)/thumb/%.c
-	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_2BONLY -DLFS3_KVONLY -DLFS3_RDONLY \
-		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.2bonly.kvonly.rdonly.o)
-
 # .lfs3 files need -DLFS3=1
 $(BUILDDIR)/%.lfs3.b.a.o $(BUILDDIR)/%.lfs3.b.a.ci: %.lfs3.b.a.c
 	$(CC) -c -MMD -DLFS3=1 $(CFLAGS) $< -o $(BUILDDIR)/$*.lfs3.b.a.o
@@ -506,66 +425,111 @@ bench-p26-litmus-linear: \
 
 
 # p26 bench rules!
-define BENCH_P26_RULES
 
-# the actual p26 bench rules
-$$(RESULTSDIR)/bench_p26_litmus_linear.$(V).$(SIM).csv: $(V_RUNNER)
+# p26 litmus bench rule
+#
+# $1 - target
+# $2 - runner
+# $3 - read size
+# $4 - prog size
+# $5 - block size
+#
+define BENCH_P26_LITMUS_RULE
+$1: $2
 	$$(strip ./scripts/bench.py -R$$< -B bench_p26_litmus_linear \
 		-DSEED="range($$(SAMPLES))" \
-		-DREAD_SIZE=$(SIM_READ_SIZE) \
-		-DPROG_SIZE=$(SIM_PROG_SIZE) \
-		-DBLOCK_SIZE=$(SIM_BLOCK_SIZE) \
+		-DREAD_SIZE=$3 \
+		-DPROG_SIZE=$4 \
+		-DBLOCK_SIZE=$5 \
 		$$(BENCHFLAGS) \
 		-o$$@)
+endef
+
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs3.emmc.csv,$\
+		$(BENCH_LFS3_RUNNER),$\
+		$(EMMC_READ_SIZE),$\
+		$(EMMC_PROG_SIZE),$\
+		$(EMMC_LFS3_BLOCK_SIZE)))
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs3.nor.csv,$\
+		$(BENCH_LFS3_RUNNER),$\
+		$(NOR_READ_SIZE),$\
+		$(NOR_PROG_SIZE),$\
+		$(NOR_LFS3_BLOCK_SIZE)))
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs3.nand.csv,$\
+		$(BENCH_LFS3_RUNNER),$\
+		$(NAND_READ_SIZE),$\
+		$(NAND_PROG_SIZE),$\
+		$(NAND_LFS3_BLOCK_SIZE)))
+
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs2.emmc.csv,$\
+		$(BENCH_LFS2_RUNNER),$\
+		$(EMMC_READ_SIZE),$\
+		$(EMMC_PROG_SIZE),$\
+		$(EMMC_LFS2_BLOCK_SIZE)))
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs2.nor.csv,$\
+		$(BENCH_LFS2_RUNNER),$\
+		$(NOR_READ_SIZE),$\
+		$(NOR_PROG_SIZE),$\
+		$(NOR_LFS2_BLOCK_SIZE)))
+$(eval $(call BENCH_P26_LITMUS_RULE,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.lfs2.nand.csv,$\
+		$(BENCH_LFS2_RUNNER),$\
+		$(NAND_READ_SIZE),$\
+		$(NAND_PROG_SIZE),$\
+		$(NAND_LFS2_BLOCK_SIZE)))
 
 # simulated/estimated results
-$$(RESULTSDIR)/bench_%.$(SIM).sim.csv: \
-		$$(RESULTSDIR)/bench_%.$(SIM).csv
+#
+# $1 - target
+# $2 - source
+# $3 - read time
+# $4 - prog time
+# $5 - erase time
+#
+define BENCH_P26_SIM_RULE
+$1: $2
 	$$(strip ./scripts/csv.py $$^ \
 		-Bm='%(m)s+sim' \
 		-fbench_readed=' \
-			(float(bench_readed)*float($(SIM_READ_TIME)) \
-				+ float(bench_proged)*float($(SIM_PROG_TIME)) \
-				+ float(bench_erased)*float($(SIM_ERASE_TIME)) \
+			(float(bench_readed)*float($3) \
+				+ float(bench_proged)*float($4) \
+				+ float(bench_erased)*float($5) \
 				) / 1.0e9' \
 		-fbench_proged=0 \
 		-fbench_erased=0 \
 		-fbench_creaded=' \
-			(float(bench_creaded)*float($(SIM_READ_TIME)) \
-				+ float(bench_cproged)*float($(SIM_PROG_TIME)) \
-				+ float(bench_cerased)*float($(SIM_ERASE_TIME)) \
+			(float(bench_creaded)*float($3) \
+				+ float(bench_cproged)*float($4) \
+				+ float(bench_cerased)*float($5) \
 				) / 1.0e9' \
 		-fbench_cproged=0 \
 		-fbench_cerased=0 \
 		-o$$@)
-
 endef
 
-# parameterize based on lfs3/lfs2 and sim type
-$(foreach V_, lfs3/LFS3 lfs2/LFS2, \
-	$(foreach V, $(word 1,$(subst /, ,$(V_))), \
-	$(foreach V_RUNNER, $(if $(filter lfs3/%,$(V_)), \
-			$$(BENCH_LFS3_RUNNER), \
-			$$(BENCH_LFS2_RUNNER)), \
-	$(foreach SIM_, emmc/EMMC nor/NOR nand/NAND, \
-		$(foreach SIM, $(word 1,$(subst /, ,$(SIM_))), \
-		$(foreach SIM_READ_SIZE, \
-			$$($(word 2,$(subst /, ,$(SIM_)))_READ_SIZE), \
-		$(foreach SIM_PROG_SIZE, \
-			$$($(word 2,$(subst /, ,$(SIM_)))_PROG_SIZE), \
-		$(foreach SIM_ERASE_SIZE, \
-			$$($(word 2,$(subst /, ,$(SIM_)))_ERASE_SIZE), \
-		$(foreach SIM_BLOCK_SIZE, \
-			$(if $(filter lfs3/%,$(V_)), \
-				$$($(word 2,$(subst /, ,$(SIM_)))_LFS3_BLOCK_SIZE), \
-				$$($(word 2,$(subst /, ,$(SIM_)))_LFS2_BLOCK_SIZE)), \
-		$(foreach SIM_READ_TIME, \
-			$$($(word 2,$(subst /, ,$(SIM_)))_READ_TIME), \
-		$(foreach SIM_PROG_TIME, \
-			$$($(word 2,$(subst /, ,$(SIM_)))_PROG_TIME), \
-		$(foreach SIM_ERASE_TIME, \
-			$$($(word 2,$(subst /, ,$(SIM_)))_ERASE_TIME), \
-		$(eval $(BENCH_P26_RULES))))))))))))))
+$(eval $(call BENCH_P26_SIM_RULE,$\
+		$(RESULTSDIR)/bench_%.emmc.sim.csv,$\
+		$(RESULTSDIR)/bench_%.emmc.csv,$\
+		$(EMMC_READ_TIME),$\
+		$(EMMC_PROG_TIME),$\
+		$(EMMC_ERASE_TIME)))
+$(eval $(call BENCH_P26_SIM_RULE,$\
+		$(RESULTSDIR)/bench_%.nor.sim.csv,$\
+		$(RESULTSDIR)/bench_%.nor.csv,$\
+		$(NOR_READ_TIME),$\
+		$(NOR_PROG_TIME),$\
+		$(NOR_ERASE_TIME)))
+$(eval $(call BENCH_P26_SIM_RULE,$\
+		$(RESULTSDIR)/bench_%.nand.sim.csv,$\
+		$(RESULTSDIR)/bench_%.nand.csv,$\
+		$(NAND_READ_TIME),$\
+		$(NAND_PROG_TIME),$\
+		$(NAND_ERASE_TIME)))
 
 # amortized results
 $(RESULTSDIR)/bench_%.amor.csv: $(RESULTSDIR)/bench_%.csv
@@ -660,9 +624,9 @@ endif
 ## Generate all codemaps!
 .PHONY: codemap
 codemap codemap-all: \
-		codemap-default \
-		codemap-rdonly \
-		codemap-more
+		codemap-default
+# TODO
+#		codemap-rdonly
 
 ## Generate codemaps for the default build
 .PHONY: codemap-default
@@ -674,96 +638,94 @@ codemap-default: \
 		$(CODEMAPSDIR)/codemap_lfs2.svg \
 		$(CODEMAPSDIR)/codemap_lfs1.svg
 
-## Generate codemaps for the rdonly build
-.PHONY: codemap-rdonly
-codemap-rdonly: \
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg
-
-## Generate more codemaps
-.PHONY: codemap-more
-codemap-more: \
-		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_kvonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_kvonly_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_kvonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_kvonly_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_kvonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_kvonly_rdonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_rdonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_kvonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs3_2bonly_kvonly_rdonly.svg
+### Generate codemaps for the rdonly build
+#.PHONY: codemap-rdonly
+#codemap-rdonly: \
+#		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
+#		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg \
+#		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg \
+#		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg
 
 
 # codemap rules!
-define CODEMAP_RULES
 
-$$(CODEMAPSDIR)/codemap_$(subst -,_,$(V)).svg: $(V_OBJ) $(V_CI)
+# normal codemap rule
+#
+# $1 - target
+# $2 - sources
+# $3 - version
+#
+define CODEMAP_RULE
+$1: $2
 	$$(strip ./scripts/codemapsvg.py $$^ \
-		--title="$(V) code %(code)s stack %(stack)s ctx %(ctx)s" \
+		--title="$3 code %(code)s stack %(stack)s ctx %(ctx)s" \
 		-W1125 -H525 \
 		$$(CODEMAP_COLORS) \
 		$$(CODEMAPFLAGS) \
 		-o$$@ \
 		&& ./scripts/codemap.py $$^ --no-header)
+endef
 
-$$(CODEMAPSDIR)/codemap_$(subst -,_,$(V))_tiny.svg: $(V_OBJ) $(V_CI)
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3.svg,$\
+		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI),$\
+		lfs3))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2.svg,$\
+		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI),$\
+		lfs2))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1.svg,$\
+		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI),$\
+		lfs1))
+
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg,$\
+		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci),$\
+		lfs3))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg,$\
+		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci),$\
+		lfs2))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1_rdonly.svg,$\
+		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci),$\
+		lfs1))
+
+# tiny codemap rule
+#
+# $1 - target
+# $2 - sources
+#
+define CODEMAP_TINY_RULE
+$1: $2
 	$$(strip ./scripts/codemapsvg.py $$^ \
 		--tiny --background=\#00000000 \
 		$$(CODEMAP_COLORS) \
 		$$(CODEMAPFLAGS) \
 		-o$$@ \
 		&& ./scripts/codemap.py $$^ --no-header)
-
 endef
 
-# default codemaps
-#
-# parameterize based on lfs3/lfs2/lfs1
-$(foreach V_, lfs3/LFS3 lfs2/LFS2 lfs1/LFS1, \
-	$(foreach V, $(word 1,$(subst /, ,$(V_))), \
-	$(foreach V_OBJ, \
-		$$(CODEMAP_$(word 2,$(subst /, ,$(V_)))_OBJ), \
-	$(foreach V_CI, \
-		$$(CODEMAP_$(word 2,$(subst /, ,$(V_)))_CI), \
-	$(eval $(CODEMAP_RULES))))))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg,$\
+		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg,$\
+		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg,$\
+		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI)))
 
-# rdonly codemaps
-#
-# parameterize based on lfs3/lfs2/lfs1
-$(foreach V_, lfs3/LFS3 lfs2/LFS2 lfs1/LFS1, \
-	$(foreach V, $(word 1,$(subst /, ,$(V_)))-rdonly, \
-	$(foreach V_OBJ, \
-		$$(CODEMAP_$(word 2,$(subst /, ,$(V_)))_OBJ:.o=.rdonly.o), \
-	$(foreach V_CI, \
-		$$(CODEMAP_$(word 2,$(subst /, ,$(V_)))_CI:.ci=.rdonly.ci), \
-	$(eval $(CODEMAP_RULES))))))
-
-# other codemaps
-$(foreach M_, \
-		kvonly \
-		kvonly-rdonly \
-		2bonly \
-		2bonly-rdonly \
-		2bonly-kvonly \
-		2bonly-kvonly-rdonly, \
-	$(foreach V_, lfs3/LFS3, \
-		$(foreach V, $(word 1,$(subst /, ,$(V_)))-$(M_), \
-		$(foreach V_OBJ, \
-			$$(CODEMAP_$(word 2,$(subst /, ,$(V_)))_OBJ:.o=.$(subst \
-				-,.,$(M_)).o), \
-		$(foreach V_CI, \
-			$$(CODEMAP_$(word 2,$(subst /, ,$(V_)))_CI:.ci=.$(subst \
-				-,.,$(M_)).ci), \
-		$(eval $(CODEMAP_RULES)))))))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg,$\
+		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg,$\
+		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1_rdonly_tiny.svg,$\
+		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci)))
 
 
 
@@ -857,62 +819,72 @@ plot-p26-litmus-linear: \
 # p26 plot rules!
 
 # plot p26 config
+#
+# $1 - measurement
+# $2 - optional amor/per flag
+#
 PLOT_P26_FLAGS += -W1500 -H700
 PLOT_P26_FLAGS += \
 		--subplot=" \
 				-DBLOCK_SIZE='$(EMMC_LFS3_BLOCK_SIZE)$(,)$\
 					$(EMMC_LFS2_BLOCK_SIZE)' \
-				-Dm=$2 \
-				$(if $(filter amor,$3),--ylabel=raw) \
-				$(if $(filter per,$3),--ylabel=total) \
+				-Dm=$1 \
+				$(if $(filter amor,$2),--ylabel=raw) \
+				$(if $(filter per,$2),--ylabel=total) \
 				--title=sd/emmc \
-				$(if $3,--add-xticklabel=,)" \
-			$(if $3, \
+				$(if $2,--add-xticklabel=,)" \
+			$(if $2, \
 			--subplot-below=" \
 				-DBLOCK_SIZE='$(EMMC_LFS3_BLOCK_SIZE)$(,)$\
 					$(EMMC_LFS2_BLOCK_SIZE)' \
-				-Dm=$2+$3 \
-				$(if $(filter amor,$3),--ylabel=amortized) \
-				$(if $(filter per,$3),--ylabel=per) \
+				-Dm=$1+$2 \
+				$(if $(filter amor,$2),--ylabel=amortized) \
+				$(if $(filter per,$2),--ylabel=per) \
 				--ylim-stddev=3 \
 				-H0.5",) \
 		--subplot-right=" \
 				-DBLOCK_SIZE='$(NOR_LFS3_BLOCK_SIZE)$(,)$\
 					$(NOR_LFS2_BLOCK_SIZE)' \
-				-Dm=$2 \
+				-Dm=$1 \
 				--title=nor \
-				$(if $3,--add-xticklabel=,) \
+				$(if $2,--add-xticklabel=,) \
 				-W0.5 \
-			$(if $3, \
+			$(if $2, \
 			--subplot-below=\" \
 				-DBLOCK_SIZE='$(NOR_LFS3_BLOCK_SIZE)$(,)$\
 					$(NOR_LFS2_BLOCK_SIZE)' \
-				-Dm=$2+$3 \
+				-Dm=$1+$2 \
 				--ylim-stddev=3 \
 				-H0.5\",)" \
 		--subplot-right=" \
 				-DBLOCK_SIZE='$(NAND_LFS3_BLOCK_SIZE)$(,)$\
 					$(NAND_LFS2_BLOCK_SIZE)' \
-				-Dm=$2 \
+				-Dm=$1 \
 				--title=nand \
-				$(if $3,--add-xticklabel=,) \
+				$(if $2,--add-xticklabel=,) \
 				-W0.33 \
-			$(if $3, \
+			$(if $2, \
 			--subplot-below=\" \
 				-DBLOCK_SIZE='$(NAND_LFS3_BLOCK_SIZE)$(,)$\
 					$(NAND_LFS2_BLOCK_SIZE)' \
-				-Dm=$2+$3 \
+				-Dm=$1+$2 \
 				--ylim-stddev=3 \
 				-H0.5\",)"
 PLOT_P26_FLAGS += $(PLOT_COLORS_1BND)
 
-# p26 rules
-define PLOT_P26_RULE
-$$(PLOTSDIR)/bench_p26_$1.svg: \
-		$$(foreach V, lfs3 lfs2, \
-			$$(foreach SIM, emmc nor nand, \
-				$(foreach BENCH, $2, \
-					$$(RESULTSDIR)/bench_p26_$(BENCH).avg.csv)))
+# p26 litmus plot rule
+#
+# $1 - target
+# $2 - sources, parameterized by $$(V) and $$(SIM)
+# $3 - title
+# $4 - y field
+# $5 - measurement
+# $6 - optional amor/per flag
+# $7 - extra plotmpl.py flags
+#
+define PLOT_P26_LITMUS_RULE
+$1: $$(foreach V, lfs3 lfs2, \
+		$$(foreach SIM, emmc nor nand, $2))
 	$$(strip ./scripts/plotmpl.py \
 		<(./scripts/csv.py $$^ \
 			-f$4_avg \
@@ -937,38 +909,59 @@ $$(PLOTSDIR)/bench_p26_$1.svg: \
 			- bs=$(NOR_LFS2_BLOCK_SIZE)%n$\
 			- bs=$(NAND_LFS2_BLOCK_SIZE)' \
 		-L'2,$4_bnd=' \
-		$$(call PLOT_P26_FLAGS,$5,$6,$7) \
-		$8 \
+		$$(call PLOT_P26_FLAGS,$5,$6) \
+		$7 \
 		$$(PLOTFLAGS) \
 		-o$$@)
 endef
 
 # lfs3 (no bmap) vs lfs2 - linear file writes
-$(eval $(call PLOT_P26_RULE,litmus_linear_r,$\
-	litmus_linear.$$(V).$$(SIM) litmus_linear.$$(V).$$(SIM).amor,$\
-	"lfs3 (no bmap) vs lfs2 - linear file writes - reads",$\
-	bench_readed,readed,write,amor,$\
-	-DMODE=0 --x2 --xunits=B --y2 --yunits=B))
-$(eval $(call PLOT_P26_RULE,litmus_linear_p,$\
-	litmus_linear.$$(V).$$(SIM) litmus_linear.$$(V).$$(SIM).amor,$\
-	"lfs3 (no bmap) vs lfs2 - linear file writes - progs",$\
-	bench_proged,proged,write,amor,$\
-	-DMODE=0 --x2 --xunits=B --y2 --yunits=B))
-$(eval $(call PLOT_P26_RULE,litmus_linear_e,$\
-	litmus_linear.$$(V).$$(SIM) litmus_linear.$$(V).$$(SIM).amor,$\
-	"lfs3 (no bmap) vs lfs2 - linear file writes - erases",$\
-	bench_erased,erased,write,amor,$\
-	-DMODE=0 --x2 --xunits=B --y2 --yunits=B))
-$(eval $(call PLOT_P26_RULE,litmus_linear_u,$\
-	litmus_linear.$$(V).$$(SIM) litmus_linear.$$(V).$$(SIM).per,$\
-	"lfs3 (no bmap) vs lfs2 - linear file usage",$\
-	bench_readed,usage,usage,per,$\
-	-DMODE=1 --x2 --xunits=B --y2 --yunits=B))
-$(eval $(call PLOT_P26_RULE,litmus_linear,$\
-	litmus_linear.$$(V).$$(SIM).sim litmus_linear.$$(V).$$(SIM).sim.amor,$\
-	"lfs3 (no bmap) vs lfs2 - linear file writes - simulated runtime",$\
-	bench_readed,simulated,write+sim,amor,$\
-	-DMODE=0 --x2 --xunits=B --yunits=s))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_linear_r.svg,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
+			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).amor.avg.csv,$\
+		"lfs3 (no bmap) vs lfs2 - linear file writes - reads",$\
+		bench_readed,$\
+		write,$\
+		amor,$\
+		-DMODE=0 --x2 --xunits=B --y2 --yunits=B))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_linear_p.svg,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
+			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).amor.avg.csv,$\
+		"lfs3 (no bmap) vs lfs2 - linear file writes - progs",$\
+		bench_proged,$\
+		write,$\
+		amor,$\
+		-DMODE=0 --x2 --xunits=B --y2 --yunits=B))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_linear_e.svg,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
+			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).amor.avg.csv,$\
+		"lfs3 (no bmap) vs lfs2 - linear file writes - erases",$\
+		bench_erased,$\
+		write,$\
+		amor,$\
+		-DMODE=0 --x2 --xunits=B --y2 --yunits=B))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_linear_u.svg,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).avg.csv $\
+			$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).per.avg.csv,$\
+		"lfs3 (no bmap) vs lfs2 - linear file usage",$\
+		bench_readed,$\
+		usage,$\
+		per,$\
+		-DMODE=1 --x2 --xunits=B --y2 --yunits=B))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_linear.svg,$\
+		$(RESULTSDIR)/bench_p26_litmus_linear.$$(V).$$(SIM).sim.avg.csv $\
+			$(RESULTSDIR)/bench_p26_litmus_linear.$\
+				$$(V).$$(SIM).sim.amor.avg.csv,$\
+		"lfs3 (no bmap) vs lfs2 - linear file writes - simulated runtime",$\
+		bench_readed,$\
+		write+sim,$\
+		amor,$\
+		-DMODE=0 --x2 --xunits=B --yunits=s))
 
 
 
