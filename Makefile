@@ -444,7 +444,8 @@ bench-p26: \
 .PHONY: bench-p26-litmus
 bench-p26-litmus: \
 		bench-p26-litmus-linear \
-		bench-p26-litmus-random
+		bench-p26-litmus-random \
+		bench-p26-litmus-logging
 
 ## Run p26 litmus linear benchmarks
 .PHONY: bench-p26-litmus-linear
@@ -461,6 +462,14 @@ bench-p26-litmus-random: \
 			$(RESULTSDIR)/bench_p26_litmus_random.lfs3.$(SIM).csv \
 			$(RESULTSDIR)/bench_p26_litmus_random.lfs3nb.$(SIM).csv \
 			$(RESULTSDIR)/bench_p26_litmus_random.lfs2.$(SIM).csv)
+
+## Run p26 litmus logging benchmarks
+.PHONY: bench-p26-litmus-logging
+bench-p26-litmus-logging: \
+		$(foreach SIM, emmc nor nand, \
+			$(RESULTSDIR)/bench_p26_litmus_logging.lfs3.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_litmus_logging.lfs3nb.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_litmus_logging.lfs2.$(SIM).csv)
 
 
 # p26 bench rules!
@@ -883,7 +892,8 @@ plot-p26: \
 .PHONY: plot-p26-litmus
 plot-p26-litmus: \
 		plot-p26-litmus-linear \
-		plot-p26-litmus-random
+		plot-p26-litmus-random \
+		plot-p26-litmus-logging
 
 ## Plot p26 litmus linear benchmarks
 .PHONY: plot-p26-litmus-linear
@@ -902,6 +912,15 @@ plot-p26-litmus-random: \
 		$(PLOTSDIR)/bench_p26_litmus_random_e.svg \
 		$(PLOTSDIR)/bench_p26_litmus_random_u.svg \
 		$(PLOTSDIR)/bench_p26_litmus_random.svg
+
+## Plot p26 litmus logging benchmarks
+.PHONY: plot-p26-litmus-logging
+plot-p26-litmus-logging: \
+		$(PLOTSDIR)/bench_p26_litmus_logging_r.svg \
+		$(PLOTSDIR)/bench_p26_litmus_logging_p.svg \
+		$(PLOTSDIR)/bench_p26_litmus_logging_e.svg \
+		$(PLOTSDIR)/bench_p26_litmus_logging_u.svg \
+		$(PLOTSDIR)/bench_p26_litmus_logging.svg
 
 
 
