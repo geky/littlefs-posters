@@ -128,7 +128,10 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(PROG_SIZE,          1                                      ) \
     BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
     BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
-    BENCH_DEFINE(DISK_SIZE,          1024*1024                              ) \
+    /* TODO we can drop this back to 1MiB, but we'd need to support        */ \
+    /* disabling the bmap at runtime when disk is "small", with 128KiB     */ \
+    /* NAND blocks, 1MiB only gives us 8 blocks to use!                    */ \
+    BENCH_DEFINE(DISK_SIZE,          2*1024*1024                            ) \
     BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
     BENCH_DEFINE(RCACHE_SIZE,        LFS3_MAX(16, READ_SIZE)                ) \
     BENCH_DEFINE(PCACHE_SIZE,        LFS3_MAX(16, PROG_SIZE)                ) \
@@ -159,7 +162,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(PROG_SIZE,          1                                      ) \
     BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
     BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
-    BENCH_DEFINE(DISK_SIZE,          1024*1024                              ) \
+    BENCH_DEFINE(DISK_SIZE,          2*1024*1024                            ) \
     BENCH_DEFINE(BLOCK_CYCLES,       -1                                     ) \
     BENCH_DEFINE(CACHE_SIZE,         LFS3_MAX(16, \
                                         LFS3_MAX(READ_SIZE, PROG_SIZE))     ) \
