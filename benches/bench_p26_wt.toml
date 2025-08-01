@@ -6,12 +6,12 @@
 # note for bench_p26_litmus_many, CHUNK => file size, and SIZE = sum of
 # all files
 #
-defines.SIZE = [4096, 8192, 16384, 32768]
+defines.SIZE = [1024, 2048, 4096, 8192, 16384, 32768]
 defines.CHUNK = 32
 defines.SEED = 42
 
 # simulated time, in nanoseconds, to run the test
-defines.SIMTIME = '10000000000ULL' # 10 seconds
+defines.SIMTIME = '60000000000ULL' # 1 minute
 
 
 code = '''
@@ -218,7 +218,7 @@ code = '''
     uint64_t written = 0;
     while (!bench_p26_oot(CFG)) {
         // choose a random filename
-        lfs3_off_t pos = BENCH_PRNG(&prng) % SIZE;
+        lfs3_off_t pos = BENCH_PRNG(&prng) % ((SIZE+(CHUNK-1))/CHUNK);
         char name[256];
         sprintf(name, "bench_%08x", pos);
 

@@ -10,7 +10,7 @@ PLOTSDIR ?= plots
 # how many samples to measure for litmus testing?
 SAMPLES ?= 16
 # simulated time, in nanoseconds, for write-throughput testing?
-SIMTIME ?= 10000000000 # 10 seconds
+SIMTIME ?= 60000000000 # 1 minute
 
 # configurations that simulate real-world storage
 #
@@ -1231,6 +1231,16 @@ $1: $2
 			- bs=$(NAND_LFS2_BLOCK_SIZE)' \
 		$(PLOT_COLORS_1) \
 		-Fo- -F^- -Fs- -FX- -FP- \
+		--xlog \
+		--xticks=4 \
+		-X"$$$$(./scripts/csv.py $$< -fSIZE='min(SIZE)' -Y \
+				| awk '/^TOTAL/ {print $$$$2-$$$$2/4}'), \
+			$$$$(./scripts/csv.py $$< -fSIZE='max(SIZE)' -Y \
+				| awk '/^TOTAL/ {print $$$$2+$$$$2/4}')" \
+		--x2 --xunits=B \
+		--y2 --yunits=B/s \
+		$$$$(./scripts/csv.py $$< -bSIZE -fSIZE \
+			| awk '/^[0-9]/ {print "--add-xticklabel=" $$$$1 "=%(x)IB"}') \
 		$4 \
 		$$(PLOTFLAGS) \
 		-o$$@)
@@ -1241,10 +1251,7 @@ $(eval $(call PLOT_P26_T_RULE,$\
 		$(foreach FS,lfs3 lfs3nb lfs2,$\
 			$(foreach SIM,emmc nor nand,$\
 				$(RESULTSDIR)/bench_p26_wt_%.$(FS).$(SIM).tsim.csv)),$\
-		"$$* file writes - simulated throughput",$\
-		--xlim-stddev=-0.95$(,)2.1 \
-			--xticks=8 --xlog --x2 --xunits=B \
-			--y2 --yunits=B/s))
+		"$$* file writes - simulated throughput"))
 
 
 

@@ -303,7 +303,7 @@ code = '''
                 && (FS != 2 || i < (LFS2_MANY_CUTOFF+(CHUNK-1))/CHUNK);
             i++) {
         // choose a random filename
-        lfs3_off_t pos = BENCH_PRNG(&prng) % SIZE;
+        lfs3_off_t pos = BENCH_PRNG(&prng) % (i+1);
         char name[256];
         sprintf(name, "bench_%08x", pos);
 
