@@ -6,10 +6,13 @@ export RESULTSDIR ?= results_1M
 export PLOTSDIR ?= plots_1M
 
 
+# and give us more space for activities
+export DISK_SIZE ?= 134217728
+
 # increase bench sizes to 1 MiB
-export BENCHFLAGS += -DDISK_SIZE=134217728
-export BENCHFLAGS += -DSIZE=1048576
-export BENCHFLAGS += -DSTEP=64
+export P26_LITMUS_SIZE ?= 1048576
+export P26_LITMUS_STEP ?= 64
+export P26_T_SIZES ?= 32768,65536,131072,262144,524288,1048576
 
 
 # don't run rules in parallel at this level, it breaks things

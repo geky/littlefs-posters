@@ -7,10 +7,26 @@ CODEMAPSDIR ?= codemaps
 # overrideable plots dir, defaults ./plots
 PLOTSDIR ?= plots
 
+
+# overall disk size?
+DISK_SIZE ?= 4194304
+
+# size to test for litmus testing?
+P26_LITMUS_SIZE ?= 32768
+# chunks size, i.e. size of writes/reads, for litmus testing?
+P26_LITMUS_CHUNK ?= 32
+# step size for litmus testing?
+P26_LITMUS_STEP ?= 1
 # how many samples to measure for litmus testing?
-SAMPLES ?= 16
-# simulated time, in nanoseconds, for write-throughput testing?
-SIMTIME ?= 60000000000 # 1 minute
+P26_LITMUS_SAMPLES ?= 16
+
+# sizes to test for throughput testing?
+P26_T_SIZES ?= 1024,2048,4096,8192,16384,32768
+# chunks size, i.e. size of writes/reads, for throughput testing?
+P26_T_CHUNK ?= 32
+# simulated time, in nanoseconds, for throughput testing?
+P26_T_SIMTIME ?= 60000000000 # 1 minute
+
 
 # configurations that simulate real-world storage
 #
@@ -403,6 +419,8 @@ $(BUILDDIR)/%.lfs2.b.c: %.c $(BENCHES_LFS2)
 #======================================================================#
 
 # bench.py flags
+# give us a big disk
+BENCHFLAGS += -DDISK_SIZE=$(DISK_SIZE)
 BENCHFLAGS += -b
 # just always run benches in parallel, this makefile uses too much RAM
 # to parallelize at the rule level
@@ -535,7 +553,10 @@ bench-p26-wt-logging: \
 define BENCH_P26_LITMUS_RULE
 $1: $$(BENCH_$2_RUNNER)
 	$$(strip ./scripts/bench.py -R$$< -B bench_p26_litmus_$$* \
-		-DSEED="range($$(SAMPLES))" \
+		-DSIZE=$(P26_LITMUS_SIZE) \
+		-DCHUNK=$(P26_LITMUS_CHUNK) \
+		-DSTEP=$(P26_LITMUS_STEP) \
+		-DSEED="range($(P26_LITMUS_SAMPLES))" \
 		-DFS=$(if $(filter LFS3,$2),3,$\
 			$(if $(filter LFS3NB,$2),30,$\
 			$(if $(filter LFS2,$2),2))) \
@@ -599,7 +620,9 @@ $(eval $(call BENCH_P26_LITMUS_RULE,$\
 define BENCH_P26_WT_RULE
 $1: $$(BENCH_$2_RUNNER)
 	$$(strip ./scripts/bench.py -R$$< -B bench_p26_wt_$$* \
-		-DSIMTIME=$(SIMTIME) \
+		-DSIZE=$(P26_T_SIZES) \
+		-DCHUNK=$(P26_T_CHUNK) \
+		-DSIMTIME=$(P26_T_SIMTIME) \
 		-DFS=$(if $(filter LFS3,$2),3,$\
 			$(if $(filter LFS3NB,$2),30,$\
 			$(if $(filter LFS2,$2),2))) \

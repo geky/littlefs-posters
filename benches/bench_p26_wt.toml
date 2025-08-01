@@ -6,7 +6,7 @@
 # note for bench_p26_litmus_many, CHUNK => file size, and SIZE = sum of
 # all files
 #
-defines.SIZE = [1024, 2048, 4096, 8192, 16384, 32768]
+defines.SIZE = 32768
 defines.CHUNK = 32
 defines.SEED = 42
 
