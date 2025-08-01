@@ -96,7 +96,7 @@ CODEMAP_LFS1_ASM := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/thumb/%.s)
 CODEMAP_LFS1_CI  := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/thumb/%.ci)
 
 # littlefs v3 bench-runner (the default)
-BENCHES_LFS3 ?= benches/bench_p26.toml # TODO $(wildcard benches/*.toml)
+BENCHES_LFS3 ?= $(wildcard benches/*.toml)
 BENCH_LFS3_RUNNER ?= $(BUILDDIR)/bench_lfs3_runner
 BENCH_LFS3_SRC ?= \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs3/*.c)) \
@@ -127,7 +127,7 @@ BENCH_LFS3NB_TRACE := $(BENCH_LFS3NB_RUNNER:%=%.trace)
 BENCH_LFS3NB_CSV   := $(BENCH_LFS3NB_RUNNER:%=%.csv)
 
 # littlefs v2 bench-runner
-BENCHES_LFS2 ?= benches/bench_p26.toml # TODO benches/bench_vs_lfs2.toml
+BENCHES_LFS2 ?= $(wildcard benches/*.toml)
 BENCH_LFS2_RUNNER ?= $(BUILDDIR)/bench_lfs2_runner
 BENCH_LFS2_SRC ?= \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs2/*.c)) \
