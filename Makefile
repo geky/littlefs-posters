@@ -32,7 +32,9 @@ P26_T_SIMTIME ?= 60000000000 # 1 minute
 # range of erase sizes to test for throughput testing
 P26_T_BLOCK_SIZES ?= 1024,2048,4096,8192,16384,32768,65536,131072
 # range of read/prog sizes to test for throughput testing
-P26_T_READ_SIZES ?= 1,4,8,16,32,64,128,256,512
+P26_T_PAGE_SIZES ?= 1,4,8,16,32,64,128,256,512
+# range of cache sizes to test for throughput testing
+P26_T_CACHE_SIZES ?= 8,32,128,512,2048,8192,32768,131072
 
 
 # configurations that simulate real-world storage
@@ -469,7 +471,8 @@ bench-p26: \
 		bench-p26-wt \
 		bench-p26-rt \
 		bench-p26-wt-bs \
-		bench-p26-wt-ps
+		bench-p26-wt-ps \
+		bench-p26-wt-cs
 
 ## Run p26 litmus benchmarks
 .PHONY: bench-p26-litmus
@@ -662,6 +665,46 @@ bench-p26-wt-ps-logging: \
 			$(RESULTSDIR)/bench_p26_wt_ps_logging.lfs3nb.$(SIM).csv \
 			$(RESULTSDIR)/bench_p26_wt_ps_logging.lfs2.$(SIM).csv)
 
+## Run p26 write-throughput cache size benchmarks
+.PHONY: bench-p26-wt-cs
+bench-p26-wt-cs: \
+		bench-p26-wt-cs-linear \
+		bench-p26-wt-cs-random \
+		bench-p26-wt-cs-many \
+		bench-p26-wt-cs-logging
+
+## Run p26 write-throughput cache size linear benchmarks
+.PHONY: bench-p26-wt-cs-linear
+bench-p26-wt-cs-linear: \
+		$(foreach SIM, emmc nor nand, \
+			$(RESULTSDIR)/bench_p26_wt_cs_linear.lfs3.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_linear.lfs3nb.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_linear.lfs2.$(SIM).csv)
+
+## Run p26 write-throughput cache size random benchmarks
+.PHONY: bench-p26-wt-cs-random
+bench-p26-wt-cs-random: \
+		$(foreach SIM, emmc nor nand, \
+			$(RESULTSDIR)/bench_p26_wt_cs_random.lfs3.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_random.lfs3nb.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_random.lfs2.$(SIM).csv)
+
+## Run p26 write-throughput cache size many benchmarks
+.PHONY: bench-p26-wt-cs-many
+bench-p26-wt-cs-many: \
+		$(foreach SIM, emmc nor nand, \
+			$(RESULTSDIR)/bench_p26_wt_cs_many.lfs3.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_many.lfs3nb.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_many.lfs2.$(SIM).csv)
+
+## Run p26 write-throughput cache size logging benchmarks
+.PHONY: bench-p26-wt-cs-logging
+bench-p26-wt-cs-logging: \
+		$(foreach SIM, emmc nor nand, \
+			$(RESULTSDIR)/bench_p26_wt_cs_logging.lfs3.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_logging.lfs3nb.$(SIM).csv \
+			$(RESULTSDIR)/bench_p26_wt_cs_logging.lfs2.$(SIM).csv)
+
 
 # some lfs3 -> LFS3 convenience mappings
 UFS = $(if $(filter lfs3,$1),LFS3,$\
@@ -808,8 +851,7 @@ $1: $$(BENCH_$(call UFS,$3)_RUNNER)
 		-DFS=$(if $(filter lfs3,$3),3,$\
 			$(if $(filter lfs3nb,$3),30,$\
 			$(if $(filter lfs2,$3),2))) \
-		-DREAD_SIZE=$(P26_T_READ_SIZES) \
-		-DPROG_SIZE_INHERIT=1 \
+		-DPAGE_SIZE=$(P26_T_PAGE_SIZES) \
 		-DERASE_SIZE=$$($(call USIM,$4)_ERASE_SIZE) \
 		-DREAD_TIME=$$($(call USIM,$4)_READ_TIME) \
 		-DPROG_TIME=$$($(call USIM,$4)_PROG_TIME) \
@@ -824,6 +866,49 @@ $(foreach FS,lfs3 lfs3nb lfs2,$\
 	$(foreach SIM,emmc nor nand,$\
 		$(eval $(call BENCH_P26_T_PS_RULE,$\
 				$(RESULTSDIR)/bench_p26_wt_ps_%.$(FS).$(SIM).csv,$\
+				bench_p26_wt_$$*,$\
+				$(FS),$\
+				$(SIM)))))
+
+# p26 read/write-throughput cache size bench rule
+#
+# $1 - target
+# $2 - bench case
+# $3 - fs type/version
+# $4 - sim type
+#
+define BENCH_P26_T_CS_RULE
+$1: $$(BENCH_$(call UFS,$3)_RUNNER)
+	$$(strip ./scripts/bench.py -R$$< -B $2 \
+		-DSIZE=$(P26_T_SIZE) \
+		-DCHUNK=$(P26_T_CHUNK) \
+		-DSIMTIME=$(P26_T_SIMTIME) \
+		-DFS=$(if $(filter lfs3,$3),3,$\
+			$(if $(filter lfs3nb,$3),30,$\
+			$(if $(filter lfs2,$3),2))) \
+		-DREAD_SIZE=$$($(call USIM,$4)_READ_SIZE) \
+		-DPROG_SIZE=$$($(call USIM,$4)_PROG_SIZE) \
+		-DERASE_SIZE=$$($(call USIM,$4)_ERASE_SIZE) \
+		-DREAD_TIME=$$($(call USIM,$4)_READ_TIME) \
+		-DPROG_TIME=$$($(call USIM,$4)_PROG_TIME) \
+		-DERASE_TIME=$$($(call USIM,$4)_ERASE_TIME) \
+		-DBLOCK_SIZE=$$($(call USIM,$4)_$(call UFS,$3)_BLOCK_SIZE) \
+		-DCACHE_SIZE=$$(shell python -c '$\
+			print(",".join(str(n) for n in [$(P26_T_CACHE_SIZES)] $\
+				if n >= $$($(call USIM,$4)_READ_SIZE) $\
+				and n >= $$($(call USIM,$4)_PROG_SIZE) $\
+				and n <= $$($(call USIM,$4)_$(call UFS,$3)_BLOCK_SIZE) $\
+				and ("$$*" not in {"linear", "random"} $\
+					or n < $(P26_T_SIZE))))') \
+		$$(BENCHFLAGS) \
+		-o$$@)
+endef
+
+# p26 write-throughput cache size bench rules
+$(foreach FS,lfs3 lfs3nb lfs2,$\
+	$(foreach SIM,emmc nor nand,$\
+		$(eval $(call BENCH_P26_T_CS_RULE,$\
+				$(RESULTSDIR)/bench_p26_wt_cs_%.$(FS).$(SIM).csv,$\
 				bench_p26_wt_$$*,$\
 				$(FS),$\
 				$(SIM)))))
@@ -1147,7 +1232,8 @@ plot-p26: \
 		plot-p26-wt \
 		plot-p26-rt \
 		plot-p26-wt-bs \
-		plot-p26-wt-ps
+		plot-p26-wt-ps \
+		plot-p26-wt-cs
 
 ## Plot p26 litmus benchmarks
 .PHONY: plot-p26-litmus
@@ -1298,6 +1384,34 @@ plot-p26-wt-ps-many: \
 .PHONY: plot-p26-wt-ps-logging
 plot-p26-wt-ps-logging: \
 		$(PLOTSDIR)/bench_p26_wt_ps_logging.svg
+
+## Plot p26 write-throughput cache size benchmarks
+.PHONY: plot-p26-wt-cs
+plot-p26-wt-cs: \
+		plot-p26-wt-cs-linear \
+		plot-p26-wt-cs-random \
+		plot-p26-wt-cs-many \
+		plot-p26-wt-cs-logging
+
+## Plot p26 write-throughput linear cache size benchmarks
+.PHONY: plot-p26-wt-cs-linear
+plot-p26-wt-cs-linear: \
+		$(PLOTSDIR)/bench_p26_wt_cs_linear.svg
+
+## Plot p26 write-throughput random cache size benchmarks
+.PHONY: plot-p26-wt-cs-random
+plot-p26-wt-cs-random: \
+		$(PLOTSDIR)/bench_p26_wt_cs_random.svg
+
+## Plot p26 write-throughput many cache size benchmarks
+.PHONY: plot-p26-wt-cs-many
+plot-p26-wt-cs-many: \
+		$(PLOTSDIR)/bench_p26_wt_cs_many.svg
+
+## Plot p26 write-throughput logging cache size benchmarks
+.PHONY: plot-p26-wt-cs-logging
+plot-p26-wt-cs-logging: \
+		$(PLOTSDIR)/bench_p26_wt_cs_logging.svg
 
 
 
@@ -1453,7 +1567,8 @@ $(eval $(call PLOT_P26_LITMUS_RULE,$\
 # $2 - sources
 # $3 - title
 # $4 - x-axis
-# $5 - extra plotmpl.py flags
+# $5 - x-ticks
+# $6 - extra plotmpl.py flags
 #
 define PLOT_P26_T_RULE
 $1: $2
@@ -1464,26 +1579,26 @@ $1: $2
 		-x$4 \
 		-ybench_readed \
 		--subplot=" \
-			-DERASE_SIZE='$(EMMC_ERASE_SIZE)' \
+			-DERASE_SIZE=$(EMMC_ERASE_SIZE) \
 			--title=sd/emmc" \
 		--subplot-right=" \
-			-DERASE_SIZE='$(NOR_ERASE_SIZE)' \
+			-DERASE_SIZE=$(NOR_ERASE_SIZE) \
 			--title=nor \
 			-W0.5" \
 		--subplot-right=" \
-			-DERASE_SIZE='$(NAND_ERASE_SIZE)' \
+			-DERASE_SIZE=$(NAND_ERASE_SIZE) \
 			--title=nand \
 			-W0.33" \
 		--legend \
-		-L'3=lfs3%n$\
+		-L3='lfs3%n$\
 			- bs=$(EMMC_LFS3_BLOCK_SIZE)%n$\
 			- bs=$(NOR_LFS3_BLOCK_SIZE)%n$\
 			- bs=$(NAND_LFS3_BLOCK_SIZE)' \
-		-L'30=lfs3nb%n$\
+		-L30='lfs3nb%n$\
 			- bs=$(EMMC_LFS3NB_BLOCK_SIZE)%n$\
 			- bs=$(NOR_LFS3NB_BLOCK_SIZE)%n$\
 			- bs=$(NAND_LFS3NB_BLOCK_SIZE)' \
-		-L'2=lfs2%n$\
+		-L2='lfs2%n$\
 			- bs=$(EMMC_LFS2_BLOCK_SIZE)%n$\
 			- bs=$(NOR_LFS2_BLOCK_SIZE)%n$\
 			- bs=$(NAND_LFS2_BLOCK_SIZE)' \
@@ -1491,15 +1606,14 @@ $1: $2
 		-Fo- -F^- -Fs- -FX- -FP- \
 		--xlog \
 		--xticks=4 \
-		-X"$$$$(./scripts/csv.py $$< -f$4='min($4)' -Y \
-				| awk '/^TOTAL/ {print $$$$2-$$$$2/4}'), \
-			$$$$(./scripts/csv.py $$< -f$4='max($4)' -Y \
-				| awk '/^TOTAL/ {print $$$$2+$$$$2/4}')" \
+		-X"$$(shell python -c 'a=min([$5]); print(a-a//4)'),$\
+			$$(shell python -c 'b=max([$5]); print(b+b//4)')" \
 		--x2 --xunits=B \
 		--y2 --yunits=B/s \
-		$$$$(./scripts/csv.py $$< -b$4 -f$4 \
-			| awk '/^[0-9]/ {print "--add-xticklabel=" $$$$1 "=%(x)IB"}') \
-		$5 \
+		$$(shell python -c '$\
+			for n in [$5]: $\
+				print("--add-xticklabel=%d=\"%%(x)IB\"" % n)') \
+		$6 \
 		$$(PLOTFLAGS) \
 		-o$$@)
 endef
@@ -1510,7 +1624,8 @@ $(eval $(call PLOT_P26_T_RULE,$\
 			$(foreach SIM,emmc nor nand,$\
 				$(RESULTSDIR)/bench_p26_wt_%.$(FS).$(SIM).tsim.csv)),$\
 		"$$* file writes - simulated throughput",$\
-		SIZE))
+		SIZE,$\
+		$(P26_T_SIZES)))
 
 $(eval $(call PLOT_P26_T_RULE,$\
 		$(PLOTSDIR)/bench_p26_rt_%.svg,$\
@@ -1518,7 +1633,8 @@ $(eval $(call PLOT_P26_T_RULE,$\
 			$(foreach SIM,emmc nor nand,$\
 				$(RESULTSDIR)/bench_p26_rt_%.$(FS).$(SIM).tsim.csv)),$\
 		"$$* file reads - simulated throughput",$\
-		SIZE))
+		SIZE,$\
+		$(P26_T_SIZES)))
 
 $(eval $(call PLOT_P26_T_RULE,$\
 		$(PLOTSDIR)/bench_p26_wt_bs_%.svg,$\
@@ -1527,6 +1643,7 @@ $(eval $(call PLOT_P26_T_RULE,$\
 				$(RESULTSDIR)/bench_p26_wt_bs_%.$(FS).$(SIM).tsim.csv)),$\
 		"$$* file writes - block sizes - simulated throughput",$\
 		BLOCK_SIZE,$\
+		$(P26_T_BLOCK_SIZES),$\
 		--xlabel="block size"))
 
 $(eval $(call PLOT_P26_T_RULE,$\
@@ -1535,8 +1652,19 @@ $(eval $(call PLOT_P26_T_RULE,$\
 			$(foreach SIM,emmc nor nand,$\
 				$(RESULTSDIR)/bench_p26_wt_ps_%.$(FS).$(SIM).tsim.csv)),$\
 		"$$* file writes - read/prog sizes - simulated throughput",$\
-		READ_SIZE,$\
+		PAGE_SIZE,$\
+		$(P26_T_PAGE_SIZES),$\
 		--xlabel="read/prog size"))
+
+$(eval $(call PLOT_P26_T_RULE,$\
+		$(PLOTSDIR)/bench_p26_wt_cs_%.svg,$\
+		$(foreach FS,lfs3 lfs3nb lfs2,$\
+			$(foreach SIM,emmc nor nand,$\
+				$(RESULTSDIR)/bench_p26_wt_cs_%.$(FS).$(SIM).tsim.csv)),$\
+		"$$* file writes - cache sizes - simulated throughput",$\
+		CACHE_SIZE,$\
+		$(P26_T_CACHE_SIZES),$\
+		--xlabel="cache size"))
 
 
 

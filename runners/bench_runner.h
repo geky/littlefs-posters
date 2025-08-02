@@ -131,9 +131,9 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_IMPLICIT_DEFINES \
     /*           name                value (overridable)                   */ \
     BENCH_DEFINE(FS,                 LFS3_IFDEF_BMAP(3, 30)                 ) \
-    BENCH_DEFINE(READ_SIZE,          1                                      ) \
-    BENCH_DEFINE(PROG_SIZE,          (PROG_SIZE_INHERIT) ? READ_SIZE : 1    ) \
-    BENCH_DEFINE(PROG_SIZE_INHERIT,  0                                      ) \
+    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
+    BENCH_DEFINE(READ_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
+    BENCH_DEFINE(PROG_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
     /* ERASE_SIZE is just informative                                      */ \
     BENCH_DEFINE(ERASE_SIZE,         4096                                   ) \
     /* simulated estimate timings in nanoseconds                           */ \
@@ -149,13 +149,21 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     /* NAND blocks, 1MiB only gives us 8 blocks to use!                    */ \
     BENCH_DEFINE(DISK_SIZE,          8*1024*1024                            ) \
     BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
+    BENCH_DEFINE(CACHE_SIZE,         0                                      ) \
     /* NOTE this was expanded to 32 to match littlefs2, see v2's cfg       */ \
-    BENCH_DEFINE(RCACHE_SIZE,        LFS3_MAX(32, READ_SIZE)                ) \
-    BENCH_DEFINE(PCACHE_SIZE,        LFS3_MAX(32, PROG_SIZE)                ) \
+    BENCH_DEFINE(RCACHE_SIZE,        (CACHE_SIZE)                             \
+                                        ? CACHE_SIZE                          \
+                                        : LFS3_MAX(32, READ_SIZE)           ) \
+    BENCH_DEFINE(PCACHE_SIZE,        (CACHE_SIZE)                             \
+                                        ? CACHE_SIZE                          \
+                                        : LFS3_MAX(32, PROG_SIZE)           ) \
     /* NOTE this max is not necessary, but levels the playing field        */ \
     /* vs littlefs v2 (was 16)                                             */ \
-    BENCH_DEFINE(FILE_CACHE_SIZE,    LFS3_MAX(32, \
-                                        LFS3_MAX(READ_SIZE, PROG_SIZE))     ) \
+    BENCH_DEFINE(FILE_CACHE_SIZE,    (CACHE_SIZE)                             \
+                                        ? CACHE_SIZE                          \
+                                        : LFS3_MAX(                           \
+                                            32,                               \
+                                            LFS3_MAX(READ_SIZE, PROG_SIZE)) ) \
     BENCH_DEFINE(LOOKAHEAD_SIZE,     16                                     ) \
     BENCH_DEFINE(TREEDIFF_SIZE,      16                                     ) \
     BENCH_DEFINE(GC_FLAGS,           0                                      ) \
@@ -176,9 +184,9 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_IMPLICIT_DEFINES \
     /*           name                value (overridable)                   */ \
     BENCH_DEFINE(FS,                 2                                      ) \
-    BENCH_DEFINE(READ_SIZE,          1                                      ) \
-    BENCH_DEFINE(PROG_SIZE,          (PROG_SIZE_INHERIT) ? READ_SIZE : 1    ) \
-    BENCH_DEFINE(PROG_SIZE_INHERIT,  0                                      ) \
+    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
+    BENCH_DEFINE(READ_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
+    BENCH_DEFINE(PROG_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
     /* ERASE_SIZE is just informative                                      */ \
     BENCH_DEFINE(ERASE_SIZE,         4096                                   ) \
     /* simulated estimate timings in nanoseconds                           */ \
@@ -193,7 +201,8 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(BLOCK_CYCLES,       -1                                     ) \
     /* NOTE this is necessary for inline files to not explode in           */ \
     /* many testing                                                        */ \
-    BENCH_DEFINE(CACHE_SIZE,         LFS3_MAX(32, \
+    BENCH_DEFINE(CACHE_SIZE,         LFS3_MAX(                                \
+                                        32,                                   \
                                         LFS3_MAX(READ_SIZE, PROG_SIZE))     ) \
     BENCH_DEFINE(LOOKAHEAD_SIZE,     16                                     ) \
     BENCH_DEFINE(COMPACT_THRESH,     0                                      ) \
