@@ -720,13 +720,7 @@ $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
 					+ float(bench_erased)*float(ERASE_TIME) \
 					) / 1.0e9, \
 				1.0e-9)' \
-		-fbench_proged=' \
-			float((n+CHUNK-1)/CHUNK) / max( \
-				(float(bench_readed)*float(READ_TIME) \
-					+ float(bench_proged)*float(PROG_TIME) \
-					+ float(bench_erased)*float(ERASE_TIME) \
-					) / 1.0e9, \
-				1.0e-9)' \
+		-fbench_proged=0 \
 		-fbench_erased=0 \
 		-o$@)
 
@@ -1233,6 +1227,7 @@ $1: $2
 		--title=$3 \
 		-bFS \
 		-xSIZE \
+		-ybench_readed \
 		--subplot=" \
 			-DERASE_SIZE='$(EMMC_ERASE_SIZE)' \
 			--title=sd/emmc" \
@@ -1266,6 +1261,7 @@ $1: $2
 			$$$$(./scripts/csv.py $$< -fSIZE='max(SIZE)' -Y \
 				| awk '/^TOTAL/ {print $$$$2+$$$$2/4}')" \
 		--x2 --xunits=B \
+		--y2 --yunits=B/s \
 		$$$$(./scripts/csv.py $$< -bSIZE -fSIZE \
 			| awk '/^[0-9]/ {print "--add-xticklabel=" $$$$1 "=%(x)IB"}') \
 		$4 \
@@ -1278,15 +1274,7 @@ $(eval $(call PLOT_P26_T_RULE,$\
 		$(foreach FS,lfs3 lfs3nb lfs2,$\
 			$(foreach SIM,emmc nor nand,$\
 				$(RESULTSDIR)/bench_p26_wt_%.$(FS).$(SIM).tsim.csv)),$\
-		"$$* file writes - simulated throughput",$\
-		-ybench_readed --y2 --yunits=B/s))
-$(eval $(call PLOT_P26_T_RULE,$\
-		$(PLOTSDIR)/bench_p26_wt_many.svg,$\
-		$(foreach FS,lfs3 lfs3nb lfs2,$\
-			$(foreach SIM,emmc nor nand,$\
-				$(RESULTSDIR)/bench_p26_wt_many.$(FS).$(SIM).tsim.csv)),$\
-		"many file writes - simulated throughput",$\
-		-ybench_proged --yunits=ops/s))
+		"$$* file writes - simulated throughput"))
 
 
 
