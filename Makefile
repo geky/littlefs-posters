@@ -2,10 +2,10 @@
 BUILDDIR ?= build
 # overrideable results dir, default to ./results
 RESULTSDIR ?= results
-# overrideable codemaps dir, defaults to ./codemaps
-CODEMAPSDIR ?= codemaps
 # overrideable plots dir, defaults ./plots
 PLOTSDIR ?= plots
+# overrideable codemaps dir, defaults to ./codemaps
+CODEMAPSDIR ?= codemaps
 
 
 # overall disk size?
@@ -292,7 +292,7 @@ endif
 
 ## Find total section sizes
 .PHONY: size
-size: $(BENCH_LFS3_OBJ)
+size: $(BENCH_LFS3_OBJ) $(BENCH_LFS2_OBJ)
 	$(SIZE) -t $^
 
 ## Generate a ctags file
@@ -1007,163 +1007,6 @@ $(RESULTSDIR)/bench_%.avg.csv: $(RESULTSDIR)/bench_%.csv
 
 
 #======================================================================#
-# and codemap rules                                                    #
-#======================================================================#
-
-# plot config
-ifndef LIGHT
-CODEMAPFLAGS += --dark
-endif
-
-# give some of the bigger subsystems explicit colors, to help with
-# comparisons and to avoid similarly colored neighbors
-ifdef LIGHT
-CODEMAP_COLORS += -C'file=\#80be8e'   	   # was '#55a868bf', # green
-CODEMAP_COLORS += -C'lfs*_file=\#80be8e'   # was '#55a868bf', # green
-CODEMAP_COLORS += -C'lfs*_data=\#80be8e'   # was '#55a868bf', # green
-CODEMAP_COLORS += -C'lfs*_mdir=\#d9cb97'   # was '#ccb974bf', # yellow
-CODEMAP_COLORS += -C'lfs*_dir=\#d9cb97'    # was '#ccb974bf', # yellow
-CODEMAP_COLORS += -C'lfs*_mtree=\#a195c6'  # was '#8172b3bf', # purple
-CODEMAP_COLORS += -C'lfs*_btree=\#7995c4'  # was '#4c72b0bf', # blue
-CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
-CODEMAP_COLORS += -C'lfs*_bshrub=\#8bc8da' # was '#64b5cdbf', # cyan
-CODEMAP_COLORS += -C'lfs*_rbyd=\#d37a7d'   # was '#c44e52bf', # red
-CODEMAP_COLORS += -C'lfs=\#ae9a88'         # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs1=\#ae9a88'        # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs2=\#ae9a88'        # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs3=\#ae9a88'        # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs*_fs=\#ae9a88'     # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs*_bd=\#a9a9a9'     # was '#8c8c8cbf', # gray
-else
-CODEMAP_COLORS += -C'file=\#6aac79'        # was '#8de5a1bf', # green
-CODEMAP_COLORS += -C'lfs*_file=\#6aac79'   # was '#8de5a1bf', # green
-CODEMAP_COLORS += -C'lfs*_data=\#6aac79'   # was '#8de5a1bf', # green
-CODEMAP_COLORS += -C'lfs*_mdir=\#bfbe7a'   # was '#fffea3bf', # yellow
-CODEMAP_COLORS += -C'lfs*_dir=\#bfbe7a'    # was '#fffea3bf', # yellow
-CODEMAP_COLORS += -C'lfs*_mtree=\#9c8cbf'  # was '#d0bbffbf', # purple
-CODEMAP_COLORS += -C'lfs*_btree=\#7997b7'  # was '#a1c9f4bf', # blue
-CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
-CODEMAP_COLORS += -C'lfs*_bshrub=\#8bb5b4' # was '#b9f2f0bf', # cyan
-CODEMAP_COLORS += -C'lfs*_rbyd=\#bf7774'   # was '#ff9f9bbf', # red
-CODEMAP_COLORS += -C'lfs=\#a68c74'         # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs1=\#a68c74'        # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs2=\#a68c74'        # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs3=\#a68c74'        # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs*_fs=\#a68c74'     # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs*_bd=\#9b9b9b'     # was '#cfcfcfbf', # gray
-endif
-
-
-
-## Generate all codemaps!
-.PHONY: codemap
-codemap codemap-all: \
-		codemap-default
-# TODO
-#		codemap-rdonly
-
-## Generate codemaps for the default build
-.PHONY: codemap-default
-codemap-default: \
-		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs3.svg \
-		$(CODEMAPSDIR)/codemap_lfs2.svg \
-		$(CODEMAPSDIR)/codemap_lfs1.svg
-
-### Generate codemaps for the rdonly build
-#.PHONY: codemap-rdonly
-#codemap-rdonly: \
-#		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
-#		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg \
-#		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg \
-#		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg
-
-
-# codemap rules!
-
-# normal codemap rule
-#
-# $1 - target
-# $2 - sources
-# $3 - version
-#
-define CODEMAP_RULE
-$1: $2
-	$$(strip ./scripts/codemapsvg.py $$^ \
-		--title="$3 code %(code)s stack %(stack)s ctx %(ctx)s" \
-		-W1125 -H525 \
-		$$(CODEMAP_COLORS) \
-		$$(CODEMAPFLAGS) \
-		-o$$@ \
-		&& ./scripts/codemap.py $$^ --no-header)
-endef
-
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3.svg,$\
-		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI),$\
-		lfs3))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2.svg,$\
-		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI),$\
-		lfs2))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1.svg,$\
-		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI),$\
-		lfs1))
-
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg,$\
-		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci),$\
-		lfs3))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg,$\
-		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci),$\
-		lfs2))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1_rdonly.svg,$\
-		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci),$\
-		lfs1))
-
-# tiny codemap rule
-#
-# $1 - target
-# $2 - sources
-#
-define CODEMAP_TINY_RULE
-$1: $2
-	$$(strip ./scripts/codemapsvg.py $$^ \
-		--tiny --background=\#00000000 \
-		$$(CODEMAP_COLORS) \
-		$$(CODEMAPFLAGS) \
-		-o$$@ \
-		&& ./scripts/codemap.py $$^ --no-header)
-endef
-
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg,$\
-		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg,$\
-		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg,$\
-		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI)))
-
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg,$\
-		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg,$\
-		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1_rdonly_tiny.svg,$\
-		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci)))
-
-
-
-#======================================================================#
 # and plotting rules, can't have benchmarks without plots!             #
 #======================================================================#
 
@@ -1669,6 +1512,162 @@ $(eval $(call PLOT_P26_T_RULE,$\
 		CACHE_SIZE,$\
 		$(P26_T_CACHE_SIZES),$\
 		--xlabel="cache size"))
+
+
+
+#======================================================================#
+# and codemap rules                                                    #
+#======================================================================#
+
+# plot config
+ifndef LIGHT
+CODEMAPFLAGS += --dark
+endif
+
+# give some of the bigger subsystems explicit colors, to help with
+# comparisons and to avoid similarly colored neighbors
+ifdef LIGHT
+CODEMAP_COLORS += -C'file=\#80be8e'   	   # was '#55a868bf', # green
+CODEMAP_COLORS += -C'lfs*_file=\#80be8e'   # was '#55a868bf', # green
+CODEMAP_COLORS += -C'lfs*_data=\#80be8e'   # was '#55a868bf', # green
+CODEMAP_COLORS += -C'lfs*_mdir=\#d9cb97'   # was '#ccb974bf', # yellow
+CODEMAP_COLORS += -C'lfs*_dir=\#d9cb97'    # was '#ccb974bf', # yellow
+CODEMAP_COLORS += -C'lfs*_mtree=\#a195c6'  # was '#8172b3bf', # purple
+CODEMAP_COLORS += -C'lfs*_btree=\#7995c4'  # was '#4c72b0bf', # blue
+CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
+CODEMAP_COLORS += -C'lfs*_bshrub=\#8bc8da' # was '#64b5cdbf', # cyan
+CODEMAP_COLORS += -C'lfs*_rbyd=\#d37a7d'   # was '#c44e52bf', # red
+CODEMAP_COLORS += -C'lfs=\#ae9a88'         # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs1=\#ae9a88'        # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs2=\#ae9a88'        # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs3=\#ae9a88'        # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs*_fs=\#ae9a88'     # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs*_bd=\#a9a9a9'     # was '#8c8c8cbf', # gray
+else
+CODEMAP_COLORS += -C'file=\#6aac79'        # was '#8de5a1bf', # green
+CODEMAP_COLORS += -C'lfs*_file=\#6aac79'   # was '#8de5a1bf', # green
+CODEMAP_COLORS += -C'lfs*_data=\#6aac79'   # was '#8de5a1bf', # green
+CODEMAP_COLORS += -C'lfs*_mdir=\#bfbe7a'   # was '#fffea3bf', # yellow
+CODEMAP_COLORS += -C'lfs*_dir=\#bfbe7a'    # was '#fffea3bf', # yellow
+CODEMAP_COLORS += -C'lfs*_mtree=\#9c8cbf'  # was '#d0bbffbf', # purple
+CODEMAP_COLORS += -C'lfs*_btree=\#7997b7'  # was '#a1c9f4bf', # blue
+CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
+CODEMAP_COLORS += -C'lfs*_bshrub=\#8bb5b4' # was '#b9f2f0bf', # cyan
+CODEMAP_COLORS += -C'lfs*_rbyd=\#bf7774'   # was '#ff9f9bbf', # red
+CODEMAP_COLORS += -C'lfs=\#a68c74'         # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs1=\#a68c74'        # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs2=\#a68c74'        # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs3=\#a68c74'        # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs*_fs=\#a68c74'     # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs*_bd=\#9b9b9b'     # was '#cfcfcfbf', # gray
+endif
+
+
+
+## Generate all codemaps!
+.PHONY: codemap
+codemap codemap-all: \
+		codemap-default \
+		codemap-rdonly
+
+## Generate codemaps for the default build
+.PHONY: codemap-default
+codemap-default: \
+		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs3.svg \
+		$(CODEMAPSDIR)/codemap_lfs2.svg \
+		$(CODEMAPSDIR)/codemap_lfs1.svg
+
+## Generate codemaps for the rdonly build
+.PHONY: codemap-rdonly
+codemap-rdonly: \
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg \
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg
+
+
+# codemap rules!
+
+# normal codemap rule
+#
+# $1 - target
+# $2 - sources
+# $3 - version
+#
+define CODEMAP_RULE
+$1: $2
+	$$(strip ./scripts/codemapsvg.py $$^ \
+		--title="$3 code %(code)s stack %(stack)s ctx %(ctx)s" \
+		-W1125 -H525 \
+		$$(CODEMAP_COLORS) \
+		$$(CODEMAPFLAGS) \
+		-o$$@ \
+		&& ./scripts/codemap.py $$^ --no-header)
+endef
+
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3.svg,$\
+		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI),$\
+		lfs3))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2.svg,$\
+		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI),$\
+		lfs2))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1.svg,$\
+		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI),$\
+		lfs1))
+
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg,$\
+		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci),$\
+		lfs3))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg,$\
+		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci),$\
+		lfs2))
+$(eval $(call CODEMAP_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1_rdonly.svg,$\
+		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci),$\
+		lfs1))
+
+# tiny codemap rule
+#
+# $1 - target
+# $2 - sources
+#
+define CODEMAP_TINY_RULE
+$1: $2
+	$$(strip ./scripts/codemapsvg.py $$^ \
+		--tiny --background=\#00000000 \
+		$$(CODEMAP_COLORS) \
+		$$(CODEMAPFLAGS) \
+		-o$$@ \
+		&& ./scripts/codemap.py $$^ --no-header)
+endef
+
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg,$\
+		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg,$\
+		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg,$\
+		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI)))
+
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg,$\
+		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg,$\
+		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci)))
+$(eval $(call CODEMAP_TINY_RULE,$\
+		$(CODEMAPSDIR)/codemap_lfs1_rdonly_tiny.svg,$\
+		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci)))
 
 
 
