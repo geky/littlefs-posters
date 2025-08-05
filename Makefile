@@ -113,10 +113,16 @@ SIM = $(if $(filter emmc,$1),EMMC,$\
 
 # littlefs v3 sources
 CODEMAP_LFS3_SRC ?= $(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs3/*.c))
-CODEMAP_LFS3_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.o)
-CODEMAP_LFS3_DEP := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.d)
-CODEMAP_LFS3_ASM := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.s)
-CODEMAP_LFS3_CI  := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.ci)
+CODEMAP_LFS3_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.o)
+CODEMAP_LFS3_DEP := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.d)
+CODEMAP_LFS3_ASM := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.s)
+CODEMAP_LFS3_CI  := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.ci)
+
+# littlefs v3 no-bmap sources (well, really just object targets)
+CODEMAP_LFS3NB_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.o)
+CODEMAP_LFS3NB_DEP := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.d)
+CODEMAP_LFS3NB_ASM := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.s)
+CODEMAP_LFS3NB_CI  := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.ci)
 
 # littlefs v2 sources
 CODEMAP_LFS2_SRC ?= $(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs2/*.c))
@@ -363,24 +369,35 @@ $(BUILDDIR)/thumb/%.o $(BUILDDIR)/thumb/%.ci: %.c
 	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) $(CODEMAP_CFLAGS) $< \
 		-o $(BUILDDIR)/thumb/$*.o)
 
-$(BUILDDIR)/thumb/%.o $(BUILDDIR)/thumb/%.ci: $(BUILDDIR)/thumb/%.c
+# .lfs3 files need -DLFS3_YES_BMAP=1, .lfs3nb files don't
+$(BUILDDIR)/thumb/%.lfs3.o $(BUILDDIR)/thumb/%.lfs3.ci: %.c
+	$(strip $(CODEMAP_CC) -c -MMD -DLFS3_YES_BMAP \
+		$(CFLAGS) $(CODEMAP_CFLAGS) $< \
+		-o $(BUILDDIR)/thumb/$*.lfs3.o)
+
+$(BUILDDIR)/thumb/%.lfs3nb.o $(BUILDDIR)/thumb/%.lfs3nb.ci: %.c
 	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) $(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.o)
+		-o $(BUILDDIR)/thumb/$*.lfs3nb.o)
 
 # rdonly codemap builds
-$(BUILDDIR)/thumb/%.rdonly.o $(BUILDDIR)/thumb/%.rdonly.ci: \
-		%.c
+$(BUILDDIR)/thumb/%.rdonly.o $(BUILDDIR)/thumb/%.rdonly.ci: %.c
 	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
 		-DLFS3_RDONLY -DLFS2_READONLY \
 		$(CODEMAP_CFLAGS) $< \
 		-o $(BUILDDIR)/thumb/$*.rdonly.o)
 
-$(BUILDDIR)/thumb/%.rdonly.o $(BUILDDIR)/thumb/%.rdonly.ci: \
-		$(BUILDDIR)/thumb/%.c
+# .lfs3 files need -DLFS3_YES_BMAP=1, .lfs3nb files don't
+$(BUILDDIR)/thumb/%.lfs3.rdonly.o $(BUILDDIR)/thumb/%.lfs3.rdonly.ci: %.c
 	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
-		-DLFS3_RDONLY -DLFS2_READONLY \
+		-DLFS3_RDONLY -DLFS2_READONLY -DLFS3_YES_BMAP \
 		$(CODEMAP_CFLAGS) $< \
-		-o $(BUILDDIR)/thumb/$*.rdonly.o)
+		-o $(BUILDDIR)/thumb/$*.lfs3.rdonly.o)
+
+$(BUILDDIR)/thumb/%.lfs3nb.rdonly.o $(BUILDDIR)/thumb/%.lfs3nb.rdonly.ci: %.c
+	$(strip $(CODEMAP_CC) -c -MMD $(CFLAGS) \
+		-DLFS3_RDONLY -DLFS2_READONLY -DLFS3_YES_BMAP \
+		$(CODEMAP_CFLAGS) $< \
+		-o $(BUILDDIR)/thumb/$*.lfs3nb.rdonly.o)
 
 # .lfs3 files need -DLFS3=1 -DLFS3_YES_BMAP=1
 $(BUILDDIR)/%.lfs3.b.a.o $(BUILDDIR)/%.lfs3.b.a.ci: %.lfs3.b.a.c
@@ -1574,20 +1591,24 @@ codemap codemaps codemap-all: \
 ## Generate codemaps for the default build
 .PHONY: codemap-default
 codemap-default: \
-		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg \
 		$(CODEMAPSDIR)/codemap_lfs3.svg \
+		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs3nb.svg \
+		$(CODEMAPSDIR)/codemap_lfs3nb_tiny.svg \
 		$(CODEMAPSDIR)/codemap_lfs2.svg \
-		$(CODEMAPSDIR)/codemap_lfs1.svg
+		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs1.svg \
+		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg
 
 ## Generate codemaps for the rdonly build
 .PHONY: codemap-rdonly
 codemap-rdonly: \
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg \
 		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg \
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg
+		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs3nb_rdonly.svg \
+		$(CODEMAPSDIR)/codemap_lfs3nb_rdonly_tiny.svg \
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg \
+		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg
 
 
 # codemap rules!
