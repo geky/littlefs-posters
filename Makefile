@@ -98,6 +98,16 @@ NAND_PROG_TIME  ?= 141    # tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
 NAND_ERASE_TIME ?= 15     # tBE=2 ms, block=131072 (2 ms / 131072)
 
 
+# some lfs3 -> LFS3 convenience mappings
+UFS = $(if $(filter lfs3,$1),LFS3,$\
+		$(if $(filter lfs3nb,$1),LFS3NB,$\
+		$(if $(filter lfs2,$1),LFS2,$\
+		$(if $(filter lfs1,$1),LFS1))))
+
+USIM = $(if $(filter emmc,$1),EMMC,$\
+		$(if $(filter nor,$1),NOR,$\
+		$(if $(filter nand,$1),NAND)))
+
 
 # find source files
 
@@ -705,15 +715,6 @@ bench-p26-wt-cs-logging: \
 			$(RESULTSDIR)/bench_p26_wt_cs_logging.lfs3nb.$(SIM).csv \
 			$(RESULTSDIR)/bench_p26_wt_cs_logging.lfs2.$(SIM).csv)
 
-
-# some lfs3 -> LFS3 convenience mappings
-UFS = $(if $(filter lfs3,$1),LFS3,$\
-		$(if $(filter lfs3nb,$1),LFS3NB,$\
-		$(if $(filter lfs2,$1),LFS2)))
-
-USIM = $(if $(filter emmc,$1),EMMC,$\
-		$(if $(filter nor,$1),NOR,$\
-		$(if $(filter nand,$1),NAND)))
 
 # p26 bench rules!
 
@@ -1565,8 +1566,8 @@ endif
 
 
 ## Generate all codemaps!
-.PHONY: codemap
-codemap codemap-all: \
+.PHONY: codemap codemaps codemap-all
+codemap codemaps codemap-all: \
 		codemap-default \
 		codemap-rdonly
 
@@ -1594,8 +1595,8 @@ codemap-rdonly: \
 # normal codemap rule
 #
 # $1 - target
-# $2 - sources
-# $3 - version
+# $2 - obj/callgraph files
+# $3 - fs type/version
 #
 define CODEMAP_RULE
 $1: $2
@@ -1608,36 +1609,10 @@ $1: $2
 		&& ./scripts/codemap.py $$^ --no-header)
 endef
 
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3.svg,$\
-		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI),$\
-		lfs3))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2.svg,$\
-		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI),$\
-		lfs2))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1.svg,$\
-		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI),$\
-		lfs1))
-
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly.svg,$\
-		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci),$\
-		lfs3))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly.svg,$\
-		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci),$\
-		lfs2))
-$(eval $(call CODEMAP_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1_rdonly.svg,$\
-		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci),$\
-		lfs1))
-
 # tiny codemap rule
 #
 # $1 - target
-# $2 - sources
+# $2 - obj/callgraph files
 #
 define CODEMAP_TINY_RULE
 $1: $2
@@ -1649,25 +1624,35 @@ $1: $2
 		&& ./scripts/codemap.py $$^ --no-header)
 endef
 
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3_tiny.svg,$\
-		$(CODEMAP_LFS3_OBJ) $(CODEMAP_LFS3_CI)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2_tiny.svg,$\
-		$(CODEMAP_LFS2_OBJ) $(CODEMAP_LFS2_CI)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1_tiny.svg,$\
-		$(CODEMAP_LFS1_OBJ) $(CODEMAP_LFS1_CI)))
+# default codemap rules
+$(foreach FS,lfs3 lfs3nb lfs2 lfs1,$\
+	$(eval $(call CODEMAP_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(FS).svg,$\
+			$(CODEMAP_$(call UFS,$(FS))_OBJ) $\
+				$(CODEMAP_$(call UFS,$(FS))_CI),$\
+			$(FS))))
 
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs3_rdonly_tiny.svg,$\
-		$(CODEMAP_LFS3_OBJ:.o=.rdonly.o) $(CODEMAP_LFS3_CI:.ci=.rdonly.ci)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs2_rdonly_tiny.svg,$\
-		$(CODEMAP_LFS2_OBJ:.o=.rdonly.o) $(CODEMAP_LFS2_CI:.ci=.rdonly.ci)))
-$(eval $(call CODEMAP_TINY_RULE,$\
-		$(CODEMAPSDIR)/codemap_lfs1_rdonly_tiny.svg,$\
-		$(CODEMAP_LFS1_OBJ:.o=.rdonly.o) $(CODEMAP_LFS1_CI:.ci=.rdonly.ci)))
+# tiny default codemap rules
+$(foreach FS,lfs3 lfs3nb lfs2 lfs1,$\
+	$(eval $(call CODEMAP_TINY_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(FS)_tiny.svg,$\
+			$(CODEMAP_$(call UFS,$(FS))_OBJ) $\
+				$(CODEMAP_$(call UFS,$(FS))_CI))))
+
+# rdonly codemap rules
+$(foreach FS,lfs3 lfs3nb lfs2,$\
+	$(eval $(call CODEMAP_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(FS)_rdonly.svg,$\
+			$(CODEMAP_$(call UFS,$(FS))_OBJ:.o=.rdonly.o) $\
+				$(CODEMAP_$(call UFS,$(FS))_CI:.ci=.rdonly.ci),$\
+			$(FS))))
+
+# tiny rdonly codemap rules
+$(foreach FS,lfs3 lfs3nb lfs2,$\
+	$(eval $(call CODEMAP_TINY_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(FS)_rdonly_tiny.svg,$\
+			$(CODEMAP_$(call UFS,$(FS))_OBJ:.o=.rdonly.o) $\
+				$(CODEMAP_$(call UFS,$(FS))_CI:.ci=.rdonly.ci))))
 
 
 
