@@ -11,7 +11,11 @@ export DISK_SIZE ?= 268435456
 
 # increase bench sizes to 1 MiB
 export P26_LITMUS_SIZE ?= 1048576
-export P26_LITMUS_STEP ?= 64
+ifndef PRECISE
+export P26_LITMUS_STEP ?= 256 # was 32, prioritizing speed over accuracy
+else
+export P26_LITMUS_STEP ?= 32
+endif
 export P26_T_SIZES ?= 32768,65536,131072,262144,524288,1048576
 
 

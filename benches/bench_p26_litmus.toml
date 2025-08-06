@@ -11,12 +11,6 @@ defines.CHUNK = 32
 defines.STEP = 1
 defines.SEED = 42
 
-# cutoffs for runaway littlefs2 performance
-defines.LFS2_RANDOM_CUTOFF = 32768
-defines.LFS2_MANY_CUTOFF = 32768
-# cutoffs for runaway spiffs performance
-defines.SPIFFS_MANY_CUTOFF = 32768
-
 
 
 # common code for measuring disk usage, this is different per filesystem
@@ -222,6 +216,11 @@ code = '''
 # 0 => benchmark writes
 # 1 => measure usage
 defines.MODE = [0, 1]
+# don't bother with litmus benchmarks for things that don't scale
+if = [
+    'BENCH_IFDEF_SPIFFS(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_LFS2(SIZE <= 128*1024, true)',
+]
 code = '''
     #if defined(LFS3)
     lfs3_t lfs3;
@@ -278,14 +277,7 @@ code = '''
     assert(fd >= 0);
     #endif
     lfs3_off_t size = 0;
-    for (lfs3_size_t i = 0;
-            i < (SIZE+(CHUNK-1))/CHUNK
-                // cutoff littlefs2, at some point we stop caring about
-                // just how badly littlefs2 scales
-                && BENCH_IFDEF_LFS2(
-                    i < (LFS2_RANDOM_CUTOFF+(CHUNK-1))/CHUNK,
-                    true);
-            i++) {
+    for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
         // seek to a random location, but limit it to the related linear
         // file size, this shows interesting trends without too much
         // benchmarking
@@ -364,6 +356,11 @@ code = '''
 # 0 => benchmark writes
 # 1 => measure usage
 defines.MODE = [0, 1]
+# don't bother with litmus benchmarks for things that don't scale
+if = [
+    'BENCH_IFDEF_SPIFFS(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_LFS2(SIZE <= 128*1024, true)',
+]
 code = '''
     #if defined(LFS3)
     lfs3_t lfs3;
@@ -405,17 +402,7 @@ code = '''
     #endif
 
     // create a filesystem with many files
-    for (lfs3_size_t i = 0;
-            i < (SIZE+(CHUNK-1))/CHUNK
-                // cutoff littlefs2/spiffs, at some point we stop caring
-                // about just how badly littlefs2/spiffs scales
-                && BENCH_IFDEF_LFS2(
-                    i < (LFS2_MANY_CUTOFF+(CHUNK-1))/CHUNK,
-                    true)
-                && BENCH_IFDEF_SPIFFS(
-                    i < (SPIFFS_MANY_CUTOFF+(CHUNK-1))/CHUNK,
-                    true);
-            i++) {
+    for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
         // choose a random filename
         lfs3_off_t pos = BENCH_PRNG(&prng) % (i+1);
         char name[256];

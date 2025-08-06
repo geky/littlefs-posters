@@ -16,7 +16,11 @@ P26_LITMUS_SIZE ?= 32768
 # chunks size, i.e. size of writes/reads, for litmus testing?
 P26_LITMUS_CHUNK ?= 32
 # step size for litmus testing?
+ifndef PRECISE
+P26_LITMUS_STEP ?= 8 # was 1, prioritizing speed over accuracy
+else
 P26_LITMUS_STEP ?= 1
+endif
 # how many samples to measure for litmus testing?
 P26_LITMUS_SAMPLES ?= 16
 
@@ -993,7 +997,7 @@ $(foreach fs, $(BENCH_FSS),$\
 
 # simulated/estimated results
 $(RESULTSDIR)/bench_%.sim.csv: $(RESULTSDIR)/bench_%.csv
-	$(strip ./scripts/csv.py $^ \
+	-$(strip ./scripts/csv.py $^ \
 		-Bm='%(m)s+sim' \
 		-fbench_readed=' \
 			(float(bench_readed)*float(READ_TIME) \
@@ -1015,7 +1019,7 @@ $(RESULTSDIR)/bench_%.sim.csv: $(RESULTSDIR)/bench_%.csv
 #
 # note we first sum n/readed/proged/erased
 $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
-	$(strip ./scripts/csv.py \
+	-$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $^ \
 			-fn \
 			-fbench_readed \
@@ -1040,7 +1044,7 @@ $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
 
 # amortized results
 $(RESULTSDIR)/bench_%.amor.csv: $(RESULTSDIR)/bench_%.csv
-	$(strip ./scripts/csv.py $^ \
+	-$(strip ./scripts/csv.py $^ \
 		-Bn -Bm='%(m)s+amor' \
 		-fbench_readed='float(bench_creaded) / float(n)' \
 		-fbench_proged='float(bench_cproged) / float(n)' \
@@ -1049,7 +1053,7 @@ $(RESULTSDIR)/bench_%.amor.csv: $(RESULTSDIR)/bench_%.csv
 
 # per-byte/entry usage results
 $(RESULTSDIR)/bench_%.per.csv: $(RESULTSDIR)/bench_%.csv
-	$(strip ./scripts/csv.py $^ \
+	-$(strip ./scripts/csv.py $^ \
 		-Bn -Bm='%(m)s+per' \
 		-Dbench_creaded='*' \
 		-Dbench_cproged='*' \
@@ -1061,7 +1065,7 @@ $(RESULTSDIR)/bench_%.per.csv: $(RESULTSDIR)/bench_%.csv
 
 # averaged results (over SAMPLES)
 $(RESULTSDIR)/bench_%.avg.csv: $(RESULTSDIR)/bench_%.csv
-	$(strip ./scripts/csv.py $^ \
+	-$(strip ./scripts/csv.py $^ \
 		-DSEED='*' \
 		-Dbench_creaded='*' \
 		-Dbench_cproged='*' \
