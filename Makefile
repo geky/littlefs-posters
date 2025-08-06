@@ -1369,38 +1369,41 @@ $1: $2
 				$(if $(filter amor,$6),--ylabel=raw) \
 				$(if $(filter per,$6),--ylabel=total) \
 				--title=sd/emmc \
-				$(if $6,--add-xticklabel=,)" \
+				$(if $6,--add-xticklabel=,) \
+				--ylim-ratio=0.98" \
 			$(if $6, \
 			--subplot-below=" \
 				-DERASE_SIZE='$(EMMC_ERASE_SIZE)' \
 				-Dm=$5+$6 \
 				$(if $(filter amor,$6),--ylabel=amortized) \
 				$(if $(filter per,$6),--ylabel=per) \
-				--ylim-stddev=3 \
+				--ylim-ratio=0.98 \
 				-H0.5",) \
 		--subplot-right=" \
 				-DERASE_SIZE='$(NOR_ERASE_SIZE)' \
 				-Dm=$5 \
 				--title=nor \
 				$(if $6,--add-xticklabel=,) \
+				--ylim-ratio=0.98 \
 				-W0.5 \
 			$(if $6, \
 			--subplot-below=\" \
 				-DERASE_SIZE='$(NOR_ERASE_SIZE)' \
 				-Dm=$5+$6 \
-				--ylim-stddev=3 \
+				--ylim-ratio=0.98 \
 				-H0.5\",)" \
 		--subplot-right=" \
 				-DERASE_SIZE='$(NAND_ERASE_SIZE)' \
 				-Dm=$5 \
 				--title=nand \
 				$(if $6,--add-xticklabel=,) \
+				--ylim-ratio=0.98 \
 				-W0.33 \
 			$(if $6, \
 			--subplot-below=\" \
 				-DERASE_SIZE='$(NAND_ERASE_SIZE)' \
 				-Dm=$5+$6 \
-				--ylim-stddev=3 \
+				--ylim-ratio=0.98 \
 				-H0.5\",)" \
 		--legend \
 		$(foreach fs, $(BENCH_FSS),$\
