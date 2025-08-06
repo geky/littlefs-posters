@@ -38,11 +38,16 @@ void bench_fresult(const char *m, uintmax_t n, double result);
 
 
 // note these are indirectly included in any generated files
-#ifdef LFS3
+#if defined(LFS3)
 #include "lfs3.h"
-#else
+#elif defined(LFS2)
 #include "lfs2.h"
+#elif defined(SPIFFS)
+#include "spiffs.h"
+#else
+#error "No filesystem defined?"
 #endif
+
 #include "bd/lfs3_emubd.h"
 #include <stdio.h>
 
@@ -108,6 +113,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_PERMUTATION(i, buffer, size) bench_permutation(i, buffer, size)
 
 
+
 // ifdef macros for filesystem version
 #if defined(LFS3)
 #define BENCH_IFDEF_LFS3(a, b)   (a)
@@ -122,24 +128,23 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_IFDEF_LFS2(a, b)   (b)
 #define BENCH_IFDEF_SPIFFS(a, b) (a)
 #else
-#error "No filesystem version defined?"
+#error "No filesystem defined?"
 #endif
 
 
+
+
 // a few preconfigured defines that control how benches run
-//
-// note FS indicates the built filesystem and version:
-// 3  => littlefs3 with bmap
-// 30 => littlefs3 no bmap
-// 2  => littlefs2
-//
-#ifdef LFS3
+
+// common implicit defines
 #define BENCH_IMPLICIT_DEFINES \
     /*           name                value (overridable)                   */ \
-    BENCH_DEFINE(FS,                 LFS3_IFDEF_BMAP(3, 30)                 ) \
     BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
     BENCH_DEFINE(READ_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
     BENCH_DEFINE(PROG_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
+    BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
+    BENCH_DEFINE(DISK_SIZE,          8*1024*1024                            ) \
+    BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
     /* ERASE_SIZE is just informative                                      */ \
     BENCH_DEFINE(ERASE_SIZE,         4096                                   ) \
     /* simulated estimate timings in nanoseconds                           */ \
@@ -148,12 +153,21 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(READ_TIME,          40                                     ) \
     BENCH_DEFINE(PROG_TIME,          1582                                   ) \
     BENCH_DEFINE(ERASE_TIME,         10986                                  ) \
-    BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
-    BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
-    /* NOTE we can drop this back to 1MiB, but we'd need to support        */ \
-    /* disabling the bmap at runtime when disk is "small", with 128KiB     */ \
-    /* NAND blocks, 1MiB only gives us 8 blocks to use!                    */ \
-    BENCH_DEFINE(DISK_SIZE,          8*1024*1024                            ) \
+    /* emubd config                                                        */ \
+    BENCH_DEFINE(ERASE_VALUE,        0xff                                   ) \
+    BENCH_DEFINE(ERASE_CYCLES,       0                                      ) \
+    BENCH_DEFINE(BADBLOCK_BEHAVIOR,  LFS3_EMUBD_BADBLOCK_PROGERROR          ) \
+    BENCH_DEFINE(POWERLOSS_BEHAVIOR, LFS3_EMUBD_POWERLOSS_ATOMIC            ) \
+    BENCH_DEFINE(EMUBD_SEED,         0                                      ) \
+    /* filesystem-specific config                                          */ \
+    BENCH_LFS3_DEFINES                                                        \
+    BENCH_LFS2_DEFINES                                                        \
+    BENCH_SPIFFS_DEFINES
+
+// littlefs3 specific implicit defines
+#ifdef LFS3
+#define BENCH_LFS3_DEFINES \
+    BENCH_DEFINE(FS,                 LFS3_IFDEF_BMAP(3, 30)                 ) \
     BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
     BENCH_DEFINE(CACHE_SIZE,         0                                      ) \
     /* NOTE this was expanded to 32 to match littlefs2, see v2's cfg       */ \
@@ -180,30 +194,16 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(FRAGMENT_SIZE,      LFS3_MIN(BLOCK_SIZE/16, 512)           ) \
     /* TODO should max-prog_size be enforced in lfs3_init? */                 \
     BENCH_DEFINE(CRYSTAL_THRESH,     LFS3_MAX(BLOCK_SIZE/16, PROG_SIZE)     ) \
-    BENCH_DEFINE(BMAP_SCAN_THRESH,   BLOCK_COUNT/4                          ) \
-    BENCH_DEFINE(ERASE_VALUE,        0xff                                   ) \
-    BENCH_DEFINE(ERASE_CYCLES,       0                                      ) \
-    BENCH_DEFINE(BADBLOCK_BEHAVIOR,  LFS3_EMUBD_BADBLOCK_PROGERROR          ) \
-    BENCH_DEFINE(POWERLOSS_BEHAVIOR, LFS3_EMUBD_POWERLOSS_ATOMIC            ) \
-    BENCH_DEFINE(EMUBD_SEED,         0                                      )
+    BENCH_DEFINE(BMAP_SCAN_THRESH,   BLOCK_COUNT/4                          )
 #else
-#define BENCH_IMPLICIT_DEFINES \
+#define BENCH_LFS3_DEFINES
+#endif
+
+// littlefs2 specific implicit defines
+#ifdef LFS2
+#define BENCH_LFS2_DEFINES \
     /*           name                value (overridable)                   */ \
     BENCH_DEFINE(FS,                 2                                      ) \
-    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
-    BENCH_DEFINE(READ_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
-    BENCH_DEFINE(PROG_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
-    /* ERASE_SIZE is just informative                                      */ \
-    BENCH_DEFINE(ERASE_SIZE,         4096                                   ) \
-    /* simulated estimate timings in nanoseconds                           */ \
-    /* these are derived from the w25q64jv datasheet, but should probably  */ \
-    /* be overridden                                                       */ \
-    BENCH_DEFINE(READ_TIME,          40                                     ) \
-    BENCH_DEFINE(PROG_TIME,          1582                                   ) \
-    BENCH_DEFINE(ERASE_TIME,         10986                                  ) \
-    BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
-    BENCH_DEFINE(BLOCK_COUNT,        DISK_SIZE/BLOCK_SIZE                   ) \
-    BENCH_DEFINE(DISK_SIZE,          8*1024*1024                            ) \
     BENCH_DEFINE(BLOCK_CYCLES,       -1                                     ) \
     /* NOTE this is necessary for inline files to not explode in           */ \
     /* many testing                                                        */ \
@@ -213,28 +213,70 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(LOOKAHEAD_SIZE,     16                                     ) \
     BENCH_DEFINE(COMPACT_THRESH,     0                                      ) \
     BENCH_DEFINE(METADATA_MAX,       0                                      ) \
-    BENCH_DEFINE(INLINE_MAX,         0                                      ) \
-    BENCH_DEFINE(ERASE_VALUE,        0xff                                   ) \
-    BENCH_DEFINE(ERASE_CYCLES,       0                                      ) \
-    BENCH_DEFINE(BADBLOCK_BEHAVIOR,  LFS3_EMUBD_BADBLOCK_PROGERROR          ) \
-    BENCH_DEFINE(POWERLOSS_BEHAVIOR, LFS3_EMUBD_POWERLOSS_ATOMIC            ) \
-    BENCH_DEFINE(EMUBD_SEED,         0                                      )
+    BENCH_DEFINE(INLINE_MAX,         0                                      )
+#else
+#define BENCH_LFS2_DEFINES
+#endif
+
+// spiffs specific defines
+#ifdef SPIFFS
+#define BENCH_SPIFFS_DEFINES
+#else
+#define BENCH_SPIFFS_DEFINES
 #endif
 
 // declare defines as global intmax_ts
-#define BENCH_DEFINE(k, v) \
-    extern intmax_t k;
-
-    BENCH_IMPLICIT_DEFINES
+#define BENCH_DEFINE(k, v) extern intmax_t k;
+BENCH_IMPLICIT_DEFINES
 #undef BENCH_DEFINE
 
+
+
+// this gets a bit messy due to littlefs's bds expecting a littlefs
+// lfs3_cfg struct
+//
+// to make this work with other filesystems, we always wrap an lfs3_cfg
+// and do some funky casting to get to the filesystem-specific config
+//
+// this is a big hack and should _never_ be included in stack/ctx
+// measurements
+struct bench_cfg {
+    struct lfs3_cfg cfg;
+    #if defined(LFS2)
+    struct lfs2_config cfg_lfs2;
+    #elif defined(SPIFFS)
+    // TODO?
+    #endif
+};
+
+// bench.py generates CFG as a lfs3_cfg pointers, these are conveniences
+// to access filesystem-specific cfg
+#define CFG_LFS3 CFG
+#define CFG_LFS2 (&((const struct bench_cfg*)CFG)->cfg_lfs2)
+#define CFG_SPIFFS (&((const struct bench_cfg*)CFG)->cfg_spiffs)
+
 // map defines to cfg struct fields
-#ifdef LFS3
+
+// common cfg struct fields
 #define BENCH_CFG \
     .read_size          = READ_SIZE,            \
     .prog_size          = PROG_SIZE,            \
     .block_size         = BLOCK_SIZE,           \
-    .block_count        = BLOCK_COUNT,          \
+    .block_count        = BLOCK_COUNT,
+
+// common bd cfg struct fields
+#define BENCH_BDCFG \
+    .erase_value        = ERASE_VALUE,          \
+    .erase_cycles       = ERASE_CYCLES,         \
+    .badblock_behavior  = BADBLOCK_BEHAVIOR,    \
+    .powerloss_behavior = POWERLOSS_BEHAVIOR,   \
+    .seed               = EMUBD_SEED,
+
+// filesystem-specific cfg struct fields
+
+// littlefs3 cfg struct fields
+#ifdef LFS3
+#define BENCH_LFS3_CFG \
     .block_recycles     = BLOCK_RECYCLES,       \
     .rcache_size        = RCACHE_SIZE,          \
     .pcache_size        = PCACHE_SIZE,          \
@@ -262,10 +304,11 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #else
 #define BENCH_GC_CFG
 #endif
+#endif
 
-#else
-
-#define BENCH_CFG \
+// littlefs2 cfg struct fields
+#ifdef LFS2
+#define BENCH_LFS2_CFG \
     .read_size          = READ_SIZE,            \
     .prog_size          = PROG_SIZE,            \
     .block_size         = BLOCK_SIZE,           \
@@ -276,16 +319,12 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     .compact_thresh     = COMPACT_THRESH,       \
     .metadata_max       = METADATA_MAX,         \
     .inline_max         = INLINE_MAX,
-
 #endif
 
-
-#define BENCH_BDCFG \
-    .erase_value        = ERASE_VALUE,          \
-    .erase_cycles       = ERASE_CYCLES,         \
-    .badblock_behavior  = BADBLOCK_BEHAVIOR,    \
-    .powerloss_behavior = POWERLOSS_BEHAVIOR,   \
-    .seed               = EMUBD_SEED,
+// spiffs cfg struct fields
+#ifdef SPIFFS
+#define BENCH_SPIFFS_CFG
+#endif
 
 
 #endif

@@ -49,8 +49,8 @@ code = '''
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
     #else
     lfs2_t lfs2;
-    lfs2_format(&lfs2, (const struct lfs2_config*)CFG) => 0;
-    lfs2_mount(&lfs2, (const struct lfs2_config*)CFG) => 0;
+    lfs2_format(&lfs2, CFG_LFS2) => 0;
+    lfs2_mount(&lfs2, CFG_LFS2) => 0;
     #endif
     uint32_t prng = SEED;
 
@@ -150,8 +150,8 @@ code = '''
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
     #else
     lfs2_t lfs2;
-    lfs2_format(&lfs2, (const struct lfs2_config*)CFG) => 0;
-    lfs2_mount(&lfs2, (const struct lfs2_config*)CFG) => 0;
+    lfs2_format(&lfs2, CFG_LFS2) => 0;
+    lfs2_mount(&lfs2, CFG_LFS2) => 0;
     #endif
     uint32_t prng = SEED;
 
@@ -249,8 +249,8 @@ code = '''
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
     #else
     lfs2_t lfs2;
-    lfs2_format(&lfs2, (const struct lfs2_config*)CFG) => 0;
-    lfs2_mount(&lfs2, (const struct lfs2_config*)CFG) => 0;
+    lfs2_format(&lfs2, CFG_LFS2) => 0;
+    lfs2_mount(&lfs2, CFG_LFS2) => 0;
     #endif
     uint32_t prng = SEED;
 

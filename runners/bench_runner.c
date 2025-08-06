@@ -22,6 +22,7 @@
 #include <execinfo.h>
 #include <signal.h>
 #include <time.h>
+#include <stddef.h>
 
 
 // some helpers
@@ -1316,6 +1317,45 @@ static void list_implicit_defines(void) {
 
 
 
+// filesystem-specific bd wrappers
+
+// lfs2 -> lfs3 bd wrapper
+#ifdef LFS2
+static const struct lfs3_cfg *bench_lfs2bd_cfg(
+        const struct lfs2_config *cfg_lfs2) {
+    return &((const struct bench_cfg*)(
+            (uint8_t*)cfg_lfs2
+                - offsetof(const struct bench_cfg, cfg_lfs2)))->cfg;
+}
+
+static int bench_lfs2bd_read(const struct lfs2_config *cfg_lfs2,
+        lfs2_block_t block, lfs2_off_t off,
+        void *buffer, lfs2_size_t size) {
+    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
+    return lfs3_emubd_read(cfg, block, off, buffer, size);
+}
+
+static int bench_lfs2bd_prog(const struct lfs2_config *cfg_lfs2,
+        lfs2_block_t block, lfs2_off_t off,
+        const void *buffer, lfs2_size_t size) {
+    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
+    return lfs3_emubd_prog(cfg, block, off, buffer, size);
+}
+
+static int bench_lfs2bd_erase(const struct lfs2_config *cfg_lfs2,
+        lfs2_block_t block) {
+    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
+    return lfs3_emubd_erase(cfg, block);
+}
+
+static int bench_lfs2bd_sync(const struct lfs2_config *cfg_lfs2) {
+    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
+    return lfs3_emubd_sync(cfg);
+}
+#endif
+
+
+
 // global bench step count
 size_t bench_step = 0;
 
@@ -1345,35 +1385,31 @@ void perm_run(
     // create block device and configuration
     lfs3_emubd_t bd;
 
-    #ifdef LFS3
-    struct lfs3_cfg cfg = {
-        .context            = &bd,
-        .read               = lfs3_emubd_read,
-        .prog               = lfs3_emubd_prog,
-        .erase              = lfs3_emubd_erase,
-        .sync               = lfs3_emubd_sync,
-        BENCH_CFG
+    struct bench_cfg cfg = {
+        // we always create an lfs3_cfg struct, this weirdness is
+        // necessary to make littlefs's bd API work
+        .cfg = {
+            .context            = &bd,
+            .read               = lfs3_emubd_read,
+            .prog               = lfs3_emubd_prog,
+            .erase              = lfs3_emubd_erase,
+            .sync               = lfs3_emubd_sync,
+            BENCH_CFG
+            #ifdef LFS3
+            BENCH_LFS3_CFG
+            #endif
+        },
+        // filesystem-specific cfg structs piggyback here
+        #ifdef LFS2
+        .cfg_lfs2 = {
+            .read               = bench_lfs2bd_read,
+            .prog               = bench_lfs2bd_prog,
+            .erase              = bench_lfs2bd_erase,
+            .sync               = bench_lfs2bd_sync,
+            BENCH_LFS2_CFG
+        },
+        #endif
     };
-    #else
-    struct lfs2_config cfg = {
-        .context            = &bd,
-        .read               = (
-            int (*)(const struct lfs2_config *c,
-                lfs2_block_t block, lfs2_off_t off,
-                void *buffer, lfs2_size_t size))lfs3_emubd_read,
-        .prog               = (
-            int (*)(const struct lfs2_config *c,
-                lfs2_block_t block, lfs2_off_t off,
-                const void *buffer, lfs2_size_t))lfs3_emubd_prog,
-        .erase              = (
-            int (*)(const struct lfs2_config *c,
-                lfs2_block_t block))lfs3_emubd_erase,
-        .sync               = (
-            int (*)(const struct lfs2_config *c
-                ))lfs3_emubd_sync,
-        BENCH_CFG
-    };
-    #endif
 
     struct lfs3_emubd_cfg bdcfg = {
         .disk_path          = bench_disk_path,
@@ -1383,7 +1419,7 @@ void perm_run(
         BENCH_BDCFG
     };
 
-    int err = lfs3_emubd_createcfg((struct lfs3_cfg*)&cfg,
+    int err = lfs3_emubd_createcfg(&cfg.cfg,
             bench_disk_path, &bdcfg);
     if (err) {
         fprintf(stderr, "error: could not create block device: %d\n", err);
@@ -1391,19 +1427,19 @@ void perm_run(
     }
 
     // run the bench
-    bench_reset((struct lfs3_cfg*)&cfg);
+    bench_reset(&cfg.cfg);
     printf("running ");
     perm_printid(suite, case_);
     printf("\n");
 
-    case_->run((struct lfs3_cfg*)&cfg);
+    case_->run(&cfg.cfg);
 
     printf("finished ");
     perm_printid(suite, case_);
     printf("\n");
 
     // cleanup
-    err = lfs3_emubd_destroy((struct lfs3_cfg*)&cfg);
+    err = lfs3_emubd_destroy(&cfg.cfg);
     if (err) {
         fprintf(stderr, "error: could not destroy block device: %d\n", err);
         exit(-1);
