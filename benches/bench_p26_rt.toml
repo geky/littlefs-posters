@@ -1,4 +1,5 @@
 # High-level read-throughput benchmarks
+ifndef = 'SPIFFS'
 
 
 # these are common and can be overridden suite-wide

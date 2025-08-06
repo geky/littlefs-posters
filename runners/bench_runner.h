@@ -21,6 +21,27 @@ void bench_trace(const char *fmt, ...);
 #define LFS3_EMUBD_TRACE(...) LFS3_TRACE_(__VA_ARGS__, "")
 #define LFS2_EMUBD_TRACE(...) LFS3_TRACE_(__VA_ARGS__, "")
 
+// note these are indirectly included in any generated files
+#if defined(LFS3)
+#include "lfs3.h"
+#elif defined(LFS2)
+#include "lfs2.h"
+#elif defined(SPIFFS)
+#include "spiffs.h"
+#include "spiffs_nucleus.h"
+#else
+#error "No filesystem defined?"
+#endif
+
+#include "bd/lfs3_emubd.h"
+#include <stdio.h>
+#include <stdint.h>
+
+// give source a chance to define feature macros
+#undef _FEATURES_H
+#undef _STDIO_H
+
+
 // BENCH_START/BENCH_STOP macros measure readed/proged/erased bytes
 // through emubd
 void bench_start(const char *m, uintmax_t n);
@@ -36,24 +57,6 @@ void bench_fresult(const char *m, uintmax_t n, double result);
 #define BENCH_RESULT(m, n, result) bench_result(m, n, result)
 #define BENCH_FRESULT(m, n, result) bench_fresult(m, n, result)
 
-
-// note these are indirectly included in any generated files
-#if defined(LFS3)
-#include "lfs3.h"
-#elif defined(LFS2)
-#include "lfs2.h"
-#elif defined(SPIFFS)
-#include "spiffs.h"
-#else
-#error "No filesystem defined?"
-#endif
-
-#include "bd/lfs3_emubd.h"
-#include <stdio.h>
-
-// give source a chance to define feature macros
-#undef _FEATURES_H
-#undef _STDIO_H
 
 
 // generated bench configurations
@@ -139,7 +142,6 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 // common implicit defines
 #define BENCH_IMPLICIT_DEFINES \
     /*           name                value (overridable)                   */ \
-    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
     BENCH_DEFINE(READ_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
     BENCH_DEFINE(PROG_SIZE,          (PAGE_SIZE) ? PAGE_SIZE : 1            ) \
     BENCH_DEFINE(BLOCK_SIZE,         4096                                   ) \
@@ -154,7 +156,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(PROG_TIME,          1582                                   ) \
     BENCH_DEFINE(ERASE_TIME,         10986                                  ) \
     /* emubd config                                                        */ \
-    BENCH_DEFINE(ERASE_VALUE,        0xff                                   ) \
+    BENCH_DEFINE(ERASE_VALUE,        -2                                     ) \
     BENCH_DEFINE(ERASE_CYCLES,       0                                      ) \
     BENCH_DEFINE(BADBLOCK_BEHAVIOR,  LFS3_EMUBD_BADBLOCK_PROGERROR          ) \
     BENCH_DEFINE(POWERLOSS_BEHAVIOR, LFS3_EMUBD_POWERLOSS_ATOMIC            ) \
@@ -168,8 +170,9 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #ifdef LFS3
 #define BENCH_LFS3_DEFINES \
     BENCH_DEFINE(FS,                 LFS3_IFDEF_BMAP(3, 30)                 ) \
-    BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
+    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
     BENCH_DEFINE(CACHE_SIZE,         0                                      ) \
+    BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
     /* NOTE this was expanded to 32 to match littlefs2, see v2's cfg       */ \
     BENCH_DEFINE(RCACHE_SIZE,        (CACHE_SIZE)                             \
                                         ? CACHE_SIZE                          \
@@ -204,6 +207,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_LFS2_DEFINES \
     /*           name                value (overridable)                   */ \
     BENCH_DEFINE(FS,                 2                                      ) \
+    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
     BENCH_DEFINE(BLOCK_CYCLES,       -1                                     ) \
     /* NOTE this is necessary for inline files to not explode in           */ \
     /* many testing                                                        */ \
@@ -220,7 +224,21 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 
 // spiffs specific defines
 #ifdef SPIFFS
-#define BENCH_SPIFFS_DEFINES
+#define BENCH_SPIFFS_DEFINES \
+    /*           name                value (overridable)                   */ \
+    BENCH_DEFINE(FS,                 4                                      ) \
+    BENCH_DEFINE(PAGE_SIZE,          LFS3_MAX(PROG_SIZE, 256)               ) \
+    BENCH_DEFINE(FD_COUNT,           1                                      ) \
+    BENCH_DEFINE(FD_SIZE,            FD_COUNT*sizeof(spiffs_fd)             ) \
+    BENCH_DEFINE(CACHE_SIZE,         0                                      ) \
+    /* spiffs's page cache is different from littlefs's cache,             */ \
+    /* let's default to 4 pages, and add CACHE_SIZE if explicitly set      */ \
+    BENCH_DEFINE(PAGECACHE_COUNT,    4                                      ) \
+    BENCH_DEFINE(PAGECACHE_SIZE,     sizeof(spiffs_cache)                     \
+                                        + PAGECACHE_COUNT                     \
+                                            * (sizeof(spiffs_cache_page)      \
+                                            + PAGE_SIZE)                      \
+                                        + CACHE_SIZE)
 #else
 #define BENCH_SPIFFS_DEFINES
 #endif
@@ -245,7 +263,7 @@ struct bench_cfg {
     #if defined(LFS2)
     struct lfs2_config cfg_lfs2;
     #elif defined(SPIFFS)
-    // TODO?
+    spiffs_config cfg_spiffs;
     #endif
 };
 
@@ -323,7 +341,13 @@ struct bench_cfg {
 
 // spiffs cfg struct fields
 #ifdef SPIFFS
-#define BENCH_SPIFFS_CFG
+#define BENCH_SPIFFS_CFG \
+    .phys_size          = BLOCK_SIZE*BLOCK_COUNT,   \
+    .phys_addr          = 0,                        \
+    .phys_erase_block   = BLOCK_SIZE,               \
+    .log_block_size     = BLOCK_SIZE,               \
+    .log_page_size      = PAGE_SIZE,
+
 #endif
 
 

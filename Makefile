@@ -59,6 +59,7 @@ EMMC_ERASE_SIZE ?= 512
 EMMC_LFS3_BLOCK_SIZE ?= 1024 # v3 performs better with larger block sizes
 EMMC_LFS3NB_BLOCK_SIZE ?= 1024
 EMMC_LFS2_BLOCK_SIZE ?= 512  # but no reason to penalize v2
+EMMC_SPIFFS_BLOCK_SIZE ?= 1024
 EMMC_READ_TIME  ?= 31   # taken from w25n01gv, read time
 EMMC_PROG_TIME  ?= 156  # taken from w25n01gv, prog time + erase time
 EMMC_ERASE_TIME ?= 0    # noop
@@ -76,6 +77,7 @@ NOR_ERASE_SIZE ?= 4096
 NOR_LFS3_BLOCK_SIZE ?= 4096
 NOR_LFS3NB_BLOCK_SIZE ?= 4096
 NOR_LFS2_BLOCK_SIZE ?= 4096
+NOR_SPIFFS_BLOCK_SIZE ?= 4096
 NOR_READ_TIME  ?= 40    # fR=50 MHz, quad read (20 ns * 8/4)
 NOR_PROG_TIME  ?= 1582  # tPP=0.4 ms, page=256 (0.4 ms / 256 + bus)
 NOR_ERASE_TIME ?= 10986 # tSE=45 ms, sector=4096 (45 ms / 4096)
@@ -93,13 +95,14 @@ NAND_ERASE_SIZE ?= 131072
 NAND_LFS3_BLOCK_SIZE ?= 131072
 NAND_LFS3NB_BLOCK_SIZE ?= 131072
 NAND_LFS2_BLOCK_SIZE ?= 131072
+NAND_SPIFFS_BLOCK_SIZE ?= 131072
 NAND_READ_TIME  ?= 31     # tRD1=25 us, p=2048, s=512 (25 us / 2048 + bus)
 NAND_PROG_TIME  ?= 141    # tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
 NAND_ERASE_TIME ?= 15     # tBE=2 ms, block=131072 (2 ms / 131072)
 
 
 # filesystems/sims to benchmark
-BENCH_FSS = lfs3 lfs3nb lfs2 #spiffs
+BENCH_FSS = lfs3 lfs3nb lfs2 spiffs
 BENCH_SIMS = emmc nor nand
 
 CODEMAP_FSS = lfs3 lfs3nb lfs2 lfs1 spiffs
@@ -223,10 +226,14 @@ BENCH_SPIFFS_SRC ?= \
 BENCH_SPIFFS_C     := \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.spiffs.b.c) \
 		$(BENCH_SPIFFS_SRC:%.c=$(BUILDDIR)/%.spiffs.b.c)
-BENCH_SPIFFS_A     := $(BENCH_SPIFFS_C:%.spiffs.b.c=%.spiffs.b.a.c)
-BENCH_SPIFFS_OBJ   := $(BENCH_SPIFFS_A:%.spiffs.b.a.c=%.spiffs.b.a.o)
-BENCH_SPIFFS_DEP   := $(BENCH_SPIFFS_A:%.spiffs.b.a.c=%.spiffs.b.a.d)
-BENCH_SPIFFS_CI    := $(BENCH_SPIFFS_A:%.spiffs.b.a.c=%.spiffs.b.a.ci)
+# let's not stress test prettyasserts right now
+BENCH_SPIFFS_A     := \
+		$(patsubst %.b.c,%.b.a.c, \
+			$(filter-out $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_C))) \
+		$(filter $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_C))
+BENCH_SPIFFS_OBJ   := $(BENCH_SPIFFS_A:.c=.o)
+BENCH_SPIFFS_DEP   := $(BENCH_SPIFFS_A:.c=.d)
+BENCH_SPIFFS_CI    := $(BENCH_SPIFFS_A:.c=.ci)
 
 
 
@@ -420,6 +427,18 @@ $(foreach fs, $(BENCH_FSS), \
 		$(BUILDDIR)/%.b.a.c,$\
 		$(fs))))
 
+$(foreach fs, $(BENCH_FSS), \
+	$(eval $(call BENCH_O_RULE,$\
+		$(BUILDDIR)/%.$(fs).b.o $(BUILDDIR)/%.$(fs).b.ci,$\
+		%.b.c,$\
+		$(fs))))
+
+$(foreach fs, $(BENCH_FSS), \
+	$(eval $(call BENCH_O_RULE,$\
+		$(BUILDDIR)/%.$(fs).b.o $(BUILDDIR)/%.$(fs).b.ci,$\
+		$(BUILDDIR)/%.b.c,$\
+		$(fs))))
+
 # cross-compile for codemap
 
 # codemap .o rule
@@ -559,10 +578,9 @@ bench-p26-litmus: \
 ## Run p26 litmus linear benchmarks
 .PHONY: bench-p26-litmus-linear
 bench-p26-litmus-linear: \
-		$(foreach sim, $(BENCH_SIMS), \
-			$(RESULTSDIR)/bench_p26_litmus_linear.lfs3.$(sim).csv \
-			$(RESULTSDIR)/bench_p26_litmus_linear.lfs3nb.$(sim).csv \
-			$(RESULTSDIR)/bench_p26_litmus_linear.lfs2.$(sim).csv)
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(RESULTSDIR)/bench_p26_litmus_linear.$(fs).$(sim).csv))
 
 ## Run p26 litmus random benchmarks
 .PHONY: bench-p26-litmus-random
@@ -1385,21 +1403,12 @@ $1: $2
 				--ylim-stddev=3 \
 				-H0.5\",)" \
 		--legend \
-		-L'3,$4_avg=lfs3%n$\
-			- bs=$(EMMC_LFS3_BLOCK_SIZE)%n$\
-			- bs=$(NOR_LFS3_BLOCK_SIZE)%n$\
-			- bs=$(NAND_LFS3_BLOCK_SIZE)' \
-		-L'3,$4_bnd=' \
-		-L'30,$4_avg=lfs3nb%n$\
-			- bs=$(EMMC_LFS3NB_BLOCK_SIZE)%n$\
-			- bs=$(NOR_LFS3NB_BLOCK_SIZE)%n$\
-			- bs=$(NAND_LFS3NB_BLOCK_SIZE)' \
-		-L'30,$4_bnd=' \
-		-L'2,$4_avg=lfs2%n$\
-			- bs=$(EMMC_LFS2_BLOCK_SIZE)%n$\
-			- bs=$(NOR_LFS2_BLOCK_SIZE)%n$\
-			- bs=$(NAND_LFS2_BLOCK_SIZE)' \
-		-L'2,$4_bnd=' \
+		$(foreach fs, $(BENCH_FSS),$\
+			-L'$(N_$(fs)),$4_avg=$(fs)%n$\
+				- bs=$(EMMC_$(U_$(fs))_BLOCK_SIZE)%n$\
+				- bs=$(NOR_$(U_$(fs))_BLOCK_SIZE)%n$\
+				- bs=$(NAND_$(U_$(fs))_BLOCK_SIZE)' \
+			-L'$(N_$(fs)),$4_bnd=') \
 		$(PLOT_COLORS_1BND) \
 		$7 \
 		$$(PLOTFLAGS) \

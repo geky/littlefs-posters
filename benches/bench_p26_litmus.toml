@@ -19,7 +19,7 @@ defines.LFS2_MANY_CUTOFF = 32768
 
 # common code for measuring disk usage, this is different per filesystem
 code = '''
-#ifdef LFS3
+#if defined(LFS3)
 // measure disk usage
 //
 // littlefs can be a dag, so build a bitmap to find the exact
@@ -52,7 +52,7 @@ static void bench_p26_find_usage(lfs3_t *lfs3, lfs3_size_t n) {
 
     free(usage_bmap);
 }
-#else
+#elif defined(LFS2)
 static int bench_p26_find_usage_cb(void *ctx, lfs3_block_t block) {
     uint8_t *usage_bmap = ctx;
     // TODO found a bug in littlefs2?
@@ -83,6 +83,21 @@ static void bench_p26_find_usage(lfs2_t *lfs2, lfs3_size_t n) {
 
     free(usage_bmap);
 }
+#elif defined(SPIFFS)
+// measure disk usage
+//
+// we rely on spiffs's internal bookkeeping here
+static void bench_p26_find_usage(spiffs *spiffs, lfs3_size_t n) {
+    u32_t total;
+    u32_t used;
+    SPIFFS_info(spiffs, &total, &used) => 0;
+
+    // include metadata pages in used
+    used += (BLOCK_COUNT*BLOCK_SIZE) - total;
+
+    // note used is already in bytes
+    BENCH_RESULT("usage", n, used);
+}
 #endif
 '''
 
@@ -93,37 +108,59 @@ static void bench_p26_find_usage(lfs2_t *lfs2, lfs3_size_t n) {
 # 1 => measure usage
 defines.MODE = [0, 1]
 code = '''
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
-    #else
+    #elif defined(LFS2)
     lfs2_t lfs2;
     lfs2_format(&lfs2, CFG_LFS2) => 0;
     lfs2_mount(&lfs2, CFG_LFS2) => 0;
+    #elif defined(SPIFFS)
+    spiffs spiffs;
+    spiffs.user_data = CFG;
+    uint8_t work_buffer[2*PAGE_SIZE];
+    uint8_t fd_buffer[FD_SIZE];
+    uint8_t pagecache_buffer[PAGECACHE_SIZE];
+    // yes we need this mount
+    SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
+            fd_buffer, FD_SIZE,
+            pagecache_buffer, PAGECACHE_SIZE,
+            NULL) => SPIFFS_ERR_NOT_A_FS;
+    SPIFFS_format(&spiffs) => 0;
+    SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
+            fd_buffer, FD_SIZE,
+            pagecache_buffer, PAGECACHE_SIZE,
+            NULL) => 0;
     #endif
     uint32_t prng = SEED;
 
     // go ahead and make consistent to avoid lazy mount operations
     // messing with the benchmark
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_fs_mkconsistent(&lfs3) => 0;
-    #else
+    #elif defined(LFS2)
     lfs2_fs_mkconsistent(&lfs2) => 0;
+    #elif defined(SPIFFS)
+    SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
     #endif
 
     // open a file
     if (MODE == 0) {
         BENCH_START("write", 0*CHUNK+CHUNK);
     }
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_file_t file;
     lfs3_file_open(&lfs3, &file, "bench_linear",
             LFS3_O_RDWR | LFS3_O_CREAT | LFS3_O_EXCL) => 0;
-    #else
+    #elif defined(LFS2)
     lfs2_file_t file;
     lfs2_file_open(&lfs2, &file, "bench_linear",
             LFS2_O_RDWR | LFS2_O_CREAT | LFS2_O_EXCL) => 0;
+    #elif defined(SPIFFS)
+    spiffs_file fd = SPIFFS_open(&spiffs, "bench_linear",
+            SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0);
+    assert(fd >= 0);
     #endif
     for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
         // write to the file
@@ -131,10 +168,12 @@ code = '''
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
             wbuf[j] = 'a' + (BENCH_PRNG(&prng) % 26);
         }
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_file_write(&lfs3, &file, wbuf, CHUNK) => CHUNK;
-        #else
+        #elif defined(LFS2)
         lfs2_file_write(&lfs2, &file, wbuf, CHUNK) => CHUNK;
+        #elif defined(SPIFFS)
+        SPIFFS_write(&spiffs, fd, wbuf, CHUNK) => CHUNK;
         #endif
 
         // a little bit weird, but this incrementally measures linear
@@ -148,26 +187,32 @@ code = '''
 
         if (MODE == 1 && (i+1) % STEP == 0) {
             // measure disk usage
-            #ifdef LFS3
+            #if defined(LFS3)
             bench_p26_find_usage(&lfs3, i*CHUNK+CHUNK);
-            #else
+            #elif defined(LFS2)
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
+            #elif defined(SPIFFS)
+            bench_p26_find_usage(&spiffs, i*CHUNK+CHUNK);
             #endif
         }
     }
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
-    #else
+    #elif defined(LFS2)
     lfs2_file_close(&lfs2, &file) => 0;
+    #elif defined(SPIFFS)
+    SPIFFS_close(&spiffs, fd) => 0;
     #endif
     if (MODE == 0) {
         BENCH_STOP("write");
     }
 
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_unmount(&lfs3) => 0;
-    #else
+    #elif defined(LFS2)
     lfs2_unmount(&lfs2) => 0;
+    #elif defined(SPIFFS)
+    SPIFFS_unmount(&spiffs);
     #endif
 '''
 
@@ -175,8 +220,9 @@ code = '''
 # 0 => benchmark writes
 # 1 => measure usage
 defines.MODE = [0, 1]
+ifndef = 'SPIFFS'
 code = '''
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
@@ -189,7 +235,7 @@ code = '''
 
     // go ahead and make consistent to avoid lazy mount operations
     // messing with the benchmark
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_fs_mkconsistent(&lfs3) => 0;
     #else
     lfs2_fs_mkconsistent(&lfs2) => 0;
@@ -199,7 +245,7 @@ code = '''
     if (MODE == 0) {
         BENCH_START("write", 0*CHUNK+CHUNK);
     }
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_file_t file;
     lfs3_file_open(&lfs3, &file, "bench_random",
             LFS3_O_RDWR | LFS3_O_CREAT | LFS3_O_EXCL) => 0;
@@ -218,7 +264,7 @@ code = '''
         // file size, this shows interesting trends without too much
         // benchmarking
         lfs3_off_t pos = BENCH_PRNG(&prng) % (i*CHUNK+CHUNK);
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_file_seek(&lfs3, &file, pos, LFS3_SEEK_SET) => pos;
         #else
         lfs2_file_seek(&lfs2, &file, pos, LFS2_SEEK_SET) => pos;
@@ -229,7 +275,7 @@ code = '''
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
             wbuf[j] = 'a' + (BENCH_PRNG(&prng) % 26);
         }
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_file_write(&lfs3, &file, wbuf, CHUNK) => CHUNK;
         #else
         lfs2_file_write(&lfs2, &file, wbuf, CHUNK) => CHUNK;
@@ -246,14 +292,14 @@ code = '''
 
         if (MODE == 1 && (i+1) % STEP == 0) {
             // measure disk usage
-            #ifdef LFS3
+            #if defined(LFS3)
             bench_p26_find_usage(&lfs3, i*CHUNK+CHUNK);
             #else
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
             #endif
         }
     }
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
     #else
     lfs2_file_close(&lfs2, &file) => 0;
@@ -262,7 +308,7 @@ code = '''
         BENCH_STOP("write");
     }
 
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_unmount(&lfs3) => 0;
     #else
     lfs2_unmount(&lfs2) => 0;
@@ -273,8 +319,9 @@ code = '''
 # 0 => benchmark writes
 # 1 => measure usage
 defines.MODE = [0, 1]
+ifndef = 'SPIFFS'
 code = '''
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
@@ -289,7 +336,7 @@ code = '''
     //
     // go ahead and make consistent to avoid lazy mount operations
     // messing with the benchmark
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_fs_mkconsistent(&lfs3) => 0;
     #else
     lfs2_fs_mkconsistent(&lfs2) => 0;
@@ -316,7 +363,7 @@ code = '''
         }
         uint8_t wbuf[CHUNK];
         memset(wbuf, 'a'+(BENCH_PRNG(&prng) % 26), CHUNK);
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_file_t file;
         lfs3_file_open(&lfs3, &file, name,
                 LFS3_O_WRONLY | LFS3_O_CREAT | LFS3_O_TRUNC) => 0;
@@ -335,7 +382,7 @@ code = '''
 
         if (MODE == 1 && (i+1) % STEP == 0) {
             // measure disk usage
-            #ifdef LFS3
+            #if defined(LFS3)
             bench_p26_find_usage(&lfs3, i*CHUNK+CHUNK);
             #else
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
@@ -343,7 +390,7 @@ code = '''
         }
     }
 
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_unmount(&lfs3) => 0;
     #else
     lfs2_unmount(&lfs2) => 0;
@@ -355,8 +402,9 @@ code = '''
 # 1 => measure usage
 defines.MODE = [0, 1]
 defines.LOG_SIZE = '(SIZE+4-1) / 4'
+ifndef = 'SPIFFS'
 code = '''
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
@@ -369,7 +417,7 @@ code = '''
 
     // go ahead and make consistent to avoid lazy mount operations
     // messing with the benchmark
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_fs_mkconsistent(&lfs3) => 0;
     #else
     lfs2_fs_mkconsistent(&lfs2) => 0;
@@ -379,7 +427,7 @@ code = '''
     if (MODE == 0) {
         BENCH_START("write", 0*CHUNK+CHUNK);
     }
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_file_t file;
     lfs3_file_open(&lfs3, &file, "bench_log",
             LFS3_O_RDWR | LFS3_O_CREAT | LFS3_O_EXCL | LFS3_O_APPEND) => 0;
@@ -394,14 +442,14 @@ code = '''
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
             wbuf[j] = 'a' + (BENCH_PRNG(&prng) % 26);
         }
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_file_write(&lfs3, &file, wbuf, CHUNK) => CHUNK;
         #else
         lfs2_file_write(&lfs2, &file, wbuf, CHUNK) => CHUNK;
         #endif
 
         // sync
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_file_sync(&lfs3, &file) => 0;
         #else
         lfs2_file_sync(&lfs2, &file) => 0;
@@ -411,7 +459,7 @@ code = '''
         //
         // note we use LOG_SIZE < SIZE here, for interesting results,
         // otherwise we'd never truncate the log!
-        #ifdef LFS3
+        #if defined(LFS3)
         lfs3_soff_t size = lfs3_file_size(&lfs3, &file);
         assert(size >= 0);
         if (size > LOG_SIZE) {
@@ -442,14 +490,14 @@ code = '''
 
         if (MODE == 1 && (i+1) % STEP == 0) {
             // measure disk usage
-            #ifdef LFS3
+            #if defined(LFS3)
             bench_p26_find_usage(&lfs3, i*CHUNK+CHUNK);
             #else
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
             #endif
         }
     }
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
     #else
     lfs2_file_close(&lfs2, &file) => 0;
@@ -458,7 +506,7 @@ code = '''
         BENCH_STOP("write");
     }
 
-    #ifdef LFS3
+    #if defined(LFS3)
     lfs3_unmount(&lfs3) => 0;
     #else
     lfs2_unmount(&lfs2) => 0;

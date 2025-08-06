@@ -1317,40 +1317,129 @@ static void list_implicit_defines(void) {
 
 
 
+// hacky macro to get to the bench config from a specific filesystem cfg
+#define BENCH_CFG_FROM(field, p) \
+        (const struct bench_cfg*)( \
+            (uint8_t*)(p) - offsetof(const struct bench_cfg, field))
+
 // filesystem-specific bd wrappers
 
 // lfs2 -> lfs3 bd wrapper
 #ifdef LFS2
-static const struct lfs3_cfg *bench_lfs2bd_cfg(
-        const struct lfs2_config *cfg_lfs2) {
-    return &((const struct bench_cfg*)(
-            (uint8_t*)cfg_lfs2
-                - offsetof(const struct bench_cfg, cfg_lfs2)))->cfg;
-}
-
 static int bench_lfs2bd_read(const struct lfs2_config *cfg_lfs2,
         lfs2_block_t block, lfs2_off_t off,
         void *buffer, lfs2_size_t size) {
-    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
-    return lfs3_emubd_read(cfg, block, off, buffer, size);
+    const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
+    return lfs3_emubd_read(&cfg->cfg, block, off, buffer, size);
 }
 
 static int bench_lfs2bd_prog(const struct lfs2_config *cfg_lfs2,
         lfs2_block_t block, lfs2_off_t off,
         const void *buffer, lfs2_size_t size) {
-    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
-    return lfs3_emubd_prog(cfg, block, off, buffer, size);
+    const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
+    return lfs3_emubd_prog(&cfg->cfg, block, off, buffer, size);
 }
 
 static int bench_lfs2bd_erase(const struct lfs2_config *cfg_lfs2,
         lfs2_block_t block) {
-    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
-    return lfs3_emubd_erase(cfg, block);
+    const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
+    return lfs3_emubd_erase(&cfg->cfg, block);
 }
 
 static int bench_lfs2bd_sync(const struct lfs2_config *cfg_lfs2) {
-    const struct lfs3_cfg *cfg = bench_lfs2bd_cfg(cfg_lfs2);
-    return lfs3_emubd_sync(cfg);
+    const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
+    return lfs3_emubd_sync(&cfg->cfg);
+}
+#endif
+
+// spiffs -> lfs3 bd wrapper
+#ifdef SPIFFS
+static uint8_t *bench_spiffsbd_buffer = NULL;
+static uint8_t *bench_spiffsbd_buffer_size = 0;
+
+static s32_t bench_spiffsbd_read(struct spiffs_t *spiffs,
+        u32_t addr, u32_t size, u8_t *dst) {
+    const struct bench_cfg *cfg = spiffs->user_data;
+    lfs3_block_t block = addr / cfg->cfg.block_size;
+    lfs3_size_t off = addr % cfg->cfg.block_size;
+    // spiffs expect byte reads, so we may need to read into a buffer
+    if (cfg->cfg.read_size == 1) {
+        return lfs3_emubd_read(&cfg->cfg, block, off, dst, size);
+    } else {
+        if (bench_spiffsbd_buffer_size < cfg->cfg.read_size) {
+            free(bench_spiffsbd_buffer);
+            bench_spiffsbd_buffer = malloc(cfg->cfg.read_size);
+        }
+
+        while (size > 0) {
+            lfs3_size_t aligned_off = lfs3_aligndown(off, cfg->cfg.read_size);
+            lfs3_ssize_t d = lfs3_min(
+                    size,
+                    cfg->cfg.read_size - (off - aligned_off));
+
+            int err = lfs3_emubd_read(&cfg->cfg, block, aligned_off,
+                    bench_spiffsbd_buffer, cfg->cfg.read_size);
+            if (err) {
+                return err;
+            }
+
+            memcpy(dst, bench_spiffsbd_buffer + (off - aligned_off), d);
+            dst += d;
+            size -= d;
+            off += d;
+        }
+
+        return 0;
+    }
+}
+
+static s32_t bench_spiffsbd_write(struct spiffs_t *spiffs,
+        u32_t addr, u32_t size, u8_t *src) {
+    const struct bench_cfg *cfg = spiffs->user_data;
+    lfs3_block_t block = addr / cfg->cfg.block_size;
+    lfs3_size_t off = addr % cfg->cfg.block_size;
+    // spiffs expect byte reads, so we may need to read into a buffer
+    if (cfg->cfg.read_size == 1) {
+        return lfs3_emubd_prog(&cfg->cfg, block, off, src, size);
+    } else {
+        if (bench_spiffsbd_buffer_size < cfg->cfg.prog_size) {
+            free(bench_spiffsbd_buffer);
+            bench_spiffsbd_buffer = malloc(cfg->cfg.prog_size);
+        }
+
+        while (size > 0) {
+            lfs3_size_t aligned_off = lfs3_aligndown(off, cfg->cfg.prog_size);
+            lfs3_ssize_t d = lfs3_min(
+                    size,
+                    cfg->cfg.prog_size - (off - aligned_off));
+            memset(bench_spiffsbd_buffer, 0xff, cfg->cfg.prog_size);
+            memcpy(bench_spiffsbd_buffer + (off - aligned_off), src, d);
+
+            int err = lfs3_emubd_prog(&cfg->cfg, block, aligned_off,
+                    bench_spiffsbd_buffer, cfg->cfg.prog_size);
+            if (err) {
+                return err;
+            }
+
+            src += d;
+            size -= d;
+            off += d;
+        }
+
+        return 0;
+    }
+}
+
+static s32_t bench_spiffsbd_erase(struct spiffs_t *spiffs,
+        u32_t addr, u32_t size) {
+    const struct bench_cfg *cfg = spiffs->user_data;
+    lfs3_block_t block = addr / cfg->cfg.block_size;
+    lfs3_size_t off = addr % cfg->cfg.block_size;
+    // off should always be zero
+    assert(off == 0);
+    // we expect block size here?
+    assert(size == cfg->cfg.block_size);
+    return lfs3_emubd_erase(&cfg->cfg, block);
 }
 #endif
 
@@ -1407,6 +1496,14 @@ void perm_run(
             .erase              = bench_lfs2bd_erase,
             .sync               = bench_lfs2bd_sync,
             BENCH_LFS2_CFG
+        },
+        #endif
+        #ifdef SPIFFS
+        .cfg_spiffs = {
+            .hal_read_f         = bench_spiffsbd_read,
+            .hal_write_f        = bench_spiffsbd_write,
+            .hal_erase_f        = bench_spiffsbd_erase,
+            BENCH_SPIFFS_CFG
         },
         #endif
     };

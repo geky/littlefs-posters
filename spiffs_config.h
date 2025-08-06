@@ -191,7 +191,7 @@ typedef int8_t   s8_t;
 // not on mount point. If not, SPIFFS_format must be called prior to mounting
 // again.
 #ifndef SPIFFS_USE_MAGIC
-#define SPIFFS_USE_MAGIC                (0)
+#define SPIFFS_USE_MAGIC                (1)
 #endif
 
 #if SPIFFS_USE_MAGIC
@@ -201,7 +201,7 @@ typedef int8_t   s8_t;
 // be accepted for mounting with a configuration defining the filesystem as 2
 // megabytes.
 #ifndef SPIFFS_USE_MAGIC_LENGTH
-#define SPIFFS_USE_MAGIC_LENGTH         (0)
+#define SPIFFS_USE_MAGIC_LENGTH         (1)
 #endif
 #endif
 
@@ -251,7 +251,7 @@ typedef int8_t   s8_t;
 
 // Enable this if you want the HAL callbacks to be called with the spiffs struct
 #ifndef SPIFFS_HAL_CALLBACK_EXTRA
-#define SPIFFS_HAL_CALLBACK_EXTRA         0
+#define SPIFFS_HAL_CALLBACK_EXTRA         1
 #endif
 
 // Enable this if you want to add an integer offset to all file handles
