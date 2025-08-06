@@ -338,7 +338,9 @@ size: \
 tags ctags:
 	$(strip $(CTAGS) \
 		--totals --fields=+n --c-types=+p \
-		$(shell find -H -name '*.h') \
+		$(shell find -H -name '*.h'))
+	$(strip $(CTAGS) \
+		--totals --append --fields=+n \
 		$(foreach fs, $(BENCH_FSS), \
 			$(BENCH_$(U_$(fs))_SRC)))
 
