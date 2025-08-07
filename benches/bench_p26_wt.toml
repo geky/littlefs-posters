@@ -66,10 +66,16 @@ code = '''
     uint8_t fd_buffer[FD_SIZE];
     uint8_t pagecache_buffer[PAGECACHE_SIZE];
     // yes we need this mount
-    SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
+    int err = SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
-            NULL) => SPIFFS_ERR_NOT_A_FS;
+            NULL);
+    assert(err == SPIFFS_ERR_NOT_A_FS
+            || err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE);
+    if (err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE) {
+        printf("error: spiffs magic not possible\n");
+        return;
+    }
     SPIFFS_format(&spiffs) => 0;
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -187,10 +193,16 @@ code = '''
     uint8_t fd_buffer[FD_SIZE];
     uint8_t pagecache_buffer[PAGECACHE_SIZE];
     // yes we need this mount
-    SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
+    int err = SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
-            NULL) => SPIFFS_ERR_NOT_A_FS;
+            NULL);
+    assert(err == SPIFFS_ERR_NOT_A_FS
+            || err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE);
+    if (err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE) {
+        printf("error: spiffs magic not possible\n");
+        return;
+    }
     SPIFFS_format(&spiffs) => 0;
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -309,10 +321,16 @@ code = '''
     uint8_t fd_buffer[FD_SIZE];
     uint8_t pagecache_buffer[PAGECACHE_SIZE];
     // yes we need this mount
-    SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
+    int err = SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
-            NULL) => SPIFFS_ERR_NOT_A_FS;
+            NULL);
+    assert(err == SPIFFS_ERR_NOT_A_FS
+            || err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE);
+    if (err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE) {
+        printf("error: spiffs magic not possible\n");
+        return;
+    }
     SPIFFS_format(&spiffs) => 0;
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -433,10 +451,16 @@ code = '''
     uint8_t fd_buffer[FD_SIZE];
     uint8_t pagecache_buffer[PAGECACHE_SIZE];
     // yes we need this mount
-    SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
+    int err = SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
-            NULL) => SPIFFS_ERR_NOT_A_FS;
+            NULL);
+    assert(err == SPIFFS_ERR_NOT_A_FS
+            || err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE);
+    if (err == SPIFFS_ERR_MAGIC_NOT_POSSIBLE) {
+        printf("error: spiffs magic not possible\n");
+        return;
+    }
     SPIFFS_format(&spiffs) => 0;
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
