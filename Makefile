@@ -110,10 +110,10 @@ NAND_ERASE_TIME ?= 15     # tBE=2 ms, block=131072 (2 ms / 131072)
 
 
 # filesystems/sims to benchmark
-BENCH_FSS = lfs3 lfs3nb lfs2 spiffs
+BENCH_FSS = lfs3 lfs3nb lfs2 spiffs yaffs2
 BENCH_SIMS = emmc nor nand
 
-CODEMAP_FSS = lfs3 lfs3nb lfs2 lfs1 spiffs
+CODEMAP_FSS = lfs3 lfs3nb lfs2 lfs1 spiffs yaffs2
 CODEMAP_RDONLY_FSS = lfs3 lfs3nb lfs2 spiffs
 
 # poor man's uppercase
@@ -122,6 +122,7 @@ U_lfs3nb = LFS3NB
 U_lfs2   = LFS2
 U_lfs1   = LFS1
 U_spiffs = SPIFFS
+U_yaffs2 = YAFFS2
 
 U_emmc = EMMC
 U_nor  = NOR
@@ -133,12 +134,14 @@ N_lfs3nb = 30
 N_lfs2   = 2
 N_lfs1   = 1
 N_spiffs = 4
+N_yaffs2 = 5
 
 I_lfs3   = 0
 I_lfs3nb = 1
 I_lfs2   = 2
 I_lfs1   = 3
 I_spiffs = 4
+I_yaffs2 = 5
 
 
 # find source files
@@ -183,6 +186,34 @@ CODEMAP_SPIFFS_DEP := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.d)
 CODEMAP_SPIFFS_ASM := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.s)
 CODEMAP_SPIFFS_CI  := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.ci)
 
+# yaffs2 sources
+#
+# note yaffs2 needs a preprocessing step with handle_common.sh
+#
+# we're feeling monstrous today so instead of actually running yaffs2's
+# handle_common.sh script, just parse it for the info we need
+#
+YAFFS2_CORE_C := $(shell grep -o '[^ ]*\.c' yaffs2/direct/handle_common.sh)
+YAFFS2_CORE_H := $(shell grep -o '[^ ]*\.h' yaffs2/direct/handle_common.sh)
+YAFFS2_CORE_E := $(shell grep -o '\-e "[^"]*"' yaffs2/direct/handle_common.sh)
+YAFFS2_DIRECT_C := $(notdir $(wildcard yaffs2/direct/*.c))
+YAFFS2_DIRECT_H := $(notdir $(wildcard yaffs2/direct/*.h))
+
+CODEMAP_YAFFS2_CFLAGS += -DYAFFS2=1
+CODEMAP_YAFFS2_SRC ?= \
+		$(addprefix yaffs2/core/,$(YAFFS2_CORE_C)) \
+		$(addprefix yaffs2/direct/,$(YAFFS2_DIRECT_C))
+CODEMAP_YAFFS2_SRC_ := \
+		$(addprefix $(BUILDDIR)/yaffs2/,\
+			$(YAFFS2_CORE_C) $(YAFFS2_DIRECT_C))
+CODEMAP_YAFFS2_SRC__ := \
+		$(patsubst $(BUILDDIR)/yaffs2/%,$(BUILDDIR)/thumb/yaffs2/%,\
+			$(CODEMAP_YAFFS2_SRC_))
+CODEMAP_YAFFS2_OBJ := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.o)
+CODEMAP_YAFFS2_DEP := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.d)
+CODEMAP_YAFFS2_ASM := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.s)
+CODEMAP_YAFFS2_CI  := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.ci)
+
 
 # common benches
 BENCHES ?= $(wildcard benches/*.toml)
@@ -194,10 +225,10 @@ BENCH_LFS3_SRC ?= \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs3/*.c)) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
 		runners/bench_runner.c
-BENCH_LFS3_C     := \
+BENCH_LFS3_B     := \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c) \
 		$(BENCH_LFS3_SRC:%.c=$(BUILDDIR)/%.b.c)
-BENCH_LFS3_A     := $(BENCH_LFS3_C:%.b.c=%.b.a.c)
+BENCH_LFS3_A     := $(BENCH_LFS3_B:%.b.c=%.b.a.c)
 BENCH_LFS3_OBJ   := $(BENCH_LFS3_A:%.b.a.c=%.lfs3.b.a.o)
 BENCH_LFS3_DEP   := $(BENCH_LFS3_A:%.b.a.c=%.lfs3.b.a.d)
 BENCH_LFS3_CI    := $(BENCH_LFS3_A:%.b.a.c=%.lfs3.b.a.ci)
@@ -216,10 +247,10 @@ BENCH_LFS2_SRC ?= \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs2/*.c)) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
 		runners/bench_runner.c
-BENCH_LFS2_C     := \
+BENCH_LFS2_B     := \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c) \
 		$(BENCH_LFS2_SRC:%.c=$(BUILDDIR)/%.b.c)
-BENCH_LFS2_A     := $(BENCH_LFS2_C:%.b.c=%.b.a.c)
+BENCH_LFS2_A     := $(BENCH_LFS2_B:%.b.c=%.b.a.c)
 BENCH_LFS2_OBJ   := $(BENCH_LFS2_A:%.b.a.c=%.lfs2.b.a.o)
 BENCH_LFS2_DEP   := $(BENCH_LFS2_A:%.b.a.c=%.lfs2.b.a.d)
 BENCH_LFS2_CI    := $(BENCH_LFS2_A:%.b.a.c=%.lfs2.b.a.ci)
@@ -231,17 +262,40 @@ BENCH_SPIFFS_SRC ?= \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard spiffs/src/*.c)) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
 		runners/bench_runner.c
-BENCH_SPIFFS_C     := \
+BENCH_SPIFFS_B     := \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.spiffs.b.c) \
 		$(BENCH_SPIFFS_SRC:%.c=$(BUILDDIR)/%.spiffs.b.c)
 # let's not stress test prettyasserts right now
 BENCH_SPIFFS_A     := \
 		$(patsubst %.b.c,%.b.a.c, \
-			$(filter-out $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_C))) \
-		$(filter $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_C))
+			$(filter-out $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_B))) \
+		$(filter $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_B))
 BENCH_SPIFFS_OBJ   := $(BENCH_SPIFFS_A:.c=.o)
 BENCH_SPIFFS_DEP   := $(BENCH_SPIFFS_A:.c=.d)
 BENCH_SPIFFS_CI    := $(BENCH_SPIFFS_A:.c=.ci)
+
+# yaffs2 bench-runner
+#
+# note yaffs2 needs a preprocessing step with handle_common.sh
+#
+BENCH_YAFFS2_RUNNER ?= $(BUILDDIR)/bench_yaffs2_runner
+BENCH_YAFFS2_CFLAGS += -DYAFFS2=1
+BENCH_YAFFS2_SRC ?= \
+		$(addprefix yaffs2/core/,$(YAFFS2_CORE_C)) \
+		$(addprefix yaffs2/direct/,$(YAFFS2_DIRECT_C)) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
+		runners/bench_runner.c
+BENCH_YAFFS2_B     := \
+		$(BENCHES:%.toml=$(BUILDDIR)/%.yaffs2.b.c) \
+		$(BENCH_YAFFS2_SRC:%.c=$(BUILDDIR)/%.yaffs2.b.c)
+# let's not stress test prettyasserts right now
+BENCH_YAFFS2_A     := \
+		$(patsubst %.b.c,%.b.a.c, \
+			$(filter-out $(BUILDDIR)/yaffs2/%,$(BENCH_YAFFS2_B))) \
+		$(filter $(BUILDDIR)/yaffs2/%,$(BENCH_YAFFS2_B))
+BENCH_YAFFS2_OBJ   := $(BENCH_YAFFS2_A:.c=.o)
+BENCH_YAFFS2_DEP   := $(BENCH_YAFFS2_A:.c=.d)
+BENCH_YAFFS2_CI    := $(BENCH_YAFFS2_A:.c=.ci)
 
 
 
@@ -261,6 +315,7 @@ CFLAGS += -fcallgraph-info=su
 CFLAGS += -g3
 CFLAGS += -I. -Ilittlefs3 -Ilittlefs2
 CFLAGS += -Ispiffs/src
+CFLAGS += -I$(BUILDDIR)/yaffs2
 CFLAGS += -std=c99 -Wall -Wextra -pedantic
 # labels are useful for debugging, in-function organization, etc
 CFLAGS += -Wno-unused-label
@@ -521,6 +576,63 @@ $(BUILDDIR)/%.b.c: %.toml
 
 $(BUILDDIR)/%.b.c: %.c $(BENCHES)
 	./scripts/bench.py -c $(BENCHES) -s $< $(BENCHCFLAGS) -o$@
+
+# yaffs2 preprocessing rules
+$(BUILDDIR)/yaffs2/%.h: yaffs2/direct/%.h
+	sed $< -e '1i#include "yaffs2_cfg.h"' >$@
+
+$(BUILDDIR)/yaffs2/%.h: yaffs2/core/%.h
+	sed $< -e '1i#include "yaffs2_cfg.h"' $(YAFFS2_CORE_E) >$@
+
+$(BUILDDIR)/yaffs2/%.c: yaffs2/direct/%.c \
+		$(addprefix $(BUILDDIR)/yaffs2/,\
+			$(YAFFS2_CORE_H) $(YAFFS2_DIRECT_H))
+	sed $< -e '1i#include "yaffs2_cfg.h"' >$@
+
+$(BUILDDIR)/yaffs2/%.c: yaffs2/core/%.c \
+		$(addprefix $(BUILDDIR)/yaffs2/,\
+			$(YAFFS2_CORE_H) $(YAFFS2_DIRECT_H))
+	sed $< -e '1i#include "yaffs2_cfg.h"' $(YAFFS2_CORE_E) >$@
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TODO
+#
+# we're feeling monstrous today so instead of actually running yaffs2's
+# handle_common.sh script, just parse it for the info we need
+#
+
+#YAFFS2_PRE_SRC := $(shell grep 
+#
+#
+###
+### use yaffs_yaffs.h to determine if files have been copied
+###
+##$(BUILDDIR)/yaffs2/%.c: $(BUILDDIR)/yaffs2/yaffs_yaffs2.h
+##$(BUILDDIR)/yaffs2/yaffs_yaffs2.h: \
+##		$(wildcard yaffs2/direct/*) \
+##		$(wildcard yaffs2/core/*)
+##	$(strip find yaffs2/direct/ -type f \
+##		-execdir cp "{}" $(BUILDDIR)/yaffs2/ ";")
+##	$(strip find yaffs2/core/ -type f \
+##		-execdir cp "{}" $(BUILDDIR)/yaffs2/core/ ";")
+##	
+##	echo $^
+##	find  -not -type d -execdir cp "{}" /dest/path ";"
+##	cp $< $@
+#
+#$(BUILDDIR)/yaffs2/%.c: yaffs2/direct/%.c
+#	cp $< $@
 
 
 
