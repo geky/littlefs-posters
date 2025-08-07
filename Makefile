@@ -16,10 +16,10 @@ P26_LITMUS_SIZE ?= 32768
 # chunks size, i.e. size of writes/reads, for litmus testing?
 P26_LITMUS_CHUNK ?= 32
 # step size for litmus testing?
-ifndef PRECISE
-P26_LITMUS_STEP ?= 8 # was 1, prioritizing speed over accuracy
-else
+ifdef PRECISE
 P26_LITMUS_STEP ?= 1
+else
+P26_LITMUS_STEP ?= 8 # was 1, prioritizing speed over accuracy
 endif
 # how many samples to measure for litmus testing?
 P26_LITMUS_SAMPLES ?= 16
@@ -31,7 +31,11 @@ P26_T_SIZE ?= $(lastword $(subst $(,), ,$(P26_T_SIZES)))
 # chunks size, i.e. size of writes/reads, for throughput testing?
 P26_T_CHUNK ?= 32
 # simulated time, in nanoseconds, for throughput testing?
+ifdef PRECISE
+P26_T_SIMTIME ?= 600000000000 # 10 minutes
+else
 P26_T_SIMTIME ?= 60000000000 # 1 minute
+endif
 
 # range of erase sizes to test for throughput testing
 P26_T_BLOCK_SIZES ?= 1024,2048,4096,8192,16384,32768,65536,131072
