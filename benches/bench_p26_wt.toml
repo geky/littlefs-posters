@@ -608,8 +608,7 @@ code = '''
         s32_t d = SPIFFS_fflush(&spiffs, fd);
         assert(d >= 0);
         #elif defined(YAFFS2)
-        // TODO should this be yaffs_fsync?
-        yaffs_sync("/") => 0;
+        yaffs_fsync(fd) => 0;
         #endif
 
         // for v3, fruncate, for v2, rotate if full
