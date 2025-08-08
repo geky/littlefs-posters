@@ -74,6 +74,16 @@ code = '''
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
             NULL) => 0;
+    #elif defined(YAFFS2)
+    // note this implicitly zeros yaffs_dev
+    struct yaffs_dev yaffs2 = {
+        .driver_context = CFG,
+        .param = CFG_YAFFS2->param,
+        .drv = CFG_YAFFS2->drv,
+    };
+    yaffs_add_device(&yaffs2);
+    yaffs_format("/", false, false, false) => 0;
+    yaffs_mount("/") => 0;
     #endif
     uint32_t prng = SEED;
 
@@ -85,6 +95,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // create a file to read
@@ -114,7 +126,7 @@ code = '''
     lfs2_file_close(&lfs2, &file) => 0;
     #elif defined(SPIFFS)
     spiffs_file fd = SPIFFS_open(&spiffs, "bench_linear",
-            SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0);
+            SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0777);
     assert(fd >= 0);
     for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
         uint8_t wbuf[CHUNK];
@@ -124,6 +136,18 @@ code = '''
         SPIFFS_write(&spiffs, fd, wbuf, CHUNK) => CHUNK;
     }
     SPIFFS_close(&spiffs, fd) => 0;
+    #elif defined(YAFFS2)
+    int fd = yaffs_open("bench_linear",
+            O_RDWR | O_CREAT | O_EXCL, 0777);
+    assert(fd >= 0);
+    for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
+        uint8_t wbuf[CHUNK];
+        for (lfs3_size_t j = 0; j < CHUNK; j++) {
+            wbuf[j] = 'a' + (BENCH_PRNG(&prng) % 26);
+        }
+        yaffs_write(fd, wbuf, CHUNK) => CHUNK;
+    }
+    yaffs_close(fd) => 0;
     #endif
 
     // reset our timer
@@ -136,8 +160,10 @@ code = '''
     #elif defined(LFS2)
     lfs2_file_open(&lfs2, &file, "bench_linear", LFS2_O_RDONLY) => 0;
     #elif defined(SPIFFS)
-    fd = SPIFFS_open(&spiffs, "bench_linear", SPIFFS_RDONLY, 0);
+    fd = SPIFFS_open(&spiffs, "bench_linear", SPIFFS_RDONLY, 0777);
     assert(fd >= 0);
+    #elif defined(YAFFS2)
+    fd = yaffs_open("bench_linear", O_RDONLY, 0777);
     #endif
     lfs3_off_t size = 0;
     uint64_t readed = 0;
@@ -150,6 +176,8 @@ code = '''
         lfs2_file_read(&lfs2, &file, rbuf, CHUNK) => CHUNK;
         #elif defined(SPIFFS)
         SPIFFS_read(&spiffs, fd, rbuf, CHUNK) => CHUNK;
+        #elif defined(YAFFS2)
+        yaffs_read(fd, rbuf, CHUNK) => CHUNK;
         #endif
         size += CHUNK;
         readed += CHUNK;
@@ -162,6 +190,8 @@ code = '''
             lfs2_file_rewind(&lfs2, &file) => 0;
             #elif defined(SPIFFS)
             SPIFFS_lseek(&spiffs, fd, 0, SPIFFS_SEEK_SET) => 0;
+            #elif defined(YAFFS2)
+            yaffs_lseek(fd, 0, SEEK_SET) => 0;
             #endif
             size = 0;
         }
@@ -177,6 +207,8 @@ code = '''
     lfs2_file_close(&lfs2, &file) => 0;
     #elif defined(SPIFFS)
     SPIFFS_close(&spiffs, fd) => 0;
+    #elif defined(YAFFS2)
+    yaffs_close(fd) => 0;
     #endif
     BENCH_STOP("read");
 
@@ -192,6 +224,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    #elif defined(YAFFS2)
+    yaffs_unmount("/") => 0;
+    yaffs_remove_device(&yaffs2);
     #endif
 '''
 
@@ -221,6 +256,16 @@ code = '''
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
             NULL) => 0;
+    #elif defined(YAFFS2)
+    // note this implicitly zeros yaffs_dev
+    struct yaffs_dev yaffs2 = {
+        .driver_context = CFG,
+        .param = CFG_YAFFS2->param,
+        .drv = CFG_YAFFS2->drv,
+    };
+    yaffs_add_device(&yaffs2);
+    yaffs_format("/", false, false, false) => 0;
+    yaffs_mount("/") => 0;
     #endif
     uint32_t prng = SEED;
 
@@ -232,6 +277,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // create a file to read
@@ -260,8 +307,8 @@ code = '''
     }
     lfs2_file_close(&lfs2, &file) => 0;
     #elif defined(SPIFFS)
-    spiffs_file fd = SPIFFS_open(&spiffs, "bench_linear",
-            SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0);
+    spiffs_file fd = SPIFFS_open(&spiffs, "bench_random",
+            SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0777);
     assert(fd >= 0);
     for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
         uint8_t wbuf[CHUNK];
@@ -271,6 +318,18 @@ code = '''
         SPIFFS_write(&spiffs, fd, wbuf, CHUNK) => CHUNK;
     }
     SPIFFS_close(&spiffs, fd) => 0;
+    #elif defined(YAFFS2)
+    int fd = yaffs_open("bench_random",
+            O_RDWR | O_CREAT | O_EXCL, 0777);
+    assert(fd >= 0);
+    for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
+        uint8_t wbuf[CHUNK];
+        for (lfs3_size_t j = 0; j < CHUNK; j++) {
+            wbuf[j] = 'a' + (BENCH_PRNG(&prng) % 26);
+        }
+        yaffs_write(fd, wbuf, CHUNK) => CHUNK;
+    }
+    yaffs_close(fd) => 0;
     #endif
 
     // reset our timer
@@ -283,8 +342,10 @@ code = '''
     #elif defined(LFS2)
     lfs2_file_open(&lfs2, &file, "bench_random", LFS2_O_RDONLY) => 0;
     #elif defined(SPIFFS)
-    fd = SPIFFS_open(&spiffs, "bench_linear", SPIFFS_RDONLY, 0);
+    fd = SPIFFS_open(&spiffs, "bench_random", SPIFFS_RDONLY, 0777);
     assert(fd >= 0);
+    #elif defined(YAFFS2)
+    fd = yaffs_open("bench_random", O_RDONLY, 0777);
     #endif
     uint64_t readed = 0;
     while (!bench_p26_oot(CFG)) {
@@ -296,6 +357,8 @@ code = '''
         lfs2_file_seek(&lfs2, &file, pos, LFS2_SEEK_SET) => pos;
         #elif defined(SPIFFS)
         SPIFFS_lseek(&spiffs, fd, pos, SPIFFS_SEEK_SET) => pos;
+        #elif defined(YAFFS2)
+        yaffs_lseek(fd, pos, SEEK_SET) => pos;
         #endif
 
         // read from the file
@@ -308,6 +371,9 @@ code = '''
         assert(d <= CHUNK);
         #elif defined(SPIFFS)
         s32_t d = SPIFFS_read(&spiffs, fd, rbuf, CHUNK);
+        assert(d <= CHUNK);
+        #elif defined(YAFFS2)
+        ssize_t d = yaffs_read(fd, rbuf, CHUNK);
         assert(d <= CHUNK);
         #endif
         readed += CHUNK;
@@ -323,6 +389,8 @@ code = '''
     lfs2_file_close(&lfs2, &file) => 0;
     #elif defined(SPIFFS)
     SPIFFS_close(&spiffs, fd) => 0;
+    #elif defined(YAFFS2)
+    yaffs_close(fd) => 0;
     #endif
     BENCH_STOP("read");
 
@@ -338,6 +406,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    #elif defined(YAFFS2)
+    yaffs_unmount("/") => 0;
+    yaffs_remove_device(&yaffs2);
     #endif
 '''
 
@@ -372,6 +443,16 @@ code = '''
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
             NULL) => 0;
+    #elif defined(YAFFS2)
+    // note this implicitly zeros yaffs_dev
+    struct yaffs_dev yaffs2 = {
+        .driver_context = CFG,
+        .param = CFG_YAFFS2->param,
+        .drv = CFG_YAFFS2->drv,
+    };
+    yaffs_add_device(&yaffs2);
+    yaffs_format("/", false, false, false) => 0;
+    yaffs_mount("/") => 0;
     #endif
     uint32_t prng = SEED;
 
@@ -383,6 +464,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // create files to read
@@ -419,7 +502,7 @@ code = '''
         char name[256];
         sprintf(name, "bench_%08x", i);
         spiffs_file fd = SPIFFS_open(&spiffs, name,
-                SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0);
+                SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0777);
         assert(fd >= 0);
         uint8_t wbuf[CHUNK];
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
@@ -427,6 +510,19 @@ code = '''
         }
         SPIFFS_write(&spiffs, fd, wbuf, CHUNK) => CHUNK;
         SPIFFS_close(&spiffs, fd) => 0;
+    }
+    #elif defined(YAFFS2)
+    for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
+        char name[256];
+        sprintf(name, "bench_%08x", i);
+        int fd = yaffs_open(name, O_RDWR | O_CREAT | O_EXCL, 0777);
+        assert(fd >= 0);
+        uint8_t wbuf[CHUNK];
+        for (lfs3_size_t j = 0; j < CHUNK; j++) {
+            wbuf[j] = 'a' + (BENCH_PRNG(&prng) % 26);
+        }
+        yaffs_write(fd, wbuf, CHUNK) => CHUNK;
+        yaffs_close(fd) => 0;
     }
     #endif
 
@@ -458,10 +554,15 @@ code = '''
         lfs2_file_read(&lfs2, &file, rbuf, CHUNK) => CHUNK;
         lfs2_file_close(&lfs2, &file) => 0;
         #elif defined(SPIFFS)
-        spiffs_file fd = SPIFFS_open(&spiffs, name, SPIFFS_RDONLY, 0);
+        spiffs_file fd = SPIFFS_open(&spiffs, name, SPIFFS_RDONLY, 0777);
         assert(fd >= 0);
         SPIFFS_read(&spiffs, fd, rbuf, CHUNK) => CHUNK;
         SPIFFS_close(&spiffs, fd) => 0;
+        #elif defined(YAFFS2)
+        int fd = yaffs_open(name, O_RDONLY, 0777);
+        assert(fd >= 0);
+        yaffs_read(fd, rbuf, CHUNK) => CHUNK;
+        yaffs_close(fd) => 0;
         #endif
 
         readed += CHUNK;
@@ -485,5 +586,8 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    #elif defined(YAFFS2)
+    yaffs_unmount("/") => 0;
+    yaffs_remove_device(&yaffs2);
     #endif
 '''

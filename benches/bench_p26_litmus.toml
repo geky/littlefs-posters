@@ -161,6 +161,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // open a file
@@ -301,6 +303,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // open a file
@@ -467,6 +471,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // create a filesystem with many files
@@ -590,6 +596,8 @@ code = '''
     lfs2_fs_mkconsistent(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_gc_quick(&spiffs, 0) => SPIFFS_ERR_NO_DELETED_BLOCKS;
+    #elif defined(YAFFS2)
+    yaffs_sync("/") => 0;
     #endif
 
     // open a file
