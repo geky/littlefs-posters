@@ -1859,14 +1859,14 @@ $(foreach fs, $(CODEMAP_RDONLY_FSS),$\
 ## Clean everything
 .PHONY: clean
 clean: \
-		clean-benches \
+		clean-build \
 		clean-results \
 		clean-codemaps \
 		clean-plots
 
 ## Clean bench-runner things
-.PHONY: clean-benches
-clean-benches:
+.PHONY: clean-build
+clean-build:
 	rm -rf $(BUILDDIR)
 
 ## Clean bench results
