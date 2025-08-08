@@ -1592,10 +1592,7 @@ $1: $2
 			-W0.33" \
 		--legend \
 		$(foreach fs, $(BENCH_FSS),$\
-			-L'$(N_$(fs))=$(fs)%n$\
-				- bs=$(EMMC_$(U_$(fs))_BLOCK_SIZE)%n$\
-				- bs=$(NOR_$(U_$(fs))_BLOCK_SIZE)%n$\
-				- bs=$(NAND_$(U_$(fs))_BLOCK_SIZE)') \
+			-L'$(N_$(fs))=$(fs)') \
 		$(PLOT_COLORS_1) \
 		-Fo- -F^- -Fs- -FX- -FP- \
 		--xlog \
