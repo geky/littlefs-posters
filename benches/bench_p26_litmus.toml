@@ -94,6 +94,18 @@ static void bench_p26_find_usage(spiffs *spiffs, lfs3_size_t n) {
     // note used is already in bytes
     BENCH_RESULT("usage", n, used);
 }
+#elif defined(YAFFS2)
+// measure disk usage
+//
+// we rely on yaffs2's internal bookkeeping here
+static void bench_p26_find_usage(struct yaffs_dev *yaffs2, lfs3_size_t n) {
+    lfs3_soff_t free = yaffs_freespace("/");
+    assert(free >= 0);
+
+    // note used is already in bytes
+    lfs3_soff_t used = (BLOCK_COUNT*BLOCK_SIZE) - free;
+    BENCH_RESULT("usage", n, used);
+}
 #endif
 '''
 
@@ -128,6 +140,16 @@ code = '''
             fd_buffer, FD_SIZE,
             pagecache_buffer, PAGECACHE_SIZE,
             NULL) => 0;
+    #elif defined(YAFFS2)
+    // note this implicitly zeros yaffs_dev
+    struct yaffs_dev yaffs2 = {
+        .driver_context = CFG,
+        .param = CFG_YAFFS2->param,
+        .drv = CFG_YAFFS2->drv,
+    };
+    yaffs_add_device(&yaffs2);
+    yaffs_format("/", false, false, false) => 0;
+    yaffs_mount("/") => 0;
     #endif
     uint32_t prng = SEED;
 
@@ -157,6 +179,9 @@ code = '''
     spiffs_file fd = SPIFFS_open(&spiffs, "bench_linear",
             SPIFFS_RDWR | SPIFFS_CREAT | SPIFFS_EXCL, 0);
     assert(fd >= 0);
+    #elif defined(YAFFS2)
+    int fd = yaffs_open("/bench_linear", O_RDWR | O_CREAT | O_EXCL, 0);
+    assert(fd >= 0);
     #endif
     for (lfs3_size_t i = 0; i < (SIZE+(CHUNK-1))/CHUNK; i++) {
         // write to the file
@@ -170,6 +195,8 @@ code = '''
         lfs2_file_write(&lfs2, &file, wbuf, CHUNK) => CHUNK;
         #elif defined(SPIFFS)
         SPIFFS_write(&spiffs, fd, wbuf, CHUNK) => CHUNK;
+        #elif defined(YAFFS2)
+        yaffs_write(fd, wbuf, CHUNK) => CHUNK;
         #endif
 
         // a little bit weird, but this incrementally measures linear
@@ -189,6 +216,8 @@ code = '''
             bench_p26_find_usage(&lfs2, i*CHUNK+CHUNK);
             #elif defined(SPIFFS)
             bench_p26_find_usage(&spiffs, i*CHUNK+CHUNK);
+            #elif defined(YAFFS2)
+            bench_p26_find_usage(&yaffs2, i*CHUNK+CHUNK);
             #endif
         }
     }
@@ -198,6 +227,8 @@ code = '''
     lfs2_file_close(&lfs2, &file) => 0;
     #elif defined(SPIFFS)
     SPIFFS_close(&spiffs, fd) => 0;
+    #elif defined(YAFFS2)
+    yaffs_close(fd) => 0;
     #endif
     if (MODE == 0) {
         BENCH_STOP("write");
@@ -209,6 +240,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    #elif defined(YAFFS2)
+    yaffs_unmount("/") => 0;
+    yaffs_remove_device(&yaffs2);
     #endif
 '''
 

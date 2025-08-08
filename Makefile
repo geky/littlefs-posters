@@ -68,6 +68,7 @@ EMMC_LFS3_BLOCK_SIZE ?= 1024 # v3 performs better with larger block sizes
 EMMC_LFS3NB_BLOCK_SIZE ?= 1024
 EMMC_LFS2_BLOCK_SIZE ?= 512  # but no reason to penalize v2
 EMMC_SPIFFS_BLOCK_SIZE ?= 1024
+EMMC_YAFFS2_BLOCK_SIZE ?= 1024
 EMMC_READ_TIME  ?= 31   # taken from w25n01gv, read time
 EMMC_PROG_TIME  ?= 156  # taken from w25n01gv, prog time + erase time
 EMMC_ERASE_TIME ?= 0    # noop
@@ -86,6 +87,7 @@ NOR_LFS3_BLOCK_SIZE ?= 4096
 NOR_LFS3NB_BLOCK_SIZE ?= 4096
 NOR_LFS2_BLOCK_SIZE ?= 4096
 NOR_SPIFFS_BLOCK_SIZE ?= 4096
+NOR_YAFFS2_BLOCK_SIZE ?= 4096
 NOR_READ_TIME  ?= 40    # fR=50 MHz, quad read (20 ns * 8/4)
 NOR_PROG_TIME  ?= 1582  # tPP=0.4 ms, page=256 (0.4 ms / 256 + bus)
 NOR_ERASE_TIME ?= 10986 # tSE=45 ms, sector=4096 (45 ms / 4096)
@@ -104,6 +106,7 @@ NAND_LFS3_BLOCK_SIZE ?= 131072
 NAND_LFS3NB_BLOCK_SIZE ?= 131072
 NAND_LFS2_BLOCK_SIZE ?= 131072
 NAND_SPIFFS_BLOCK_SIZE ?= 131072
+NAND_YAFFS2_BLOCK_SIZE ?= 131072
 NAND_READ_TIME  ?= 31     # tRD1=25 us, p=2048, s=512 (25 us / 2048 + bus)
 NAND_PROG_TIME  ?= 141    # tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
 NAND_ERASE_TIME ?= 15     # tBE=2 ms, block=131072 (2 ms / 131072)

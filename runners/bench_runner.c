@@ -1443,6 +1443,71 @@ static s32_t bench_spiffsbd_erase(struct spiffs_t *spiffs,
 }
 #endif
 
+// yaffs2 -> lfs3 bd wrapper
+#ifdef YAFFS2
+static int bench_yaffs2bd_readchunk(struct yaffs_dev *yaffs2, int page,
+        uint8_t *data, int data_len,
+        uint8_t *oob, int oob_len,
+        enum yaffs_ecc_result *ecc_result) {
+    (void)oob;
+    (void)oob_len;
+    assert(oob_len == 0);
+
+    const struct bench_cfg *cfg = yaffs2->driver_context;
+    lfs3_block_t block = page / (BLOCK_SIZE / PAGE_SIZE);
+    lfs3_off_t off = (page % (BLOCK_SIZE / PAGE_SIZE)) * PAGE_SIZE;
+    int err = lfs3_emubd_read(&cfg->cfg, block, off, data, data_len);
+    if (err) {
+        return YAFFS_FAIL;
+    }
+
+    *ecc_result = YAFFS_ECC_RESULT_NO_ERROR;
+    return YAFFS_OK;
+}
+
+static int bench_yaffs2bd_writechunk(struct yaffs_dev *yaffs2, int page,
+        const uint8_t *data, int data_len,
+        const uint8_t *oob, int oob_len) {
+    (void)oob;
+    (void)oob_len;
+    assert(oob_len == 0);
+
+    const struct bench_cfg *cfg = yaffs2->driver_context;
+    lfs3_block_t block = page / (BLOCK_SIZE / PAGE_SIZE);
+    lfs3_off_t off = (page % (BLOCK_SIZE / PAGE_SIZE)) * PAGE_SIZE;
+    int err = lfs3_emubd_prog(&cfg->cfg, block, off, data, data_len);
+    if (err) {
+        return YAFFS_FAIL;
+    }
+
+    return YAFFS_OK;
+}
+
+static int bench_yaffs2bd_erase(struct yaffs_dev *yaffs2, int block) {
+    const struct bench_cfg *cfg = yaffs2->driver_context;
+    int err = lfs3_emubd_erase(&cfg->cfg, block);
+    if (err) {
+        return YAFFS_FAIL;
+    }
+
+    return YAFFS_OK;
+}
+
+static int bench_yaffs2bd_markbad(struct yaffs_dev *yaffs2, int block) {
+    (void)yaffs2;
+    (void)block;
+    // let's just assume this can't happen for now
+    assert(false);
+    __builtin_unreachable();
+}
+
+static int bench_yaffs2bd_checkbad(struct yaffs_dev *yaffs2, int block) {
+    (void)yaffs2;
+    (void)block;
+    return YAFFS_OK;
+}
+#endif
+
 
 
 // global bench step count
@@ -1504,6 +1569,20 @@ void perm_run(
             .hal_write_f        = bench_spiffsbd_write,
             .hal_erase_f        = bench_spiffsbd_erase,
             BENCH_SPIFFS_CFG
+        },
+        #endif
+        #ifdef YAFFS2
+        .cfg_yaffs2 = {
+            .param = {
+                BENCH_YAFFS2_CFG
+            },
+            .drv = {
+                .drv_read_chunk_fn      = bench_yaffs2bd_readchunk,
+                .drv_write_chunk_fn     = bench_yaffs2bd_writechunk,
+                .drv_erase_fn           = bench_yaffs2bd_erase,
+                .drv_mark_bad_fn        = bench_yaffs2bd_markbad,
+                .drv_check_bad_fn       = bench_yaffs2bd_checkbad,
+            },
         },
         #endif
     };

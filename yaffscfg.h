@@ -117,4 +117,9 @@ static inline void yaffs_bug_fn(const char *file_name, int line_no) {
 }
 
 
+// why was this never declared?
+struct yaffs_dev;
+void yaffs_remove_device(struct yaffs_dev *dev);
+
+
 #endif

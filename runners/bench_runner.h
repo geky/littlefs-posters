@@ -30,6 +30,7 @@ void bench_trace(const char *fmt, ...);
 #include "spiffs.h"
 #include "spiffs_nucleus.h"
 #elif defined(YAFFS2)
+#include "yaffs_yaffs2.h"
 #include "yaffsfs.h"
 #else
 #error "No filesystem defined?"
@@ -254,8 +255,12 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_YAFFS2_DEFINES \
     /*           name                value (overridable)                   */ \
     BENCH_DEFINE(FS,                 5                                      ) \
-    BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
-    BENCH_DEFINE(CACHE_SIZE,         0                                      )
+    /* this is limited by struct yaffs_obj_hdr                             */ \
+    BENCH_DEFINE(PAGE_SIZE,          LFS3_MAX(PROG_SIZE, 512)               ) \
+    BENCH_DEFINE(CACHE_SIZE,         0                                      ) \
+    BENCH_DEFINE(RESERVED_BLOCKS,    5                                      ) \
+    BENCH_DEFINE(PAGECACHE_COUNT,    4 + (CACHE_SIZE / PAGE_SIZE)           ) \
+    BENCH_DEFINE(REFRESH_PERIOD,     1000                                   )
 #else
 #define BENCH_YAFFS2_DEFINES
 #endif
@@ -281,6 +286,11 @@ struct bench_cfg {
     struct lfs2_config cfg_lfs2;
     #elif defined(SPIFFS)
     spiffs_config cfg_spiffs;
+    #elif defined(YAFFS2)
+    struct {
+        struct yaffs_param param;
+        struct yaffs_driver drv;
+    } cfg_yaffs2;
     #endif
 };
 
@@ -289,6 +299,7 @@ struct bench_cfg {
 #define CFG_LFS3 CFG
 #define CFG_LFS2 (&((const struct bench_cfg*)CFG)->cfg_lfs2)
 #define CFG_SPIFFS (&((const struct bench_cfg*)CFG)->cfg_spiffs)
+#define CFG_YAFFS2 (&((const struct bench_cfg*)CFG)->cfg_yaffs2)
 
 // map defines to cfg struct fields
 
@@ -359,18 +370,38 @@ struct bench_cfg {
 // spiffs cfg struct fields
 #ifdef SPIFFS
 #define BENCH_SPIFFS_CFG \
-    .phys_size          = BLOCK_SIZE*BLOCK_COUNT,   \
+    .phys_size          = BLOCK_SIZE * BLOCK_COUNT, \
     .phys_addr          = 0,                        \
     .phys_erase_block   = BLOCK_SIZE,               \
     .log_block_size     = BLOCK_SIZE,               \
     .log_page_size      = PAGE_SIZE,
-
 #endif
 
 // yaffs2 cfg struct fields
 #ifdef YAFFS2
-#define BENCH_YAFFS2_CFG // TODO
-
+#define BENCH_YAFFS2_CFG \
+    .name                   = "/",                      \
+    .inband_tags            = true,                     \
+    .total_bytes_per_chunk  = PAGE_SIZE,                \
+    .chunks_per_block       = BLOCK_SIZE / PAGE_SIZE,   \
+    .spare_bytes_per_chunk  = 0,                        \
+    .start_block            = 0,                        \
+    .end_block              = BLOCK_COUNT-1,            \
+    .n_reserved_blocks      = RESERVED_BLOCKS,          \
+    .n_caches               = PAGECACHE_COUNT,          \
+    .cache_bypass_aligned   = false,                    \
+    .use_nand_ecc           = true, /* fake ecc */      \
+    .tags_9bytes            = false,                    \
+    .no_tags_ecc            = false,                    \
+    .is_yaffs2              = true,                     \
+    .empty_lost_n_found     = false,                    \
+    .refresh_period         = REFRESH_PERIOD,           \
+    .skip_checkpt_rd        = false,                    \
+    .skip_checkpt_wr        = false,                    \
+    .enable_xattr           = false,                    \
+    .max_objects            = 0, /* unbounded */        \
+    .hide_lost_n_found      = false,                    \
+    .stored_endian          = 1, /* le */
 #endif
 
 
