@@ -179,7 +179,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     BENCH_DEFINE(FS,                 LFS3_IFDEF_BMAP(3, 30)                 ) \
     BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
     BENCH_DEFINE(CACHE_SIZE,         0                                      ) \
-    BENCH_DEFINE(BLOCK_RECYCLES,     -1                                     ) \
+    BENCH_DEFINE(BLOCK_RECYCLES,     1000                                   ) \
     /* NOTE this was expanded to 32 to match littlefs2, see v2's cfg       */ \
     BENCH_DEFINE(RCACHE_SIZE,        (CACHE_SIZE)                             \
                                         ? CACHE_SIZE                          \
@@ -215,7 +215,7 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
     /*           name                value (overridable)                   */ \
     BENCH_DEFINE(FS,                 2                                      ) \
     BENCH_DEFINE(PAGE_SIZE,          0                                      ) \
-    BENCH_DEFINE(BLOCK_CYCLES,       -1                                     ) \
+    BENCH_DEFINE(BLOCK_CYCLES,       1000                                   ) \
     /* NOTE this is necessary for inline files to not explode in           */ \
     /* many testing                                                        */ \
     BENCH_DEFINE(CACHE_SIZE,         LFS3_MAX(                                \
