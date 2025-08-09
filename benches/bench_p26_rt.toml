@@ -13,39 +13,10 @@ defines.SEED = 42
 # simulated time, in nanoseconds, to run the test
 defines.SIMTIME = '60000000000ULL' # 1 minute
 
-
+# include common bench helpers
 code = '''
-// simulated time in nanoseconds since start of bench
-//
-// this is derived form the current read/prog/erase ops
-static uint64_t bench_p26_time(const struct lfs3_cfg *cfg) {
-    uint64_t time = 0;
-    time += lfs3_emubd_readed(cfg) * READ_TIME;
-    time += lfs3_emubd_proged(cfg) * PROG_TIME;
-    time += lfs3_emubd_erased(cfg) * ERASE_TIME;
-    return time;
-}
-
-// reset the current time
-static void bench_p26_reset(const struct lfs3_cfg *cfg) {
-    lfs3_emubd_setreaded(cfg, 0);
-    lfs3_emubd_setproged(cfg, 0);
-    lfs3_emubd_seterased(cfg, 0);
-}
-
-// is the current bench out-of-time?
-static bool bench_p26_oot(const struct lfs3_cfg *cfg) {
-    return (bench_p26_time(cfg) >= (uint64_t)SIMTIME);
-}
-
-// is the current bench stuck? not making progress?
-static bool bench_p26_stuck(const struct lfs3_cfg *cfg, uint64_t n) {
-    // ok if we've read/progged more than twice the runtime we're
-    // definitely stuck, note these aren't even the same units
-    return (n > 2*bench_p26_time(cfg));
-}
+#include "bench_helpers.h"
 '''
-
 
 
 [cases.bench_p26_rt_linear]
@@ -151,7 +122,7 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open the file
     BENCH_START("read", 0);
@@ -167,7 +138,7 @@ code = '''
     #endif
     lfs3_off_t size = 0;
     uint64_t readed = 0;
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // read from the file
         uint8_t rbuf[CHUNK];
         #if defined(LFS3)
@@ -197,7 +168,7 @@ code = '''
         }
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, readed)) {
+        if (bench_helpers_simstuck(CFG, readed)) {
             return;
         }
     }
@@ -333,7 +304,7 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open the file
     BENCH_START("read", 0);
@@ -348,7 +319,7 @@ code = '''
     fd = yaffs_open("bench_random", O_RDONLY, 0777);
     #endif
     uint64_t readed = 0;
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // seek to a random location
         lfs3_off_t pos = BENCH_PRNG(&prng) % SIZE;
         #if defined(LFS3)
@@ -379,7 +350,7 @@ code = '''
         readed += CHUNK;
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, readed)) {
+        if (bench_helpers_simstuck(CFG, readed)) {
             return;
         }
     }
@@ -532,12 +503,12 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open the files
     BENCH_START("read", 0);
     uint64_t readed = 0;
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // choose a random filename
         lfs3_off_t pos = BENCH_PRNG(&prng) % ((SIZE+(CHUNK-1))/CHUNK);
         char name[256];
@@ -573,7 +544,7 @@ code = '''
         readed += CHUNK;
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, readed)) {
+        if (bench_helpers_simstuck(CFG, readed)) {
             return;
         }
     }

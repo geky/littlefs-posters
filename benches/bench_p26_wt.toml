@@ -13,40 +13,10 @@ defines.SEED = 42
 # simulated time, in nanoseconds, to run the test
 defines.SIMTIME = '60000000000ULL' # 1 minute
 
-
-
+# include common bench helpers
 code = '''
-// simulated time in nanoseconds since start of bench
-//
-// this is derived form the current read/prog/erase ops
-static uint64_t bench_p26_time(const struct lfs3_cfg *cfg) {
-    uint64_t time = 0;
-    time += lfs3_emubd_readed(cfg) * READ_TIME;
-    time += lfs3_emubd_proged(cfg) * PROG_TIME;
-    time += lfs3_emubd_erased(cfg) * ERASE_TIME;
-    return time;
-}
-
-// reset the current time
-static void bench_p26_reset(const struct lfs3_cfg *cfg) {
-    lfs3_emubd_setreaded(cfg, 0);
-    lfs3_emubd_setproged(cfg, 0);
-    lfs3_emubd_seterased(cfg, 0);
-}
-
-// is the current bench out-of-time?
-static bool bench_p26_oot(const struct lfs3_cfg *cfg) {
-    return (bench_p26_time(cfg) >= (uint64_t)SIMTIME);
-}
-
-// is the current bench stuck? not making progress?
-static bool bench_p26_stuck(const struct lfs3_cfg *cfg, uint64_t n) {
-    // ok if we've read/progged more than twice the runtime we're
-    // definitely stuck, note these aren't even the same units
-    return (n > 2*bench_p26_time(cfg));
-}
+#include "bench_helpers.h"
 '''
-
 
 
 [cases.bench_p26_wt_linear]
@@ -107,7 +77,7 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open a file
     BENCH_START("write", 0);
@@ -129,7 +99,7 @@ code = '''
     #endif
     lfs3_off_t size = 0;
     uint64_t written = 0;
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // write to the file
         uint8_t wbuf[CHUNK];
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
@@ -168,7 +138,7 @@ code = '''
         }
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, written)) {
+        if (bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
@@ -259,7 +229,7 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open a file
     BENCH_START("write", 0);
@@ -281,7 +251,7 @@ code = '''
     #endif
     lfs3_off_t size = 0;
     uint64_t written = 0;
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // seek to a random location
         lfs3_off_t pos = BENCH_PRNG(&prng) % SIZE;
         #if defined(LFS3)
@@ -320,7 +290,7 @@ code = '''
         size = lfs3_max(size, pos + CHUNK);
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, written)) {
+        if (bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
@@ -411,7 +381,7 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open a file
     BENCH_START("write", 0);
@@ -419,7 +389,7 @@ code = '''
     #ifdef LFS2
     int err;
     #endif
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // choose a random filename
         lfs3_off_t pos = BENCH_PRNG(&prng) % ((SIZE+(CHUNK-1))/CHUNK);
         char name[256];
@@ -469,7 +439,7 @@ code = '''
         written += CHUNK;
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, written)) {
+        if (bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
@@ -561,7 +531,7 @@ code = '''
     #endif
 
     // reset our timer
-    bench_p26_reset(CFG);
+    bench_helpers_simreset(CFG);
 
     // open a file
     BENCH_START("write", 0);
@@ -583,7 +553,7 @@ code = '''
     assert(fd >= 0);
     #endif
     uint64_t written = 0;
-    while (!bench_p26_oot(CFG)) {
+    while (bench_helpers_simtime(CFG) < (uint64_t)SIMTIME) {
         // append to log
         uint8_t wbuf[CHUNK];
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
@@ -663,7 +633,7 @@ code = '''
         written += CHUNK;
 
         // bail if we get stuck
-        if (bench_p26_stuck(CFG, written)) {
+        if (bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
