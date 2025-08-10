@@ -19,12 +19,12 @@ BENCH_SIMS ?= nor nand
 
 # use our bench rules
 BENCH_RULES ?= \
-	bench-p26-wt-bs \
-	bench-p26-wt-bs-1M
+	bench-p26-bs \
+	bench-p26-bs-1M
 # use our plot rules
 PLOT_RULES ?= \
-	plot-p26-wt-bs \
-	plot-p26-wt-bs-1M
+	plot-p26-bs \
+	plot-p26-bs-1M
 
 # default Makefile does most of the work
 include Makefile
@@ -32,73 +32,73 @@ include Makefile
 
 
 ## Run p26 block size benchmarks
-.PHONY: bench-p26-wt-bs
-bench-p26-wt-bs: \
-		bench-p26-wt-bs-linear \
-		bench-p26-wt-bs-random \
-		bench-p26-wt-bs-many \
-		bench-p26-wt-bs-logging
+.PHONY: bench-p26-bs
+bench-p26-bs: \
+		bench-p26-bs-linear \
+		bench-p26-bs-random \
+		bench-p26-bs-many \
+		bench-p26-bs-logging
 
 ## Run p26 block size linear benchmarks
-.PHONY: bench-p26-wt-bs-linear
-bench-p26-wt-bs-linear: \
+.PHONY: bench-p26-bs-linear
+bench-p26-bs-linear: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_linear.$(fs).$(sim).csv))
 
 ## Run p26 block size random benchmarks
-.PHONY: bench-p26-wt-bs-random
-bench-p26-wt-bs-random: \
+.PHONY: bench-p26-bs-random
+bench-p26-bs-random: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_random.$(fs).$(sim).csv))
 
 ## Run p26 block size many benchmarks
-.PHONY: bench-p26-wt-bs-many
-bench-p26-wt-bs-many: \
+.PHONY: bench-p26-bs-many
+bench-p26-bs-many: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_many.$(fs).$(sim).csv))
 
 ## Run p26 block size logging benchmarks
-.PHONY: bench-p26-wt-bs-logging
-bench-p26-wt-bs-logging: \
+.PHONY: bench-p26-bs-logging
+bench-p26-bs-logging: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_logging.$(fs).$(sim).csv))
 
 ## Run p26 block size benchmarks
-.PHONY: bench-p26-wt-bs-1M
-bench-p26-wt-bs-1M: \
-		bench-p26-wt-bs-1M-linear \
-		bench-p26-wt-bs-1M-random \
-		bench-p26-wt-bs-1M-many \
-		bench-p26-wt-bs-1M-logging
+.PHONY: bench-p26-bs-1M
+bench-p26-bs-1M: \
+		bench-p26-bs-1M-linear \
+		bench-p26-bs-1M-random \
+		bench-p26-bs-1M-many \
+		bench-p26-bs-1M-logging
 
 ## Run p26 block size linear benchmarks
-.PHONY: bench-p26-wt-bs-1M-linear
-bench-p26-wt-bs-1M-linear: \
+.PHONY: bench-p26-bs-1M-linear
+bench-p26-bs-1M-linear: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_1M_linear.$(fs).$(sim).csv))
 
 ## Run p26 block size random benchmarks
-.PHONY: bench-p26-wt-bs-1M-random
-bench-p26-wt-bs-1M-random: \
+.PHONY: bench-p26-bs-1M-random
+bench-p26-bs-1M-random: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_1M_random.$(fs).$(sim).csv))
 
 ## Run p26 block size many benchmarks
-.PHONY: bench-p26-wt-bs-1M-many
-bench-p26-wt-bs-1M-many: \
+.PHONY: bench-p26-bs-1M-many
+bench-p26-bs-1M-many: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_1M_many.$(fs).$(sim).csv))
 
 ## Run p26 block size logging benchmarks
-.PHONY: bench-p26-wt-bs-1M-logging
-bench-p26-wt-bs-1M-logging: \
+.PHONY: bench-p26-bs-1M-logging
+bench-p26-bs-1M-logging: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(RESULTSDIR)/bench_p26_bs_1M_logging.$(fs).$(sim).csv))
@@ -156,59 +156,59 @@ $(foreach fs, $(BENCH_FSS),$\
 
 
 ## Plot p26 block size benchmarks
-.PHONY: plot-p26-wt-bs
-plot-p26-wt-bs: \
-		plot-p26-wt-bs-linear \
-		plot-p26-wt-bs-random \
-		plot-p26-wt-bs-many \
-		plot-p26-wt-bs-logging
+.PHONY: plot-p26-bs
+plot-p26-bs: \
+		plot-p26-bs-linear \
+		plot-p26-bs-random \
+		plot-p26-bs-many \
+		plot-p26-bs-logging
 
 ## Plot p26 write-throughput linear block size benchmarks
-.PHONY: plot-p26-wt-bs-linear
-plot-p26-wt-bs-linear: \
+.PHONY: plot-p26-bs-linear
+plot-p26-bs-linear: \
 		$(PLOTSDIR)/bench_p26_bs_linear.svg
 
 ## Plot p26 write-throughput random block size benchmarks
-.PHONY: plot-p26-wt-bs-random
-plot-p26-wt-bs-random: \
+.PHONY: plot-p26-bs-random
+plot-p26-bs-random: \
 		$(PLOTSDIR)/bench_p26_bs_random.svg
 
 ## Plot p26 write-throughput many block size benchmarks
-.PHONY: plot-p26-wt-bs-many
-plot-p26-wt-bs-many: \
+.PHONY: plot-p26-bs-many
+plot-p26-bs-many: \
 		$(PLOTSDIR)/bench_p26_bs_many.svg
 
 ## Plot p26 write-throughput logging block size benchmarks
-.PHONY: plot-p26-wt-bs-logging
-plot-p26-wt-bs-logging: \
+.PHONY: plot-p26-bs-logging
+plot-p26-bs-logging: \
 		$(PLOTSDIR)/bench_p26_bs_logging.svg
 
 ## Plot p26 block size benchmarks
-.PHONY: plot-p26-wt-bs-1M
-plot-p26-wt-bs-1M: \
-		plot-p26-wt-bs-1M-linear \
-		plot-p26-wt-bs-1M-random \
-		plot-p26-wt-bs-1M-many \
-		plot-p26-wt-bs-1M-logging
+.PHONY: plot-p26-bs-1M
+plot-p26-bs-1M: \
+		plot-p26-bs-1M-linear \
+		plot-p26-bs-1M-random \
+		plot-p26-bs-1M-many \
+		plot-p26-bs-1M-logging
 
 ## Plot p26 write-throughput linear block size benchmarks
-.PHONY: plot-p26-wt-bs-1M-linear
-plot-p26-wt-bs-1M-linear: \
+.PHONY: plot-p26-bs-1M-linear
+plot-p26-bs-1M-linear: \
 		$(PLOTSDIR)/bench_p26_bs_1M_linear.svg
 
 ## Plot p26 write-throughput random block size benchmarks
-.PHONY: plot-p26-wt-bs-1M-random
-plot-p26-wt-bs-1M-random: \
+.PHONY: plot-p26-bs-1M-random
+plot-p26-bs-1M-random: \
 		$(PLOTSDIR)/bench_p26_bs_1M_random.svg
 
 ## Plot p26 write-throughput many block size benchmarks
-.PHONY: plot-p26-wt-bs-1M-many
-plot-p26-wt-bs-1M-many: \
+.PHONY: plot-p26-bs-1M-many
+plot-p26-bs-1M-many: \
 		$(PLOTSDIR)/bench_p26_bs_1M_many.svg
 
 ## Plot p26 write-throughput logging block size benchmarks
-.PHONY: plot-p26-wt-bs-1M-logging
-plot-p26-wt-bs-1M-logging: \
+.PHONY: plot-p26-bs-1M-logging
+plot-p26-bs-1M-logging: \
 		$(PLOTSDIR)/bench_p26_bs_1M_logging.svg
 
 
