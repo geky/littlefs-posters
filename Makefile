@@ -663,8 +663,7 @@ endif
 
 
 # overrideable bench rules
-BENCH_RULES ?= bench-p26
-BENCH_P26_RULES ?= \
+BENCH_RULES ?= \
 		bench-p26-litmus \
 		bench-p26-wt \
 		bench-p26-rt
@@ -672,10 +671,6 @@ BENCH_P26_RULES ?= \
 ## Run all benchmarks!
 .PHONY: bench bench-all
 bench bench-all: $(BENCH_RULES)
-
-## Run p26 benchmarks
-.PHONY: bench-p26
-bench-p26: $(BENCH_P26_RULES)
 
 ## Run p26 litmus benchmarks
 .PHONY: bench-p26-litmus
@@ -1008,8 +1003,7 @@ F_yaffs2 = P # big plus
 
 
 # overrideable plot rules
-PLOT_RULES ?= plot-p26
-PLOT_P26_RULES ?= \
+PLOT_RULES ?= \
 		plot-p26-litmus \
 		plot-p26-litmus-ops \
 		plot-p26-wt \
@@ -1021,10 +1015,6 @@ PLOT_P26_RULES ?= \
 ## Plot all benchmarks!
 .PHONY: plot plot-all
 plot plot-all: $(PLOT_RULES)
-
-## Plot p26 benchmarks
-.PHONY: plot-p26
-plot-p26: $(PLOT_P26_RULES)
 
 ## Plot p26 litmus benchmarks
 .PHONY: plot-p26-litmus

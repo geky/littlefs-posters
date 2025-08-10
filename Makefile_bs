@@ -18,11 +18,11 @@ P26_T_SIZE_1M ?= 1048576
 BENCH_SIMS ?= nor nand
 
 # use our bench rules
-BENCH_P26_RULES ?= \
+BENCH_RULES ?= \
 	bench-p26-wt-bs \
 	bench-p26-wt-bs-1M
 # use our plot rules
-PLOT_P26_RULES ?= \
+PLOT_RULES ?= \
 	plot-p26-wt-bs \
 	plot-p26-wt-bs-1M
 
