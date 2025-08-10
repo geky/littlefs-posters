@@ -334,6 +334,10 @@ CFLAGS += -Wno-format-overflow
 # compiler bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101854
 CFLAGS += -Wno-stringop-overflow
 CFLAGS += -ftrack-macro-expansion=0
+# wrap malloc/free/realloc for heap measurements
+CFLAGS += -Wl,--wrap=malloc
+CFLAGS += -Wl,--wrap=free
+CFLAGS += -Wl,--wrap=realloc
 ifdef DEBUG
 CFLAGS += -O0
 else
@@ -626,13 +630,6 @@ $(BUILDDIR)/yaffs2/%.c: yaffs2/core/%.c
 # ok! with that out of the way, here's our actual benchmark rules      #
 #======================================================================#
 
-# overrideable bench rules
-BENCH_RULES ?= bench-p26
-BENCH_P26_RULES ?= \
-		bench-p26-litmus \
-		bench-p26-wt \
-		bench-p26-rt
-
 # bench.py flags
 # give us a big disk
 BENCHFLAGS += -DDISK_SIZE=$(DISK_SIZE)
@@ -664,6 +661,13 @@ ifneq ($(PERF),perf)
 BENCHFLAGS += --perf-path="$(PERF)"
 endif
 
+
+# overrideable bench rules
+BENCH_RULES ?= bench-p26
+BENCH_P26_RULES ?= \
+		bench-p26-litmus \
+		bench-p26-wt \
+		bench-p26-rt
 
 ## Run all benchmarks!
 .PHONY: bench bench-all
@@ -947,15 +951,6 @@ $(RESULTSDIR)/bench_%.avg.csv: $(RESULTSDIR)/bench_%.csv
 # and plotting rules, can't have benchmarks without plots!             #
 #======================================================================#
 
-# overrideable plot rules
-PLOT_RULES ?= plot-p26
-PLOT_P26_RULES ?= \
-		plot-p26-litmus \
-		plot-p26-litmus-ops \
-		plot-p26-wt \
-		plot-p26-rt \
-		plot-p26-wt-usage
-
 # plot config
 ifndef LIGHT
 PLOTFLAGS += --dark
@@ -1012,6 +1007,16 @@ F_spiffs = X # big x
 F_yaffs2 = P # big plus
 
 
+# overrideable plot rules
+PLOT_RULES ?= plot-p26
+PLOT_P26_RULES ?= \
+		plot-p26-litmus \
+		plot-p26-litmus-ops \
+		plot-p26-wt \
+		plot-p26-rt \
+		plot-p26-wt-usage \
+		plot-p26-wt-stack \
+		plot-p26-wt-heap
 
 ## Plot all benchmarks!
 .PHONY: plot plot-all
@@ -1166,6 +1171,62 @@ plot-p26-wt-usage-many: \
 .PHONY: plot-p26-wt-usage-logging
 plot-p26-wt-usage-logging: \
 		$(PLOTSDIR)/bench_p26_wt_usage_logging.svg
+
+## Plot p26 write-throughput stack benchmarks
+.PHONY: plot-p26-wt-stack
+plot-p26-wt-stack: \
+		plot-p26-wt-stack-linear \
+		plot-p26-wt-stack-random \
+		plot-p26-wt-stack-many \
+		plot-p26-wt-stack-logging
+
+## Plot p26 write-throughput stack linear benchmarks
+.PHONY: plot-p26-wt-stack-linear
+plot-p26-wt-stack-linear: \
+		$(PLOTSDIR)/bench_p26_wt_stack_linear.svg
+
+## Plot p26 write-throughput stack random benchmarks
+.PHONY: plot-p26-wt-stack-random
+plot-p26-wt-stack-random: \
+		$(PLOTSDIR)/bench_p26_wt_stack_random.svg
+
+## Plot p26 write-throughput stack many benchmarks
+.PHONY: plot-p26-wt-stack-many
+plot-p26-wt-stack-many: \
+		$(PLOTSDIR)/bench_p26_wt_stack_many.svg
+
+## Plot p26 write-throughput stack logging benchmarks
+.PHONY: plot-p26-wt-stack-logging
+plot-p26-wt-stack-logging: \
+		$(PLOTSDIR)/bench_p26_wt_stack_logging.svg
+
+## Plot p26 write-throughput heap benchmarks
+.PHONY: plot-p26-wt-heap
+plot-p26-wt-heap: \
+		plot-p26-wt-heap-linear \
+		plot-p26-wt-heap-random \
+		plot-p26-wt-heap-many \
+		plot-p26-wt-heap-logging
+
+## Plot p26 write-throughput heap linear benchmarks
+.PHONY: plot-p26-wt-heap-linear
+plot-p26-wt-heap-linear: \
+		$(PLOTSDIR)/bench_p26_wt_heap_linear.svg
+
+## Plot p26 write-throughput heap random benchmarks
+.PHONY: plot-p26-wt-heap-random
+plot-p26-wt-heap-random: \
+		$(PLOTSDIR)/bench_p26_wt_heap_random.svg
+
+## Plot p26 write-throughput heap many benchmarks
+.PHONY: plot-p26-wt-heap-many
+plot-p26-wt-heap-many: \
+		$(PLOTSDIR)/bench_p26_wt_heap_many.svg
+
+## Plot p26 write-throughput heap logging benchmarks
+.PHONY: plot-p26-wt-heap-logging
+plot-p26-wt-heap-logging: \
+		$(PLOTSDIR)/bench_p26_wt_heap_logging.svg
 
 
 
@@ -1397,6 +1458,30 @@ $(eval $(call PLOT_P26_T_RULE,$\
 		SIZE,$\
 		$(P26_T_SIZES),$\
 		usage,$\
+		--y2 --yunits=B))
+
+# p26 throughput stack rules
+$(eval $(call PLOT_P26_T_RULE,$\
+		$(PLOTSDIR)/bench_p26_wt_stack_%.svg,$\
+		$(foreach fs, $(BENCH_FSS),$\
+			$(foreach sim, $(BENCH_SIMS),$\
+				$(RESULTSDIR)/bench_p26_wt_%.$(fs).$(sim).csv)),$\
+		"$$* file writes - stack usage",$\
+		SIZE,$\
+		$(P26_T_SIZES),$\
+		stack,$\
+		--y2 --yunits=B))
+
+# p26 throughput heap rules
+$(eval $(call PLOT_P26_T_RULE,$\
+		$(PLOTSDIR)/bench_p26_wt_heap_%.svg,$\
+		$(foreach fs, $(BENCH_FSS),$\
+			$(foreach sim, $(BENCH_SIMS),$\
+				$(RESULTSDIR)/bench_p26_wt_%.$(fs).$(sim).csv)),$\
+		"$$* file writes - heap usage",$\
+		SIZE,$\
+		$(P26_T_SIZES),$\
+		heap,$\
 		--y2 --yunits=B))
 
 

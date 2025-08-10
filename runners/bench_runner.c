@@ -604,6 +604,150 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size) {
 }
 
 
+// stack hooks
+uint8_t *bench_stack_watermark_enter;
+uint8_t *bench_stack_watermark_depth;
+size_t bench_stack_depth;
+
+// call me when entering a bench!
+__attribute__((noinline))
+void bench_stack_enter(void) {
+    bench_stack_watermark_enter = __builtin_frame_address(0);
+    bench_stack_watermark_depth = bench_stack_watermark_enter;
+    bench_stack_depth = 0;
+}
+
+// call me when entering a bd op!
+__attribute__((noinline))
+void bench_stack_watermark(void) {
+    uint8_t *watermark = __builtin_frame_address(0);
+
+    // keep track of the deepest stack
+    ssize_t depth = watermark - bench_stack_watermark_enter;
+    if (depth < 0) {
+        depth = -depth;
+    }
+    if ((size_t)depth > bench_stack_depth) {
+        bench_stack_watermark_depth = watermark;
+        bench_stack_depth = depth;
+    }
+}
+
+size_t bench_stack(void) {
+    return bench_stack_depth;
+}
+
+
+// malloc hooks
+uint32_t bench_heap_inbench = 0;
+size_t bench_heap_watermark = 0;
+size_t bench_heap_depth = 0;
+
+// call me when entering/exiting a bench!
+void bench_heap_enter(void) {
+    bench_heap_inbench = 1;
+    bench_heap_watermark = 0;
+    bench_heap_depth = 0;
+}
+
+void bench_heap_exit(void) {
+    bench_heap_inbench = 0;
+    if (bench_heap_watermark != 0) {
+        fprintf(stderr, "warning: memory leak detected (%zd > 0)\n",
+                bench_heap_watermark);
+    }
+}
+
+// call me when entering/exiting a bd op!
+void bench_heap_pause(void) {
+    // haha, a little 32-bit stack
+    bench_heap_inbench <<= 1;
+}
+
+void bench_heap_resume(void) {
+    bench_heap_inbench >>= 1;
+}
+
+void bench_heap_inc(size_t size) {
+    if (bench_heap_inbench & 1) {
+        bench_heap_watermark += size;
+        // keep track of the deepest heap
+        if (bench_heap_watermark > bench_heap_depth) {
+            bench_heap_depth = bench_heap_watermark;
+        }
+    }
+}
+
+void bench_heap_dec(size_t size) {
+    if (bench_heap_inbench & 1) {
+        assert(bench_heap_watermark >= size);
+        bench_heap_watermark -= size;
+    }
+}
+
+size_t bench_heap(void) {
+    return bench_heap_depth;
+}
+
+// __real_malloc stubs, gcc's --wrap aliases these to the original
+// symbols
+extern void *__real_malloc(size_t size);
+extern void __real_free(void *p);
+extern void *__real_realloc(void *p, size_t size);
+
+// the actual malloc hooks
+//
+// these only work if wrapped via gcc's --wrap
+void *__wrap_malloc(size_t size) {
+    // prefix with allocation size, note we use uintptr_t to hopefully
+    // keep things aligned
+    uintptr_t *p_ = __real_malloc(sizeof(uintptr_t) + size);
+    if (!p_) {
+        return NULL;
+    }
+
+    bench_heap_inc(size);
+    *p_ = size;
+    return p_ + 1;
+}
+
+void __wrap_free(void *p) {
+    if (!p) {
+        return;
+    }
+
+    uintptr_t *p_ = ((uintptr_t*)p) - 1;
+    size_t size = *p_;
+    bench_heap_dec(size);
+
+    __real_free(p_);
+}
+
+void *__wrap_realloc(void *p, size_t size) {
+    uintptr_t *p_;
+    size_t old;
+    if (p) {
+        p_ = ((uintptr_t*)p) - 1;
+        old = *p_;
+    } else {
+        p_ = NULL;
+        old = 0;
+    }
+
+    assert(size != 0);
+    p_ = __real_realloc(p_, sizeof(uintptr_t) + size);
+    if (!p_) {
+        return NULL;
+    }
+
+    bench_heap_dec(old);
+    bench_heap_inc(size);
+    *p_ = size;
+    return p_ + 1;
+}
+
+
+
 // bench recording state
 typedef struct bench_record {
     const char *m;
@@ -624,6 +768,8 @@ void bench_reset(struct lfs3_cfg *cfg) {
 }
 
 void bench_start(const char *m, uintmax_t n) {
+    bench_heap_pause();
+
     // measure current read/prog/erase
     assert(bench_cfg);
     lfs3_emubd_sio_t readed = lfs3_emubd_readed(bench_cfg);
@@ -644,9 +790,13 @@ void bench_start(const char *m, uintmax_t n) {
     record->last_readed = readed;
     record->last_proged = proged;
     record->last_erased = erased;
+
+    bench_heap_resume();
 }
 
 void bench_stop(const char *m) {
+    bench_heap_pause();
+
     // measure current read/prog/erase
     assert(bench_cfg);
     lfs3_emubd_sio_t readed = lfs3_emubd_readed(bench_cfg);
@@ -672,6 +822,8 @@ void bench_stop(const char *m) {
                     &bench_records[i+1],
                     bench_record_count-(i+1));
             bench_record_count -= 1;
+
+            bench_heap_resume();
             return;
         }
     }
@@ -684,19 +836,27 @@ void bench_stop(const char *m) {
 }
 
 void bench_result(const char *m, uintmax_t n, uintmax_t result) {
+    bench_heap_pause();
+
     // we just print these directly
     printf("benched %s %zd %"PRIu64"\n",
             m,
             n,
             result);
+
+    bench_heap_resume();
 }
 
 void bench_fresult(const char *m, uintmax_t n, double result) {
+    bench_heap_pause();
+
     // we just print these directly
     printf("benched %s %zd %.6f\n",
             m,
             n,
             result);
+
+    bench_heap_resume();
 }
 
 
@@ -1317,6 +1477,42 @@ static void list_implicit_defines(void) {
 
 
 
+// bench bd wrappers to intercept bd ops
+int bench_bd_read(const struct lfs3_cfg *cfg, lfs3_block_t block,
+        lfs3_off_t off, void *buffer, lfs3_size_t size) {
+    bench_stack_watermark();
+    bench_heap_pause();
+    int err = lfs3_emubd_read(cfg, block, off, buffer, size);
+    bench_heap_resume();
+    return err;
+}
+
+int bench_bd_prog(const struct lfs3_cfg *cfg, lfs3_block_t block,
+        lfs3_off_t off, const void *buffer, lfs3_size_t size) {
+    bench_stack_watermark();
+    bench_heap_pause();
+    int err = lfs3_emubd_prog(cfg, block, off, buffer, size);
+    bench_heap_resume();
+    return err;
+}
+
+int bench_bd_erase(const struct lfs3_cfg *cfg, lfs3_block_t block) {
+    bench_stack_watermark();
+    bench_heap_pause();
+    int err = lfs3_emubd_erase(cfg, block);
+    bench_heap_resume();
+    return err;
+}
+
+int bench_bd_sync(const struct lfs3_cfg *cfg) {
+    bench_stack_watermark();
+    bench_heap_pause();
+    int err = lfs3_emubd_sync(cfg);
+    bench_heap_resume();
+    return err;
+}
+
+
 // hacky macro to get to the bench config from a specific filesystem cfg
 #define BENCH_CFG_FROM(field, p) \
         (const struct bench_cfg*)( \
@@ -1326,49 +1522,49 @@ static void list_implicit_defines(void) {
 
 // lfs2 -> lfs3 bd wrapper
 #ifdef LFS2
-static int bench_lfs2bd_read(const struct lfs2_config *cfg_lfs2,
+static int bench_bd_lfs2_read(const struct lfs2_config *cfg_lfs2,
         lfs2_block_t block, lfs2_off_t off,
         void *buffer, lfs2_size_t size) {
     const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
-    return lfs3_emubd_read(&cfg->cfg, block, off, buffer, size);
+    return bench_bd_read(&cfg->cfg, block, off, buffer, size);
 }
 
-static int bench_lfs2bd_prog(const struct lfs2_config *cfg_lfs2,
+static int bench_bd_lfs2_prog(const struct lfs2_config *cfg_lfs2,
         lfs2_block_t block, lfs2_off_t off,
         const void *buffer, lfs2_size_t size) {
     const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
-    return lfs3_emubd_prog(&cfg->cfg, block, off, buffer, size);
+    return bench_bd_prog(&cfg->cfg, block, off, buffer, size);
 }
 
-static int bench_lfs2bd_erase(const struct lfs2_config *cfg_lfs2,
+static int bench_bd_lfs2_erase(const struct lfs2_config *cfg_lfs2,
         lfs2_block_t block) {
     const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
-    return lfs3_emubd_erase(&cfg->cfg, block);
+    return bench_bd_erase(&cfg->cfg, block);
 }
 
-static int bench_lfs2bd_sync(const struct lfs2_config *cfg_lfs2) {
+static int bench_bd_lfs2_sync(const struct lfs2_config *cfg_lfs2) {
     const struct bench_cfg *cfg = BENCH_CFG_FROM(cfg_lfs2, cfg_lfs2);
-    return lfs3_emubd_sync(&cfg->cfg);
+    return bench_bd_sync(&cfg->cfg);
 }
 #endif
 
 // spiffs -> lfs3 bd wrapper
 #ifdef SPIFFS
-static uint8_t *bench_spiffsbd_buffer = NULL;
-static uint8_t *bench_spiffsbd_buffer_size = 0;
+static uint8_t *bench_bd_spiffs_buffer = NULL;
+static uint8_t *bench_bd_spiffs_buffer_size = 0;
 
-static s32_t bench_spiffsbd_read(struct spiffs_t *spiffs,
+static s32_t bench_bd_spiffs_read(struct spiffs_t *spiffs,
         u32_t addr, u32_t size, u8_t *dst) {
     const struct bench_cfg *cfg = spiffs->user_data;
     lfs3_block_t block = addr / cfg->cfg.block_size;
     lfs3_size_t off = addr % cfg->cfg.block_size;
     // spiffs expect byte reads, so we may need to read into a buffer
     if (cfg->cfg.read_size == 1) {
-        return lfs3_emubd_read(&cfg->cfg, block, off, dst, size);
+        return bench_bd_read(&cfg->cfg, block, off, dst, size);
     } else {
-        if (bench_spiffsbd_buffer_size < cfg->cfg.read_size) {
-            free(bench_spiffsbd_buffer);
-            bench_spiffsbd_buffer = malloc(cfg->cfg.read_size);
+        if (bench_bd_spiffs_buffer_size < cfg->cfg.read_size) {
+            free(bench_bd_spiffs_buffer);
+            bench_bd_spiffs_buffer = malloc(cfg->cfg.read_size);
         }
 
         while (size > 0) {
@@ -1377,13 +1573,13 @@ static s32_t bench_spiffsbd_read(struct spiffs_t *spiffs,
                     size,
                     cfg->cfg.read_size - (off - aligned_off));
 
-            int err = lfs3_emubd_read(&cfg->cfg, block, aligned_off,
-                    bench_spiffsbd_buffer, cfg->cfg.read_size);
+            int err = bench_bd_read(&cfg->cfg, block, aligned_off,
+                    bench_bd_spiffs_buffer, cfg->cfg.read_size);
             if (err) {
                 return err;
             }
 
-            memcpy(dst, bench_spiffsbd_buffer + (off - aligned_off), d);
+            memcpy(dst, bench_bd_spiffs_buffer + (off - aligned_off), d);
             dst += d;
             size -= d;
             off += d;
@@ -1393,18 +1589,18 @@ static s32_t bench_spiffsbd_read(struct spiffs_t *spiffs,
     }
 }
 
-static s32_t bench_spiffsbd_write(struct spiffs_t *spiffs,
+static s32_t bench_bd_spiffs_write(struct spiffs_t *spiffs,
         u32_t addr, u32_t size, u8_t *src) {
     const struct bench_cfg *cfg = spiffs->user_data;
     lfs3_block_t block = addr / cfg->cfg.block_size;
     lfs3_size_t off = addr % cfg->cfg.block_size;
     // spiffs expect byte reads, so we may need to read into a buffer
     if (cfg->cfg.read_size == 1) {
-        return lfs3_emubd_prog(&cfg->cfg, block, off, src, size);
+        return bench_bd_prog(&cfg->cfg, block, off, src, size);
     } else {
-        if (bench_spiffsbd_buffer_size < cfg->cfg.prog_size) {
-            free(bench_spiffsbd_buffer);
-            bench_spiffsbd_buffer = malloc(cfg->cfg.prog_size);
+        if (bench_bd_spiffs_buffer_size < cfg->cfg.prog_size) {
+            free(bench_bd_spiffs_buffer);
+            bench_bd_spiffs_buffer = malloc(cfg->cfg.prog_size);
         }
 
         while (size > 0) {
@@ -1412,11 +1608,11 @@ static s32_t bench_spiffsbd_write(struct spiffs_t *spiffs,
             lfs3_ssize_t d = lfs3_min(
                     size,
                     cfg->cfg.prog_size - (off - aligned_off));
-            memset(bench_spiffsbd_buffer, 0xff, cfg->cfg.prog_size);
-            memcpy(bench_spiffsbd_buffer + (off - aligned_off), src, d);
+            memset(bench_bd_spiffs_buffer, 0xff, cfg->cfg.prog_size);
+            memcpy(bench_bd_spiffs_buffer + (off - aligned_off), src, d);
 
-            int err = lfs3_emubd_prog(&cfg->cfg, block, aligned_off,
-                    bench_spiffsbd_buffer, cfg->cfg.prog_size);
+            int err = bench_bd_prog(&cfg->cfg, block, aligned_off,
+                    bench_bd_spiffs_buffer, cfg->cfg.prog_size);
             if (err) {
                 return err;
             }
@@ -1430,7 +1626,7 @@ static s32_t bench_spiffsbd_write(struct spiffs_t *spiffs,
     }
 }
 
-static s32_t bench_spiffsbd_erase(struct spiffs_t *spiffs,
+static s32_t bench_bd_spiffs_erase(struct spiffs_t *spiffs,
         u32_t addr, u32_t size) {
     const struct bench_cfg *cfg = spiffs->user_data;
     lfs3_block_t block = addr / cfg->cfg.block_size;
@@ -1439,13 +1635,13 @@ static s32_t bench_spiffsbd_erase(struct spiffs_t *spiffs,
     assert(off == 0);
     // we expect block size here?
     assert(size == cfg->cfg.block_size);
-    return lfs3_emubd_erase(&cfg->cfg, block);
+    return bench_bd_erase(&cfg->cfg, block);
 }
 #endif
 
 // yaffs2 -> lfs3 bd wrapper
 #ifdef YAFFS2
-static int bench_yaffs2bd_readchunk(struct yaffs_dev *yaffs2, int page,
+static int bench_bd_yaffs2_readchunk(struct yaffs_dev *yaffs2, int page,
         uint8_t *data, int data_len,
         uint8_t *oob, int oob_len,
         enum yaffs_ecc_result *ecc_result) {
@@ -1456,7 +1652,7 @@ static int bench_yaffs2bd_readchunk(struct yaffs_dev *yaffs2, int page,
     const struct bench_cfg *cfg = yaffs2->driver_context;
     lfs3_block_t block = page / (BLOCK_SIZE / PAGE_SIZE);
     lfs3_off_t off = (page % (BLOCK_SIZE / PAGE_SIZE)) * PAGE_SIZE;
-    int err = lfs3_emubd_read(&cfg->cfg, block, off, data, data_len);
+    int err = bench_bd_read(&cfg->cfg, block, off, data, data_len);
     if (err) {
         return YAFFS_FAIL;
     }
@@ -1465,7 +1661,7 @@ static int bench_yaffs2bd_readchunk(struct yaffs_dev *yaffs2, int page,
     return YAFFS_OK;
 }
 
-static int bench_yaffs2bd_writechunk(struct yaffs_dev *yaffs2, int page,
+static int bench_bd_yaffs2_writechunk(struct yaffs_dev *yaffs2, int page,
         const uint8_t *data, int data_len,
         const uint8_t *oob, int oob_len) {
     (void)oob;
@@ -1475,7 +1671,7 @@ static int bench_yaffs2bd_writechunk(struct yaffs_dev *yaffs2, int page,
     const struct bench_cfg *cfg = yaffs2->driver_context;
     lfs3_block_t block = page / (BLOCK_SIZE / PAGE_SIZE);
     lfs3_off_t off = (page % (BLOCK_SIZE / PAGE_SIZE)) * PAGE_SIZE;
-    int err = lfs3_emubd_prog(&cfg->cfg, block, off, data, data_len);
+    int err = bench_bd_prog(&cfg->cfg, block, off, data, data_len);
     if (err) {
         return YAFFS_FAIL;
     }
@@ -1483,9 +1679,9 @@ static int bench_yaffs2bd_writechunk(struct yaffs_dev *yaffs2, int page,
     return YAFFS_OK;
 }
 
-static int bench_yaffs2bd_erase(struct yaffs_dev *yaffs2, int block) {
+static int bench_bd_yaffs2_erase(struct yaffs_dev *yaffs2, int block) {
     const struct bench_cfg *cfg = yaffs2->driver_context;
-    int err = lfs3_emubd_erase(&cfg->cfg, block);
+    int err = bench_bd_erase(&cfg->cfg, block);
     if (err) {
         return YAFFS_FAIL;
     }
@@ -1493,7 +1689,7 @@ static int bench_yaffs2bd_erase(struct yaffs_dev *yaffs2, int block) {
     return YAFFS_OK;
 }
 
-static int bench_yaffs2bd_markbad(struct yaffs_dev *yaffs2, int block) {
+static int bench_bd_yaffs2_markbad(struct yaffs_dev *yaffs2, int block) {
     (void)yaffs2;
     (void)block;
     // let's just assume this can't happen for now
@@ -1501,7 +1697,7 @@ static int bench_yaffs2bd_markbad(struct yaffs_dev *yaffs2, int block) {
     __builtin_unreachable();
 }
 
-static int bench_yaffs2bd_checkbad(struct yaffs_dev *yaffs2, int block) {
+static int bench_bd_yaffs2_checkbad(struct yaffs_dev *yaffs2, int block) {
     (void)yaffs2;
     (void)block;
     return YAFFS_OK;
@@ -1544,10 +1740,10 @@ void perm_run(
         // necessary to make littlefs's bd API work
         .cfg = {
             .context            = &bd,
-            .read               = lfs3_emubd_read,
-            .prog               = lfs3_emubd_prog,
-            .erase              = lfs3_emubd_erase,
-            .sync               = lfs3_emubd_sync,
+            .read               = bench_bd_read,
+            .prog               = bench_bd_prog,
+            .erase              = bench_bd_erase,
+            .sync               = bench_bd_sync,
             BENCH_CFG
             #ifdef LFS3
             BENCH_LFS3_CFG
@@ -1556,18 +1752,18 @@ void perm_run(
         // filesystem-specific cfg structs piggyback here
         #ifdef LFS2
         .cfg_lfs2 = {
-            .read               = bench_lfs2bd_read,
-            .prog               = bench_lfs2bd_prog,
-            .erase              = bench_lfs2bd_erase,
-            .sync               = bench_lfs2bd_sync,
+            .read               = bench_bd_lfs2_read,
+            .prog               = bench_bd_lfs2_prog,
+            .erase              = bench_bd_lfs2_erase,
+            .sync               = bench_bd_lfs2_sync,
             BENCH_LFS2_CFG
         },
         #endif
         #ifdef SPIFFS
         .cfg_spiffs = {
-            .hal_read_f         = bench_spiffsbd_read,
-            .hal_write_f        = bench_spiffsbd_write,
-            .hal_erase_f        = bench_spiffsbd_erase,
+            .hal_read_f         = bench_bd_spiffs_read,
+            .hal_write_f        = bench_bd_spiffs_write,
+            .hal_erase_f        = bench_bd_spiffs_erase,
             BENCH_SPIFFS_CFG
         },
         #endif
@@ -1577,11 +1773,11 @@ void perm_run(
                 BENCH_YAFFS2_CFG
             },
             .drv = {
-                .drv_read_chunk_fn      = bench_yaffs2bd_readchunk,
-                .drv_write_chunk_fn     = bench_yaffs2bd_writechunk,
-                .drv_erase_fn           = bench_yaffs2bd_erase,
-                .drv_mark_bad_fn        = bench_yaffs2bd_markbad,
-                .drv_check_bad_fn       = bench_yaffs2bd_checkbad,
+                .drv_read_chunk_fn      = bench_bd_yaffs2_readchunk,
+                .drv_write_chunk_fn     = bench_bd_yaffs2_writechunk,
+                .drv_erase_fn           = bench_bd_yaffs2_erase,
+                .drv_mark_bad_fn        = bench_bd_yaffs2_markbad,
+                .drv_check_bad_fn       = bench_bd_yaffs2_checkbad,
             },
         },
         #endif
@@ -1603,13 +1799,16 @@ void perm_run(
     }
 
     // run the bench
-    bench_reset(&cfg.cfg);
     printf("running ");
     perm_printid(suite, case_);
     printf("\n");
+    bench_reset(&cfg.cfg);
+    bench_heap_enter();
+    bench_stack_enter();
 
     case_->run(&cfg.cfg);
 
+    bench_heap_exit();
     printf("finished ");
     perm_printid(suite, case_);
     printf("\n");

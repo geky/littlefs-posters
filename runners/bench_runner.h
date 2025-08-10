@@ -140,6 +140,13 @@ void bench_permutation(size_t i, uint32_t *buffer, size_t size);
 #define BENCH_FACTORIAL(x) bench_factorial(x)
 #define BENCH_PERMUTATION(i, buffer, size) bench_permutation(i, buffer, size)
 
+// get the maximum stack/heap usage for this bench run
+size_t bench_stack(void);
+size_t bench_heap(void);
+
+#define BENCH_STACK() bench_stack()
+#define BENCH_HEAP() bench_heap()
+
 
 
 

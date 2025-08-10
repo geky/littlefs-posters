@@ -159,6 +159,10 @@ code = '''
     BENCH_START("write", written);
     BENCH_STOP("write");
 
+    // report the total stack/heap usage after the benchmark
+    BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("heap", written, BENCH_HEAP());
+
     // find the total disk usage after the benchmark
     #if defined(LFS3)
     uintmax_t usage = bench_helpers_usage(&lfs3);
@@ -323,6 +327,10 @@ code = '''
     BENCH_START("write", written);
     BENCH_STOP("write");
 
+    // report the total stack/heap usage after the benchmark
+    BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("heap", written, BENCH_HEAP());
+
     // find the total disk usage after the benchmark
     #if defined(LFS3)
     uintmax_t usage = bench_helpers_usage(&lfs3);
@@ -474,6 +482,10 @@ code = '''
     // TODO we should really move n to BENCH_STOP
     BENCH_START("write", written);
     BENCH_STOP("write");
+
+    // report the total stack/heap usage after the benchmark
+    BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("heap", written, BENCH_HEAP());
 
     // find the total disk usage after the benchmark
     #if defined(LFS3)
@@ -689,6 +701,10 @@ code = '''
     // TODO we should really move n to BENCH_STOP
     BENCH_START("write", written);
     BENCH_STOP("write");
+
+    // report the total stack/heap usage after the benchmark
+    BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("heap", written, BENCH_HEAP());
 
     // find the total disk usage after the benchmark
     #if defined(LFS3)
