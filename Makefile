@@ -974,6 +974,46 @@ $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
 		-fbench_erased=0 \
 		-o$@)
 
+# simulated RAM results
+#
+# this includes stack + heap + any data sections
+#
+# $1 - target
+# $2 - csv files
+# $3 - fs type/version
+#
+define BENCH_P26_RAM_RULE
+$1: $$(BENCH_$(U_$3)_RUNNER) $2
+	-$$(strip ./scripts/csv.py \
+		<(./scripts/csv.py $$(filter-out $$<,$$^) \
+			-fn \
+			-fbench_readed \
+			-fbench_proged \
+			-fbench_erased \
+			-Dbench_creaded='*' \
+			-Dbench_cproged='*' \
+			-Dbench_cerased='*' \
+			-o-) \
+		-Dm=heap,stack \
+		-Bm=ram \
+		-fn \
+		-fbench_readed="bench_readed + $$$$( \
+			./scripts/data.py $(BENCH_$(U_$(fs))_RUNNER) -bfunction -o- \
+				| $(BENCH_$(U_$(fs))_FILTER) \
+				| ./scripts/csv.py - -fdata_size \
+				| awk 'NR==2 {print ($$$$2 !~ /-/) ? $$$$2 : 0}')" \
+		-fbench_proged=0 \
+		-fbench_erased=0 \
+		-o$$@)
+endef
+
+$(foreach fs, $(BENCH_FSS),$\
+	$(foreach sim, $(BENCH_SIMS),$\
+		$(eval $(call BENCH_P26_RAM_RULE,$\
+				$(RESULTSDIR)/bench_%.$(fs).$(sim).ram.csv,$\
+				$(RESULTSDIR)/bench_%.$(fs).$(sim).csv,$\
+				$(fs)))))
+
 # amortized results
 $(RESULTSDIR)/bench_%.amor.csv: $(RESULTSDIR)/bench_%.csv
 	-$(strip ./scripts/csv.py $^ \
@@ -1083,7 +1123,8 @@ PLOT_RULES ?= \
 		plot-p26-rt \
 		plot-p26-wt-usage \
 		plot-p26-wt-stack \
-		plot-p26-wt-heap
+		plot-p26-wt-heap \
+		plot-p26-wt-ram
 
 ## Plot all benchmarks!
 .PHONY: plot plot-all
@@ -1290,6 +1331,34 @@ plot-p26-wt-heap-many: \
 .PHONY: plot-p26-wt-heap-logging
 plot-p26-wt-heap-logging: \
 		$(PLOTSDIR)/bench_p26_wt_heap_logging.svg
+
+## Plot p26 write-throughput ram benchmarks
+.PHONY: plot-p26-wt-ram
+plot-p26-wt-ram: \
+		plot-p26-wt-ram-linear \
+		plot-p26-wt-ram-random \
+		plot-p26-wt-ram-many \
+		plot-p26-wt-ram-logging
+
+## Plot p26 write-throughput ram linear benchmarks
+.PHONY: plot-p26-wt-ram-linear
+plot-p26-wt-ram-linear: \
+		$(PLOTSDIR)/bench_p26_wt_ram_linear.svg
+
+## Plot p26 write-throughput ram random benchmarks
+.PHONY: plot-p26-wt-ram-random
+plot-p26-wt-ram-random: \
+		$(PLOTSDIR)/bench_p26_wt_ram_random.svg
+
+## Plot p26 write-throughput ram many benchmarks
+.PHONY: plot-p26-wt-ram-many
+plot-p26-wt-ram-many: \
+		$(PLOTSDIR)/bench_p26_wt_ram_many.svg
+
+## Plot p26 write-throughput ram logging benchmarks
+.PHONY: plot-p26-wt-ram-logging
+plot-p26-wt-ram-logging: \
+		$(PLOTSDIR)/bench_p26_wt_ram_logging.svg
 
 
 
@@ -1545,6 +1614,18 @@ $(eval $(call PLOT_P26_T_RULE,$\
 		SIZE,$\
 		$(P26_T_SIZES),$\
 		heap,$\
+		--y2 --yunits=B))
+
+# p26 throughput ram rules
+$(eval $(call PLOT_P26_T_RULE,$\
+		$(PLOTSDIR)/bench_p26_wt_ram_%.svg,$\
+		$(foreach fs, $(BENCH_FSS),$\
+			$(foreach sim, $(BENCH_SIMS),$\
+				$(RESULTSDIR)/bench_p26_wt_%.$(fs).$(sim).ram.csv)),$\
+		"$$* file writes - RAM usage",$\
+		SIZE,$\
+		$(P26_T_SIZES),$\
+		ram,$\
 		--y2 --yunits=B))
 
 
