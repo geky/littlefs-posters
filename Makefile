@@ -105,12 +105,13 @@ NAND_PROG_TIME  ?= 141    # tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
 NAND_ERASE_TIME ?= 15     # tBE=2 ms, block=131072 (2 ms / 131072)
 
 
+# filesystems to measure code size
+CODEMAP_FSS ?= lfs3 lfs3nb lfs2 lfs1 spiffs yaffs2
+CODEMAP_RDONLY_FSS ?= lfs3 lfs3nb lfs2 spiffs
+
 # filesystems/sims to benchmark
 BENCH_FSS ?= lfs3 lfs3nb lfs2 spiffs yaffs2
 BENCH_SIMS ?= emmc nor nand
-
-CODEMAP_FSS ?= lfs3 lfs3nb lfs2 lfs1 spiffs yaffs2
-CODEMAP_RDONLY_FSS ?= lfs3 lfs3nb lfs2 spiffs
 
 # poor man's uppercase
 U_lfs3   = LFS3
@@ -142,47 +143,99 @@ I_yaffs2 = 5
 
 # find source files
 
-# littlefs v3 sources
-CODEMAP_LFS3_CFLAGS += -DLFS3 -DLFS3_YES_BMAP=1
+# common benches
+BENCHES ?= $(wildcard benches/*.toml)
+
+# littlefs3 bench-runner and sources
+BENCH_LFS3_RUNNER ?= $(BUILDDIR)/bench_lfs3_runner
+BENCH_LFS3_FILTER ?= sed -n -e'1p' -e'/\<lfs3_emubd/d' -e'/\<lfs3/p'
+BENCH_LFS3_CFLAGS += -DLFS3=1 -DLFS3_YES_BMAP=1
 CODEMAP_LFS3_SRC ?= $(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs3/*.c))
-CODEMAP_LFS3_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.o)
-CODEMAP_LFS3_DEP := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.d)
-CODEMAP_LFS3_ASM := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.s)
-CODEMAP_LFS3_CI  := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3.ci)
+CODEMAP_LFS3_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/%.lfs3.o)
+CODEMAP_LFS3_DEP := $(CODEMAP_LFS3_OBJ:.o=.d)
+CODEMAP_LFS3_CI  := $(CODEMAP_LFS3_OBJ:.o=.ci)
+BENCH_LFS3_SRC ?= \
+		$(CODEMAP_LFS3_SRC) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
+		runners/bench_runner.c \
+		benches/bench_helpers.c
+BENCH_LFS3_B   := \
+		$(BENCH_LFS3_SRC:%.c=$(BUILDDIR)/%.b.c) \
+		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
+BENCH_LFS3_A   := $(BENCH_LFS3_B:.b.c=.b.a.c)
+BENCH_LFS3_OBJ := $(BENCH_LFS3_A:.b.a.c=.lfs3.b.a.o)
+BENCH_LFS3_DEP := $(BENCH_LFS3_OBJ:.o=.d)
+BENCH_LFS3_CI  := $(BENCH_LFS3_OBJ:.o=.ci)
 
-# littlefs v3 no-bmap sources (well, really just object targets)
-CODEMAP_LFS3NB_CFLAGS += -DLFS3=1
-CODEMAP_LFS3NB_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.o)
-CODEMAP_LFS3NB_DEP := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.d)
-CODEMAP_LFS3NB_ASM := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.s)
-CODEMAP_LFS3NB_CI  := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/thumb/%.lfs3nb.ci)
+# littlefs3 no-bmap bench-runner
+BENCH_LFS3NB_RUNNER ?= $(BUILDDIR)/bench_lfs3nb_runner
+BENCH_LFS3NB_FILTER ?= $(BENCH_LFS3_FILTER)
+BENCH_LFS3NB_CFLAGS += -DLFS3=1
+CODEMAP_LFS3NB_OBJ := $(CODEMAP_LFS3_SRC:%.c=$(BUILDDIR)/%.lfs3nb.o)
+CODEMAP_LFS3NB_DEP := $(CODEMAP_LFS3NB_OBJ:.o=.d)
+CODEMAP_LFS3NB_CI  := $(CODEMAP_LFS3NB_OBJ:.o=.ci)
+BENCH_LFS3NB_OBJ := $(BENCH_LFS3_A:.b.a.c=.lfs3nb.b.a.o)
+BENCH_LFS3NB_DEP := $(BENCH_LFS3NB_OBJ:.o=.d)
+BENCH_LFS3NB_CI  := $(BENCH_LFS3NB_OBJ:.o=.ci)
 
-# littlefs v2 sources
-CODEMAP_LFS2_CFLAGS += -DLFS2=1
+# littlefs2 bench-runner and sources
+BENCH_LFS2_RUNNER ?= $(BUILDDIR)/bench_lfs2_runner
+BENCH_LFS2_FILTER ?= sed -n -e'1p' -e'/\<lfs2/p'
+BENCH_LFS2_CFLAGS += -DLFS2=1
 CODEMAP_LFS2_SRC ?= $(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs2/*.c))
-CODEMAP_LFS2_OBJ := $(CODEMAP_LFS2_SRC:%.c=$(BUILDDIR)/thumb/%.lfs2.o)
-CODEMAP_LFS2_DEP := $(CODEMAP_LFS2_SRC:%.c=$(BUILDDIR)/thumb/%.lfs2.d)
-CODEMAP_LFS2_ASM := $(CODEMAP_LFS2_SRC:%.c=$(BUILDDIR)/thumb/%.lfs2.s)
-CODEMAP_LFS2_CI  := $(CODEMAP_LFS2_SRC:%.c=$(BUILDDIR)/thumb/%.lfs2.ci)
+CODEMAP_LFS2_OBJ := $(CODEMAP_LFS2_SRC:%.c=$(BUILDDIR)/%.lfs2.o)
+CODEMAP_LFS2_DEP := $(CODEMAP_LFS2_OBJ:.o=.d)
+CODEMAP_LFS2_CI  := $(CODEMAP_LFS2_OBJ:.o=.ci)
+BENCH_LFS2_SRC ?= \
+		$(CODEMAP_LFS2_SRC) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
+		runners/bench_runner.c \
+		benches/bench_helpers.c
+BENCH_LFS2_B   := \
+		$(BENCH_LFS2_SRC:%.c=$(BUILDDIR)/%.b.c) \
+		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
+BENCH_LFS2_A   := $(BENCH_LFS2_B:.b.c=.b.a.c)
+BENCH_LFS2_OBJ := $(BENCH_LFS2_A:.b.a.c=.lfs2.b.a.o)
+BENCH_LFS2_DEP := $(BENCH_LFS2_OBJ:.o=.d)
+BENCH_LFS2_CI  := $(BENCH_LFS2_OBJ:.o=.ci)
 
-# littlefs v1 sources
-CODEMAP_LFS1_CFLAGS += -DLFS1=1
+# littlefs1 sources
+BENCH_LFS1_CFLAGS += -DLFS1=1
 CODEMAP_LFS1_SRC ?= $(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs1/*.c))
-CODEMAP_LFS1_OBJ := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/thumb/%.lfs1.o)
-CODEMAP_LFS1_DEP := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/thumb/%.lfs1.d)
-CODEMAP_LFS1_ASM := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/thumb/%.lfs1.s)
-CODEMAP_LFS1_CI  := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/thumb/%.lfs1.ci)
+CODEMAP_LFS1_OBJ := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/%.lfs1.o)
+CODEMAP_LFS1_DEP := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/%.lfs1.d)
+CODEMAP_LFS1_CI  := $(CODEMAP_LFS1_SRC:%.c=$(BUILDDIR)/%.lfs1.ci)
 
-# spiffs sources
-CODEMAP_SPIFFS_CFLAGS += -DSPIFFS=1
+# spiffs bench-runner and sources
+BENCH_SPIFFS_RUNNER ?= $(BUILDDIR)/bench_spiffs_runner
+BENCH_SPIFFS_FILTER ?= sed -n -e'1p' -e'/\<SPIFFS/p'
+BENCH_SPIFFS_CFLAGS += -DSPIFFS=1
 CODEMAP_SPIFFS_SRC ?= \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard spiffs/src/*.c))
-CODEMAP_SPIFFS_OBJ := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.o)
-CODEMAP_SPIFFS_DEP := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.d)
-CODEMAP_SPIFFS_ASM := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.s)
-CODEMAP_SPIFFS_CI  := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/thumb/%.spiffs.ci)
+CODEMAP_SPIFFS_OBJ := $(CODEMAP_SPIFFS_SRC:%.c=$(BUILDDIR)/%.spiffs.o)
+CODEMAP_SPIFFS_DEP := $(CODEMAP_SPIFFS_OBJ:.o=.d)
+CODEMAP_SPIFFS_CI  := $(CODEMAP_SPIFFS_OBJ:.o=.ci)
+BENCH_SPIFFS_SRC ?= \
+		$(CODEMAP_SPIFFS_SRC) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
+		runners/bench_runner.c \
+		benches/bench_helpers.c
+BENCH_SPIFFS_B   := \
+		$(BENCH_SPIFFS_SRC:%.c=$(BUILDDIR)/%.b.c) \
+		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
+# let's not stress test prettyasserts right now
+BENCH_SPIFFS_A   := \
+		$(patsubst %.b.c,%.b.a.c, \
+			$(filter-out $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_B))) \
+		$(filter $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_B))
+BENCH_SPIFFS_OBJ := \
+		$(patsubst %.b.a.c,%.spiffs.b.a.o,\
+		$(patsubst %.b.c,%.spiffs.b.o,\
+			$(BENCH_SPIFFS_A)))
+BENCH_SPIFFS_DEP := $(BENCH_SPIFFS_OBJ:.o=.d)
+BENCH_SPIFFS_CI  := $(BENCH_SPIFFS_OBJ:.o=.ci)
 
-# yaffs2 sources
+# yaffs2 bench-runner and sources
 #
 # note yaffs2 needs a preprocessing step with handle_common.sh
 #
@@ -195,122 +248,41 @@ YAFFS2_CORE_E := $(shell grep -o '\-e "[^"]*"' yaffs2/direct/handle_common.sh)
 YAFFS2_DIRECT_C := $(notdir $(wildcard yaffs2/direct/*.c))
 YAFFS2_DIRECT_H := $(filter-out yaffscfg.h,\
 		$(notdir $(wildcard yaffs2/direct/*.h)))
-
-CODEMAP_YAFFS2_CFLAGS += -DYAFFS2=1
-CODEMAP_YAFFS2_SRC ?= \
+BENCH_YAFFS2_RUNNER ?= $(BUILDDIR)/bench_yaffs2_runner
+BENCH_YAFFS2_FILTER ?= sed -n -e'1p' -e'/\<yaffs/p'
+BENCH_YAFFS2_CFLAGS += -DYAFFS2=1
+CODEMAP_YAFFS2_SRC  ?= \
 		$(addprefix yaffs2/core/,$(YAFFS2_CORE_C)) \
 		$(addprefix yaffs2/direct/,$(YAFFS2_DIRECT_C))
 CODEMAP_YAFFS2_SRC_ := \
 		$(addprefix $(BUILDDIR)/yaffs2/,\
 			$(YAFFS2_CORE_C) \
 			$(YAFFS2_DIRECT_C))
-CODEMAP_YAFFS2_SRC__ := \
-		$(patsubst $(BUILDDIR)/yaffs2/%,$(BUILDDIR)/thumb/yaffs2/%,\
-			$(CODEMAP_YAFFS2_SRC_))
-CODEMAP_YAFFS2_OBJ := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.o)
-CODEMAP_YAFFS2_DEP := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.d)
-CODEMAP_YAFFS2_ASM := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.s)
-CODEMAP_YAFFS2_CI  := $(CODEMAP_YAFFS2_SRC__:.c=.yaffs2.ci)
-
-
-# common benches
-BENCHES ?= $(wildcard benches/*.toml)
-
-# littlefs3 bench-runner (the default)
-BENCH_LFS3_RUNNER ?= $(BUILDDIR)/bench_lfs3_runner
-BENCH_LFS3_FILTER ?= sed -n -e'1p' -e'/\<lfs3_emubd/d' -e'/\<lfs3/p'
-BENCH_LFS3_CFLAGS += -DLFS3=1 -DLFS3_YES_BMAP=1
-BENCH_LFS3_SRC ?= \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs3/*.c)) \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
-BENCH_LFS3_B     := \
-		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c) \
-		$(BENCH_LFS3_SRC:%.c=$(BUILDDIR)/%.b.c)
-BENCH_LFS3_A     := $(BENCH_LFS3_B:%.b.c=%.b.a.c)
-BENCH_LFS3_OBJ   := $(BENCH_LFS3_A:%.b.a.c=%.lfs3.b.a.o)
-BENCH_LFS3_DEP   := $(BENCH_LFS3_A:%.b.a.c=%.lfs3.b.a.d)
-BENCH_LFS3_CI    := $(BENCH_LFS3_A:%.b.a.c=%.lfs3.b.a.ci)
-
-# littlefs3 no-bmap bench-runner
-BENCH_LFS3NB_RUNNER ?= $(BUILDDIR)/bench_lfs3nb_runner
-BENCH_LFS3NB_FILTER ?= $(BENCH_LFS3_FILTER)
-BENCH_LFS3NB_CFLAGS += -DLFS3=1
-BENCH_LFS3NB_OBJ   := $(BENCH_LFS3_A:%.b.a.c=%.lfs3nb.b.a.o)
-BENCH_LFS3NB_DEP   := $(BENCH_LFS3_A:%.b.a.c=%.lfs3nb.b.a.d)
-BENCH_LFS3NB_CI    := $(BENCH_LFS3_A:%.b.a.c=%.lfs3nb.b.a.ci)
-
-# littlefs2 bench-runner
-BENCH_LFS2_RUNNER ?= $(BUILDDIR)/bench_lfs2_runner
-BENCH_LFS2_FILTER ?= sed -n -e'1p' -e'/\<lfs2/p'
-BENCH_LFS2_CFLAGS += -DLFS2=1
-BENCH_LFS2_SRC ?= \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard littlefs2/*.c)) \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
-BENCH_LFS2_B     := \
-		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c) \
-		$(BENCH_LFS2_SRC:%.c=$(BUILDDIR)/%.b.c)
-BENCH_LFS2_A     := $(BENCH_LFS2_B:%.b.c=%.b.a.c)
-BENCH_LFS2_OBJ   := $(BENCH_LFS2_A:%.b.a.c=%.lfs2.b.a.o)
-BENCH_LFS2_DEP   := $(BENCH_LFS2_A:%.b.a.c=%.lfs2.b.a.d)
-BENCH_LFS2_CI    := $(BENCH_LFS2_A:%.b.a.c=%.lfs2.b.a.ci)
-
-# spiffs bench-runner
-BENCH_SPIFFS_RUNNER ?= $(BUILDDIR)/bench_spiffs_runner
-BENCH_SPIFFS_FILTER ?= sed -n -e'1p' -e'/\<SPIFFS/p'
-BENCH_SPIFFS_CFLAGS += -DSPIFFS=1
-BENCH_SPIFFS_SRC ?= \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard spiffs/src/*.c)) \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
-BENCH_SPIFFS_B     := \
-		$(BENCHES:%.toml=$(BUILDDIR)/%.spiffs.b.c) \
-		$(BENCH_SPIFFS_SRC:%.c=$(BUILDDIR)/%.spiffs.b.c)
-# let's not stress test prettyasserts right now
-BENCH_SPIFFS_A     := \
-		$(patsubst %.b.c,%.b.a.c, \
-			$(filter-out $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_B))) \
-		$(filter $(BUILDDIR)/spiffs/%,$(BENCH_SPIFFS_B))
-BENCH_SPIFFS_OBJ   := $(BENCH_SPIFFS_A:.c=.o)
-BENCH_SPIFFS_DEP   := $(BENCH_SPIFFS_A:.c=.d)
-BENCH_SPIFFS_CI    := $(BENCH_SPIFFS_A:.c=.ci)
-
-# yaffs2 bench-runner
-#
-# note yaffs2 needs a preprocessing step with handle_common.sh
-#
-BENCH_YAFFS2_RUNNER ?= $(BUILDDIR)/bench_yaffs2_runner
-BENCH_YAFFS2_FILTER ?= sed -n -e'1p' -e'/\<yaffs/p'
-BENCH_YAFFS2_CFLAGS += -DYAFFS2=1
-BENCH_YAFFS2_SRC ?= \
-		$(addprefix yaffs2/core/,$(YAFFS2_CORE_C)) \
-		$(addprefix yaffs2/direct/,$(YAFFS2_DIRECT_C)) \
-		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
+CODEMAP_YAFFS2_OBJ  := $(CODEMAP_YAFFS2_SRC_:.c=.yaffs2.o)
+CODEMAP_YAFFS2_DEP  := $(CODEMAP_YAFFS2_OBJ:.o=.d)
+CODEMAP_YAFFS2_CI   := $(CODEMAP_YAFFS2_OBJ:.o=.ci)
 BENCH_YAFFS2_SRC_ := \
-		$(filter-out yaffs2/%, $(BENCH_YAFFS2_SRC)) \
-		$(addprefix $(BUILDDIR)/yaffs2/,\
-			$(YAFFS2_CORE_C) \
-			$(YAFFS2_DIRECT_C))
-BENCH_YAFFS2_B     := \
-		$(BENCHES:%.toml=$(BUILDDIR)/%.yaffs2.b.c) \
-		$(patsubst %.c,$(BUILDDIR)/%.yaffs2.b.c,\
+		$(CODEMAP_YAFFS2_SRC_) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
+		runners/bench_runner.c \
+		benches/bench_helpers.c
+BENCH_YAFFS2_B 	  := \
+		$(patsubst %.c,$(BUILDDIR)/%.b.c,\
 			$(filter-out $(BUILDDIR)/%,$(BENCH_YAFFS2_SRC_))) \
-		$(patsubst %.c,%.yaffs2.b.c,\
-			$(filter $(BUILDDIR)/%,$(BENCH_YAFFS2_SRC_)))
+		$(patsubst %.c,%.b.c,\
+			$(filter $(BUILDDIR)/%,$(BENCH_YAFFS2_SRC_))) \
+		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
 # let's not stress test prettyasserts right now
-BENCH_YAFFS2_A     := \
+BENCH_YAFFS2_A    := \
 		$(patsubst %.b.c,%.b.a.c, \
 			$(filter-out $(BUILDDIR)/yaffs2/%,$(BENCH_YAFFS2_B))) \
 		$(filter $(BUILDDIR)/yaffs2/%,$(BENCH_YAFFS2_B))
-BENCH_YAFFS2_OBJ   := $(BENCH_YAFFS2_A:.c=.o)
-BENCH_YAFFS2_DEP   := $(BENCH_YAFFS2_A:.c=.d)
-BENCH_YAFFS2_CI    := $(BENCH_YAFFS2_A:.c=.ci)
+BENCH_YAFFS2_OBJ  := \
+		$(patsubst %.b.a.c,%.yaffs2.b.a.o,\
+		$(patsubst %.b.c,%.yaffs2.b.o,\
+			$(BENCH_YAFFS2_A)))
+BENCH_YAFFS2_DEP  := $(BENCH_YAFFS2_OBJ:.o=.d)
+BENCH_YAFFS2_CI   := $(BENCH_YAFFS2_OBJ:.o=.ci)
 
 
 
@@ -362,19 +334,20 @@ CFLAGS += $(foreach d,$(filter LFS1_%,$(.VARIABLES)),-D$d=$($d))
 CFLAGS += $(foreach d,$(filter LFS2_%,$(.VARIABLES)),-D$d=$($d))
 CFLAGS += $(foreach d,$(filter LFS3_%,$(.VARIABLES)),-D$d=$($d))
 
-# cross-compile codemap, we don't really care about x86 code size
-CODEMAP_CC ?= arm-linux-gnueabi-gcc -mthumb --static -Wno-stringop-overflow
-CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_LOG)
-CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_DEBUG)
-CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_INFO)
-CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_WARN)
-CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_ERROR)
-CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_ASSERT)
+# TODO eventually we'll need these for cross compiling
+# # cross-compile codemap, we don't really care about x86 code size
+# CODEMAP_CC ?= arm-linux-gnueabi-gcc -mthumb --static -Wno-stringop-overflow
+# CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_LOG)
+# CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_DEBUG)
+# CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_INFO)
+# CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_WARN)
+# CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_ERROR)
+# CODEMAP_CFLAGS += $(foreach fs,LFS LFS1 LFS2 LFS3,-D$(fs)_NO_ASSERT)
 
-# extra rdonly c flags
-CODEMAP_RDONLY_CFLAGS += -DLFS3_RDONLY
-CODEMAP_RDONLY_CFLAGS += -DLFS2_READONLY
-CODEMAP_RDONLY_CFLAGS += -DSPIFFS_READ_ONLY
+# rdonly c flags
+RDONLY_CFLAGS += -DLFS3_RDONLY
+RDONLY_CFLAGS += -DLFS2_READONLY
+RDONLY_CFLAGS += -DSPIFFS_READ_ONLY
 
 # bench.py -c flags
 ifdef VERBOSE
@@ -386,22 +359,14 @@ endif
 ifneq ($(BUILDDIR),.)
 $(if $(findstring n,$(MAKEFLAGS)),, $(shell mkdir -p \
 	$(BUILDDIR) \
-	$(BUILDDIR)/thumb \
 	$(RESULTSDIR) \
 	$(CODEMAPSDIR) \
 	$(PLOTSDIR) \
-    $(addprefix $(BUILDDIR)/,$(dir \
-		$(BENCHES) \
-		$(foreach fs, $(BENCH_FSS), \
-			$(BENCH_$(U_$(fs))_SRC)) \
+    $(dir \
 		$(foreach fs, $(CODEMAP_FSS), \
-			$(CODEMAP_$(U_$(fs))_SRC)))) \
-    $(addprefix $(BUILDDIR)/thumb/,$(dir \
-		$(BENCHES) \
+			$(CODEMAP_$(U_$(fs))_OBJ) \
 		$(foreach fs, $(BENCH_FSS), \
-			$(BENCH_$(U_$(fs))_SRC)) \
-		$(foreach fs, $(CODEMAP_FSS), \
-			$(CODEMAP_$(U_$(fs))_SRC))))))
+			$(BENCH_$(U_$(fs))_OBJ))))))
 endif
 
 # just use bash for everything, process substitution my beloved!
@@ -462,28 +427,59 @@ size: \
 	$(SIZE) -t $^
 
 ## Find compile-time sizes _before_ link-time gc
-.PHONY: sizes-prelink
-sizes-prelink: \
-		$(foreach fs, $(BENCH_FSS), \
-			$(BENCH_$(U_$(fs))_OBJ) \
-			$(BENCH_$(U_$(fs))_CI))
+.PHONY: sizes sizes-prelink
+sizes sizes-prelink: \
+		$(foreach fs, $(CODEMAP_FSS), \
+			$(CODEMAP_$(U_$(fs))_OBJ) \
+			$(CODEMAP_$(U_$(fs))_CI))
 	$(strip ./scripts/csv.py \
-		$(foreach fs, $(BENCH_FSS), \
+		$(foreach fs, $(CODEMAP_FSS), \
 			<(./scripts/csv.py \
-				<(./scripts/code.py $(BENCH_$(U_$(fs))_OBJ) -bfunction -o- \
-					| $(BENCH_$(U_$(fs))_FILTER)) \
+				<(./scripts/code.py $(CODEMAP_$(U_$(fs))_OBJ) \
+					-bfunction -o-) \
 				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-) \
 			<(./scripts/csv.py \
-				<(./scripts/data.py $(BENCH_$(U_$(fs))_OBJ) -bfunction -o- \
-					| $(BENCH_$(U_$(fs))_FILTER)) \
+				<(./scripts/data.py $(CODEMAP_$(U_$(fs))_OBJ) \
+					-bfunction -o-) \
 				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-) \
 			<(./scripts/csv.py \
-				<(./scripts/stack.py $(BENCH_$(U_$(fs))_CI) -bfunction -o- \
-					| $(BENCH_$(U_$(fs))_FILTER)) \
+				<(./scripts/stack.py $(CODEMAP_$(U_$(fs))_CI) \
+					-bfunction -o-) \
 				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-) \
 			<(./scripts/csv.py \
-				<(./scripts/ctx.py $(BENCH_$(U_$(fs))_OBJ) -bfunction -o- \
-					| $(BENCH_$(U_$(fs))_FILTER)) \
+				<(./scripts/ctx.py $(CODEMAP_$(U_$(fs))_OBJ) \
+					-bfunction -o-) \
+				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-)) \
+		-Bi -bfs \
+		-fcode=code_size \
+		-fdata=data_size \
+		-fstack='max(stack_limit)' \
+		-fctx='max(ctx_size)' \
+		--no-total)
+
+## Find rdonly compile-time sizes _before_ link-time gc
+.PHONY: sizes-rdonly sizes-rdonly-prelink
+sizes-rdonly sizes-rdonly-prelink: \
+		$(foreach fs, $(CODEMAP_RDONLY_FSS), \
+			$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) \
+			$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci))
+	$(strip ./scripts/csv.py \
+		$(foreach fs, $(CODEMAP_RDONLY_FSS), \
+			<(./scripts/csv.py \
+				<(./scripts/code.py $(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) \
+					-bfunction -o-) \
+				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-) \
+			<(./scripts/csv.py \
+				<(./scripts/data.py $(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) \
+					-bfunction -o-) \
+				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-) \
+			<(./scripts/csv.py \
+				<(./scripts/stack.py $(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci) \
+					-bfunction -o-) \
+				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-) \
+			<(./scripts/csv.py \
+				<(./scripts/ctx.py $(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) \
+					-bfunction -o-) \
 				-bi=$(I_$(fs)) -bfs=$(fs) -bfunction -o-)) \
 		-Bi -bfs \
 		-fcode=code_size \
@@ -527,10 +523,10 @@ sizes-postlink bench-sizes: \
 
 
 # low-level rules
-$(foreach fs, $(BENCH_FSS), \
-	$(eval -include $(BENCH_$(U_$(fs))_DEP)))
 $(foreach fs, $(CODEMAP_FSS), \
 	$(eval -include $(CODEMAP_$(U_$(fs))_DEP)))
+$(foreach fs, $(BENCH_FSS), \
+	$(eval -include $(BENCH_$(U_$(fs))_DEP)))
 .SUFFIXES:
 .SECONDARY:
 , := ,
@@ -539,16 +535,18 @@ $(foreach fs, $(CODEMAP_FSS), \
 # bench runner rule
 #
 # $1 - target
-# $2 - fs type/version
+# $2 - prerequisites
+# $3 - fs type/version
 #
 define BENCH_RUNNER_RULE
-$1: $(BENCH_$(U_$2)_OBJ)
-	$(CC) $(CFLAGS) $(BENCH_$(U_$1)_CFLAGS) $$^ $(LFLAGS) -o$$@
+$1: $2
+	$(CC) $(CFLAGS) $(BENCH_$(U_$3)_CFLAGS) $$^ $(LFLAGS) -o$$@
 endef
 
 $(foreach fs, $(BENCH_FSS), \
 	$(eval $(call BENCH_RUNNER_RULE,$\
 		$(BENCH_$(U_$(fs))_RUNNER),$\
+		$(BENCH_$(U_$(fs))_OBJ),$\
 		$(fs))))
 
 # our main build rule generates .o, .d, and .ci files, the latter
@@ -565,16 +563,16 @@ $1: $2
 	$(CC) -c -MMD $(CFLAGS) $(BENCH_$(U_$3)_CFLAGS) $$< -o$$(firstword $$@)
 endef
 
-$(foreach fs, $(BENCH_FSS), \
+$(foreach fs, $(CODEMAP_FSS), \
 	$(eval $(call BENCH_O_RULE,$\
-		$(BUILDDIR)/%.$(fs).b.a.o $(BUILDDIR)/%.$(fs).b.a.ci,$\
-		%.b.a.c,$\
+		$(BUILDDIR)/%.$(fs).o $(BUILDDIR)/%.$(fs).ci,$\
+		%.c,$\
 		$(fs))))
 
-$(foreach fs, $(BENCH_FSS), \
+$(foreach fs, $(CODEMAP_FSS), \
 	$(eval $(call BENCH_O_RULE,$\
-		$(BUILDDIR)/%.$(fs).b.a.o $(BUILDDIR)/%.$(fs).b.a.ci,$\
-		$(BUILDDIR)/%.b.a.c,$\
+		$(BUILDDIR)/%.$(fs).o $(BUILDDIR)/%.$(fs).ci,$\
+		$(BUILDDIR)/%.c,$\
 		$(fs))))
 
 $(foreach fs, $(BENCH_FSS), \
@@ -589,60 +587,40 @@ $(foreach fs, $(BENCH_FSS), \
 		$(BUILDDIR)/%.b.c,$\
 		$(fs))))
 
-# cross-compile for codemap
+$(foreach fs, $(BENCH_FSS), \
+	$(eval $(call BENCH_O_RULE,$\
+		$(BUILDDIR)/%.$(fs).b.a.o $(BUILDDIR)/%.$(fs).b.a.ci,$\
+		%.b.a.c,$\
+		$(fs))))
 
-# codemap .o rule
+$(foreach fs, $(BENCH_FSS), \
+	$(eval $(call BENCH_O_RULE,$\
+		$(BUILDDIR)/%.$(fs).b.a.o $(BUILDDIR)/%.$(fs).b.a.ci,$\
+		$(BUILDDIR)/%.b.a.c,$\
+		$(fs))))
+
+# bench rdonly .o rule
 #
 # $1 - targets
 # $2 - prerequisites
 # $2 - fs type/version
 #
-define CODEMAP_O_RULE
+define BENCH_RDONLY_O_RULE
 $1: $2
-	$$(strip $(CODEMAP_CC) -c -MMD \
-		$(CFLAGS) $(CODEMAP_CFLAGS) $(CODEMAP_$(U_$3)_CFLAGS) \
-		$$< -o$$(firstword $$@))
-endef
-
-$(foreach fs, $(CODEMAP_FSS), \
-	$(eval $(call CODEMAP_O_RULE,$\
-		$(BUILDDIR)/thumb/%.$(fs).o $(BUILDDIR)/thumb/%.$(fs).ci,$\
-		%.c,$\
-		$(fs))))
-
-$(foreach fs, $(CODEMAP_FSS), \
-	$(eval $(call CODEMAP_O_RULE,$\
-		$(BUILDDIR)/thumb/%.$(fs).o $(BUILDDIR)/thumb/%.$(fs).ci,$\
-		$(BUILDDIR)/%.c,$\
-		$(fs))))
-
-# rdonly codemap .o rule
-#
-# $1 - targets
-# $2 - prerequisites
-# $2 - fs type/version
-#
-define CODEMAP_RDONLY_O_RULE
-$1: $2
-	$$(strip $(CODEMAP_CC) -c -MMD \
-		$(CFLAGS) \
-		$(CODEMAP_CFLAGS) \
-		$(CODEMAP_RDONLY_CFLAGS) \
-		$(CODEMAP_$(U_$3)_CFLAGS) \
+	$$(strip $(CC) -c -MMD \
+		$(CFLAGS) $(RDONLY_CFLAGS) $(BENCH_$(U_$3)_CFLAGS) \
 		$$< -o$$(firstword $$@))
 endef
 
 $(foreach fs, $(CODEMAP_RDONLY_FSS), \
-	$(eval $(call CODEMAP_RDONLY_O_RULE,$\
-		$(BUILDDIR)/thumb/%.$(fs).rdonly.o $\
-			$(BUILDDIR)/thumb/%.$(fs).rdonly.ci,$\
+	$(eval $(call BENCH_RDONLY_O_RULE,$\
+		$(BUILDDIR)/%.$(fs).rdonly.o $(BUILDDIR)/%.$(fs).rdonly.ci,$\
 		%.c,$\
 		$(fs))))
 
 $(foreach fs, $(CODEMAP_RDONLY_FSS), \
-	$(eval $(call CODEMAP_RDONLY_O_RULE,$\
-		$(BUILDDIR)/thumb/%.$(fs).rdonly.o $\
-			$(BUILDDIR)/thumb/%.$(fs).rdonly.ci,$\
+	$(eval $(call BENCH_RDONLY_O_RULE,$\
+		$(BUILDDIR)/%.$(fs).rdonly.o $(BUILDDIR)/%.$(fs).rdonly.ci,$\
 		$(BUILDDIR)/%.c,$\
 		$(fs))))
 
@@ -700,7 +678,143 @@ $(BUILDDIR)/yaffs2/%.c: yaffs2/core/%.c
 
 
 #======================================================================#
-# ok! with that out of the way, here's our actual benchmark rules      #
+# first, some codemap rules                                            #
+#======================================================================#
+
+# plot config
+ifndef LIGHT
+CODEMAPFLAGS += --dark
+endif
+
+# give some of the bigger subsystems explicit colors, to help with
+# comparisons and to avoid similarly colored neighbors
+ifdef LIGHT
+CODEMAP_COLORS += -C'file=\#80be8e'   	   # was '#55a868bf', # green
+CODEMAP_COLORS += -C'lfs*_file=\#80be8e'   # was '#55a868bf', # green
+CODEMAP_COLORS += -C'lfs*_data=\#80be8e'   # was '#55a868bf', # green
+CODEMAP_COLORS += -C'lfs*_mdir=\#d9cb97'   # was '#ccb974bf', # yellow
+CODEMAP_COLORS += -C'lfs*_dir=\#d9cb97'    # was '#ccb974bf', # yellow
+CODEMAP_COLORS += -C'lfs*_mtree=\#a195c6'  # was '#8172b3bf', # purple
+CODEMAP_COLORS += -C'lfs*_btree=\#7995c4'  # was '#4c72b0bf', # blue
+CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
+CODEMAP_COLORS += -C'lfs*_bshrub=\#8bc8da' # was '#64b5cdbf', # cyan
+CODEMAP_COLORS += -C'lfs*_rbyd=\#d37a7d'   # was '#c44e52bf', # red
+CODEMAP_COLORS += -C'lfs=\#ae9a88'         # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs1=\#ae9a88'        # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs2=\#ae9a88'        # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs3=\#ae9a88'        # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs*_fs=\#ae9a88'     # was '#937860bf', # brown
+CODEMAP_COLORS += -C'lfs*_bd=\#a9a9a9'     # was '#8c8c8cbf', # gray
+else
+CODEMAP_COLORS += -C'file=\#6aac79'        # was '#8de5a1bf', # green
+CODEMAP_COLORS += -C'lfs*_file=\#6aac79'   # was '#8de5a1bf', # green
+CODEMAP_COLORS += -C'lfs*_data=\#6aac79'   # was '#8de5a1bf', # green
+CODEMAP_COLORS += -C'lfs*_mdir=\#bfbe7a'   # was '#fffea3bf', # yellow
+CODEMAP_COLORS += -C'lfs*_dir=\#bfbe7a'    # was '#fffea3bf', # yellow
+CODEMAP_COLORS += -C'lfs*_mtree=\#9c8cbf'  # was '#d0bbffbf', # purple
+CODEMAP_COLORS += -C'lfs*_btree=\#7997b7'  # was '#a1c9f4bf', # blue
+CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
+CODEMAP_COLORS += -C'lfs*_bshrub=\#8bb5b4' # was '#b9f2f0bf', # cyan
+CODEMAP_COLORS += -C'lfs*_rbyd=\#bf7774'   # was '#ff9f9bbf', # red
+CODEMAP_COLORS += -C'lfs=\#a68c74'         # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs1=\#a68c74'        # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs2=\#a68c74'        # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs3=\#a68c74'        # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs*_fs=\#a68c74'     # was '#debb9bbf', # brown
+CODEMAP_COLORS += -C'lfs*_bd=\#9b9b9b'     # was '#cfcfcfbf', # gray
+endif
+
+
+## Generate all codemaps!
+.PHONY: codemap codemaps codemap-all
+codemap codemaps codemap-all: \
+		codemap-default \
+		codemap-rdonly
+
+## Generate codemaps for the default build
+.PHONY: codemap-default
+codemap-default: \
+		$(foreach fs, $(CODEMAP_FSS), \
+			$(CODEMAPSDIR)/codemap_$(fs).svg \
+			$(CODEMAPSDIR)/codemap_$(fs)_tiny.svg)
+
+## Generate codemaps for the rdonly build
+.PHONY: codemap-rdonly
+codemap-rdonly: \
+		$(foreach fs, $(CODEMAP_RDONLY_FSS), \
+			$(CODEMAPSDIR)/codemap_$(fs)_rdonly.svg \
+			$(CODEMAPSDIR)/codemap_$(fs)_rdonly_tiny.svg)
+
+
+# codemap rules!
+
+# normal codemap rule
+#
+# $1 - target
+# $2 - obj/callgraph files
+# $3 - fs type/version
+#
+define CODEMAP_RULE
+$1: $2
+	$$(strip ./scripts/codemapsvg.py $$^ \
+		--title="$3 code %(code)s stack %(stack)s ctx %(ctx)s" \
+		-W1125 -H525 \
+		$$(CODEMAP_COLORS) \
+		$$(CODEMAPFLAGS) \
+		-o$$@ \
+		&& ./scripts/codemap.py $$^ --no-header)
+endef
+
+# tiny codemap rule
+#
+# $1 - target
+# $2 - obj/callgraph files
+#
+define CODEMAP_TINY_RULE
+$1: $2
+	$$(strip ./scripts/codemapsvg.py $$^ \
+		--tiny --background=\#00000000 \
+		$$(CODEMAP_COLORS) \
+		$$(CODEMAPFLAGS) \
+		-o$$@ \
+		&& ./scripts/codemap.py $$^ --no-header)
+endef
+
+# default codemap rules
+$(foreach fs, $(CODEMAP_FSS),$\
+	$(eval $(call CODEMAP_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(fs).svg,$\
+			$(CODEMAP_$(U_$(fs))_OBJ) $\
+				$(CODEMAP_$(U_$(fs))_CI),$\
+			$(fs))))
+
+# tiny default codemap rules
+$(foreach fs, $(CODEMAP_FSS),$\
+	$(eval $(call CODEMAP_TINY_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(fs)_tiny.svg,$\
+			$(CODEMAP_$(U_$(fs))_OBJ) $\
+				$(CODEMAP_$(U_$(fs))_CI))))
+
+# rdonly codemap rules
+$(foreach fs, $(CODEMAP_RDONLY_FSS),$\
+	$(eval $(call CODEMAP_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(fs)_rdonly.svg,$\
+			$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) $\
+				$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci),$\
+			$(fs))))
+
+# tiny rdonly codemap rules
+$(foreach fs, $(CODEMAP_RDONLY_FSS),$\
+	$(eval $(call CODEMAP_TINY_RULE,$\
+			$(CODEMAPSDIR)/codemap_$(fs)_rdonly_tiny.svg,$\
+			$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) $\
+				$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci))))
+
+
+
+
+#======================================================================#
+# ok! here's our actual benchmark rules      						   #
 #======================================================================#
 
 # bench.py flags
@@ -1051,6 +1165,7 @@ $(RESULTSDIR)/bench_%.avg.csv: $(RESULTSDIR)/bench_%.csv
 		-fbench_proged_max='max(bench_proged)' \
 		-fbench_erased_max='max(bench_erased)' \
 		-o$@)
+
 
 
 
@@ -1626,199 +1741,6 @@ $(eval $(call PLOT_P26_T_RULE,$\
 		$(P26_T_SIZES),$\
 		ram,$\
 		--y2 --yunits=B))
-
-
-
-
-#======================================================================#
-# and codemap rules                                                    #
-#======================================================================#
-
-# plot config
-ifndef LIGHT
-CODEMAPFLAGS += --dark
-endif
-
-# give some of the bigger subsystems explicit colors, to help with
-# comparisons and to avoid similarly colored neighbors
-ifdef LIGHT
-CODEMAP_COLORS += -C'file=\#80be8e'   	   # was '#55a868bf', # green
-CODEMAP_COLORS += -C'lfs*_file=\#80be8e'   # was '#55a868bf', # green
-CODEMAP_COLORS += -C'lfs*_data=\#80be8e'   # was '#55a868bf', # green
-CODEMAP_COLORS += -C'lfs*_mdir=\#d9cb97'   # was '#ccb974bf', # yellow
-CODEMAP_COLORS += -C'lfs*_dir=\#d9cb97'    # was '#ccb974bf', # yellow
-CODEMAP_COLORS += -C'lfs*_mtree=\#a195c6'  # was '#8172b3bf', # purple
-CODEMAP_COLORS += -C'lfs*_btree=\#7995c4'  # was '#4c72b0bf', # blue
-CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
-CODEMAP_COLORS += -C'lfs*_bshrub=\#8bc8da' # was '#64b5cdbf', # cyan
-CODEMAP_COLORS += -C'lfs*_rbyd=\#d37a7d'   # was '#c44e52bf', # red
-CODEMAP_COLORS += -C'lfs=\#ae9a88'         # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs1=\#ae9a88'        # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs2=\#ae9a88'        # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs3=\#ae9a88'        # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs*_fs=\#ae9a88'     # was '#937860bf', # brown
-CODEMAP_COLORS += -C'lfs*_bd=\#a9a9a9'     # was '#8c8c8cbf', # gray
-else
-CODEMAP_COLORS += -C'file=\#6aac79'        # was '#8de5a1bf', # green
-CODEMAP_COLORS += -C'lfs*_file=\#6aac79'   # was '#8de5a1bf', # green
-CODEMAP_COLORS += -C'lfs*_data=\#6aac79'   # was '#8de5a1bf', # green
-CODEMAP_COLORS += -C'lfs*_mdir=\#bfbe7a'   # was '#fffea3bf', # yellow
-CODEMAP_COLORS += -C'lfs*_dir=\#bfbe7a'    # was '#fffea3bf', # yellow
-CODEMAP_COLORS += -C'lfs*_mtree=\#9c8cbf'  # was '#d0bbffbf', # purple
-CODEMAP_COLORS += -C'lfs*_btree=\#7997b7'  # was '#a1c9f4bf', # blue
-CODEMAP_COLORS += -C'lfs*_ctz=\#7995c4'    # was '#4c72b0bf', # blue
-CODEMAP_COLORS += -C'lfs*_bshrub=\#8bb5b4' # was '#b9f2f0bf', # cyan
-CODEMAP_COLORS += -C'lfs*_rbyd=\#bf7774'   # was '#ff9f9bbf', # red
-CODEMAP_COLORS += -C'lfs=\#a68c74'         # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs1=\#a68c74'        # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs2=\#a68c74'        # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs3=\#a68c74'        # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs*_fs=\#a68c74'     # was '#debb9bbf', # brown
-CODEMAP_COLORS += -C'lfs*_bd=\#9b9b9b'     # was '#cfcfcfbf', # gray
-endif
-
-
-## Show compile-time sizes
-.PHONY: sizes
-sizes: $(foreach fs, $(CODEMAP_FSS), \
-		$(CODEMAP_$(U_$(fs))_OBJ) \
-		$(CODEMAP_$(U_$(fs))_CI))
-	$(strip ./scripts/csv.py \
-		$(foreach fs, $(CODEMAP_FSS), \
-			<(./scripts/csv.py \
-				<(./scripts/code.py $(CODEMAP_$(U_$(fs))_OBJ) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fcode=code_size -o-) \
-			<(./scripts/csv.py \
-				<(./scripts/data.py $(CODEMAP_$(U_$(fs))_OBJ) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fdata=data_size -o-) \
-			<(./scripts/csv.py \
-				<(./scripts/stack.py $(CODEMAP_$(U_$(fs))_CI) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fstack='max(stack_limit)' -o-) \
-			<(./scripts/csv.py \
-				<(./scripts/ctx.py $(CODEMAP_$(U_$(fs))_OBJ) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fctx='max(ctx_size)' -o-)) \
-		-Bi -bfs -fcode -fdata -fstack='max(stack)' -fctx='max(ctx)' \
-		--no-total)
-		
-## Show rdonly compile-time sizes
-.PHONY: sizes-rdonly
-sizes-rdonly: $(foreach fs, $(CODEMAP_RDONLY_FSS), \
-		$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) \
-		$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci))
-	$(strip ./scripts/csv.py \
-		$(foreach fs, $(CODEMAP_RDONLY_FSS), \
-			<(./scripts/csv.py \
-				<(./scripts/code.py \
-					$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fcode=code_size -o-) \
-			<(./scripts/csv.py \
-				<(./scripts/data.py \
-					$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fdata=data_size -o-) \
-			<(./scripts/csv.py \
-				<(./scripts/stack.py \
-					$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fstack='max(stack_limit)' -o-) \
-			<(./scripts/csv.py \
-				<(./scripts/ctx.py \
-					$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) -o-) \
-				-bi=$(I_$(fs)) -bfs=$(fs) \
-				-fctx='max(ctx_size)' -o-)) \
-		-Bi -bfs -fcode -fdata -fstack='max(stack)' -fctx='max(ctx)' \
-		--no-total)
-
-
-## Generate all codemaps!
-.PHONY: codemap codemaps codemap-all
-codemap codemaps codemap-all: \
-		codemap-default \
-		codemap-rdonly
-
-## Generate codemaps for the default build
-.PHONY: codemap-default
-codemap-default: \
-		$(foreach fs, $(CODEMAP_FSS), \
-			$(CODEMAPSDIR)/codemap_$(fs).svg \
-			$(CODEMAPSDIR)/codemap_$(fs)_tiny.svg)
-
-## Generate codemaps for the rdonly build
-.PHONY: codemap-rdonly
-codemap-rdonly: \
-		$(foreach fs, $(CODEMAP_RDONLY_FSS), \
-			$(CODEMAPSDIR)/codemap_$(fs)_rdonly.svg \
-			$(CODEMAPSDIR)/codemap_$(fs)_rdonly_tiny.svg)
-
-
-# codemap rules!
-
-# normal codemap rule
-#
-# $1 - target
-# $2 - obj/callgraph files
-# $3 - fs type/version
-#
-define CODEMAP_RULE
-$1: $2
-	$$(strip ./scripts/codemapsvg.py $$^ \
-		--title="$3 code %(code)s stack %(stack)s ctx %(ctx)s" \
-		-W1125 -H525 \
-		$$(CODEMAP_COLORS) \
-		$$(CODEMAPFLAGS) \
-		-o$$@ \
-		&& ./scripts/codemap.py $$^ --no-header)
-endef
-
-# tiny codemap rule
-#
-# $1 - target
-# $2 - obj/callgraph files
-#
-define CODEMAP_TINY_RULE
-$1: $2
-	$$(strip ./scripts/codemapsvg.py $$^ \
-		--tiny --background=\#00000000 \
-		$$(CODEMAP_COLORS) \
-		$$(CODEMAPFLAGS) \
-		-o$$@ \
-		&& ./scripts/codemap.py $$^ --no-header)
-endef
-
-# default codemap rules
-$(foreach fs, $(CODEMAP_FSS),$\
-	$(eval $(call CODEMAP_RULE,$\
-			$(CODEMAPSDIR)/codemap_$(fs).svg,$\
-			$(CODEMAP_$(U_$(fs))_OBJ) $\
-				$(CODEMAP_$(U_$(fs))_CI),$\
-			$(fs))))
-
-# tiny default codemap rules
-$(foreach fs, $(CODEMAP_FSS),$\
-	$(eval $(call CODEMAP_TINY_RULE,$\
-			$(CODEMAPSDIR)/codemap_$(fs)_tiny.svg,$\
-			$(CODEMAP_$(U_$(fs))_OBJ) $\
-				$(CODEMAP_$(U_$(fs))_CI))))
-
-# rdonly codemap rules
-$(foreach fs, $(CODEMAP_RDONLY_FSS),$\
-	$(eval $(call CODEMAP_RULE,$\
-			$(CODEMAPSDIR)/codemap_$(fs)_rdonly.svg,$\
-			$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) $\
-				$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci),$\
-			$(fs))))
-
-# tiny rdonly codemap rules
-$(foreach fs, $(CODEMAP_RDONLY_FSS),$\
-	$(eval $(call CODEMAP_TINY_RULE,$\
-			$(CODEMAPSDIR)/codemap_$(fs)_rdonly_tiny.svg,$\
-			$(CODEMAP_$(U_$(fs))_OBJ:.o=.rdonly.o) $\
-				$(CODEMAP_$(U_$(fs))_CI:.ci=.rdonly.ci))))
 
 
 
