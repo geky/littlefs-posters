@@ -19,8 +19,9 @@ code = '''
 
 [cases.bench_p26_litmus_linear]
 # 0 => benchmark writes
-# 1 => measure usage
-defines.MODE = [0, 1]
+# 1 => measure disk usage
+# 2 => measure stack/heap usage
+defines.MODE = [0, 1, 2]
 code = '''
     #if defined(LFS3)
     lfs3_t lfs3;
@@ -129,6 +130,12 @@ code = '''
             #endif
             BENCH_RESULT("usage", i*CHUNK+CHUNK, usage);
         }
+
+        if (MODE == 2 && (i+1) % STEP == 0) {
+            // measure stack/heap usage
+            BENCH_RESULT("stack", i*CHUNK+CHUNK, BENCH_STACK());
+            BENCH_RESULT("heap", i*CHUNK+CHUNK, BENCH_HEAP());
+        }
     }
     #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
@@ -157,8 +164,9 @@ code = '''
 
 [cases.bench_p26_litmus_random]
 # 0 => benchmark writes
-# 1 => measure usage
-defines.MODE = [0, 1]
+# 1 => measure disk usage
+# 2 => measure stack/heap usage
+defines.MODE = [0, 1, 2]
 # don't bother with litmus benchmarks for things that don't scale
 if = [
     'BENCH_IFDEF_SPIFFS(SIZE < 128*1024, true)',
@@ -295,6 +303,12 @@ code = '''
             BENCH_RESULT("usage", i*CHUNK+CHUNK, usage);
         }
 
+        if (MODE == 2 && (i+1) % STEP == 0) {
+            // measure stack/heap usage
+            BENCH_RESULT("stack", i*CHUNK+CHUNK, BENCH_STACK());
+            BENCH_RESULT("heap", i*CHUNK+CHUNK, BENCH_HEAP());
+        }
+
         size = lfs3_max(size, pos + CHUNK);
     }
     #if defined(LFS3)
@@ -324,8 +338,9 @@ code = '''
 
 [cases.bench_p26_litmus_many]
 # 0 => benchmark writes
-# 1 => measure usage
-defines.MODE = [0, 1]
+# 1 => measure disk usage
+# 2 => measure stack/heap usage
+defines.MODE = [0, 1, 2]
 # don't bother with litmus benchmarks for things that don't scale
 if = [
     'BENCH_IFDEF_SPIFFS(SIZE < 128*1024, true)',
@@ -440,6 +455,12 @@ code = '''
             #endif
             BENCH_RESULT("usage", i*CHUNK+CHUNK, usage);
         }
+
+        if (MODE == 2 && (i+1) % STEP == 0) {
+            // measure stack/heap usage
+            BENCH_RESULT("stack", i*CHUNK+CHUNK, BENCH_STACK());
+            BENCH_RESULT("heap", i*CHUNK+CHUNK, BENCH_HEAP());
+        }
     }
 
     #if defined(LFS3)
@@ -456,8 +477,9 @@ code = '''
 
 [cases.bench_p26_litmus_logging]
 # 0 => benchmark writes
-# 1 => measure usage
-defines.MODE = [0, 1]
+# 1 => measure disk usage
+# 2 => measure stack/heap usage
+defines.MODE = [0, 1, 2]
 defines.LOG_SIZE = '(SIZE+4-1) / 4'
 code = '''
     #if defined(LFS3)
@@ -628,6 +650,12 @@ code = '''
             uintmax_t usage = bench_helpers_usage(&yaffs2);
             #endif
             BENCH_RESULT("usage", i*CHUNK+CHUNK, usage);
+        }
+
+        if (MODE == 2 && (i+1) % STEP == 0) {
+            // measure stack/heap usage
+            BENCH_RESULT("stack", i*CHUNK+CHUNK, BENCH_STACK());
+            BENCH_RESULT("heap", i*CHUNK+CHUNK, BENCH_HEAP());
         }
     }
     #if defined(LFS3)

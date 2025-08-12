@@ -1286,7 +1286,9 @@ plot-p26-litmus-ops-linear: \
 		$(PLOTSDIR)/bench_p26_litmus_linear_r.svg \
 		$(PLOTSDIR)/bench_p26_litmus_linear_p.svg \
 		$(PLOTSDIR)/bench_p26_litmus_linear_e.svg \
-		$(PLOTSDIR)/bench_p26_litmus_linear_u.svg
+		$(PLOTSDIR)/bench_p26_litmus_linear_u.svg \
+		$(PLOTSDIR)/bench_p26_litmus_linear_s.svg \
+		$(PLOTSDIR)/bench_p26_litmus_linear_h.svg
 
 ## Plot p26 litmus ops random benchmarks
 .PHONY: plot-p26-litmus-ops-random
@@ -1294,7 +1296,9 @@ plot-p26-litmus-ops-random: \
 		$(PLOTSDIR)/bench_p26_litmus_random_r.svg \
 		$(PLOTSDIR)/bench_p26_litmus_random_p.svg \
 		$(PLOTSDIR)/bench_p26_litmus_random_e.svg \
-		$(PLOTSDIR)/bench_p26_litmus_random_u.svg
+		$(PLOTSDIR)/bench_p26_litmus_random_u.svg \
+		$(PLOTSDIR)/bench_p26_litmus_random_s.svg \
+		$(PLOTSDIR)/bench_p26_litmus_random_h.svg
 
 ## Plot p26 litmus ops many benchmarks
 .PHONY: plot-p26-litmus-ops-many
@@ -1302,7 +1306,9 @@ plot-p26-litmus-ops-many: \
 		$(PLOTSDIR)/bench_p26_litmus_many_r.svg \
 		$(PLOTSDIR)/bench_p26_litmus_many_p.svg \
 		$(PLOTSDIR)/bench_p26_litmus_many_e.svg \
-		$(PLOTSDIR)/bench_p26_litmus_many_u.svg
+		$(PLOTSDIR)/bench_p26_litmus_many_u.svg \
+		$(PLOTSDIR)/bench_p26_litmus_many_s.svg \
+		$(PLOTSDIR)/bench_p26_litmus_many_h.svg
 
 ## Plot p26 litmus ops logging benchmarks
 .PHONY: plot-p26-litmus-ops-logging
@@ -1310,7 +1316,9 @@ plot-p26-litmus-ops-logging: \
 		$(PLOTSDIR)/bench_p26_litmus_logging_r.svg \
 		$(PLOTSDIR)/bench_p26_litmus_logging_p.svg \
 		$(PLOTSDIR)/bench_p26_litmus_logging_e.svg \
-		$(PLOTSDIR)/bench_p26_litmus_logging_u.svg
+		$(PLOTSDIR)/bench_p26_litmus_logging_u.svg \
+		$(PLOTSDIR)/bench_p26_litmus_logging_s.svg \
+		$(PLOTSDIR)/bench_p26_litmus_logging_h.svg
 
 ## Plot p26 write-throughput benchmarks
 .PHONY: plot-p26-wt
@@ -1602,11 +1610,33 @@ $(eval $(call PLOT_P26_LITMUS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_litmus_%.$(fs).$(sim).avg.csv $\
 				$(RESULTSDIR)/bench_p26_litmus_%.$(fs).$(sim).per.avg.csv)),$\
-		"$$* file usage",$\
+		"$$* file disk usage",$\
 		bench_readed,$\
 		usage,$\
 		per,$\
 		-DMODE=1 --x2 --xunits=B --y2 --yunits=B))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_%_s.svg,$\
+		$(foreach fs, $(BENCH_FSS),$\
+			$(foreach sim, $(BENCH_SIMS),$\
+				$(RESULTSDIR)/bench_p26_litmus_%.$(fs).$(sim).avg.csv $\
+				$(RESULTSDIR)/bench_p26_litmus_%.$(fs).$(sim).per.avg.csv)),$\
+		"$$* file stack usage",$\
+		bench_readed,$\
+		stack,$\
+		per,$\
+		-DMODE=2 --x2 --xunits=B --y2 --yunits=B))
+$(eval $(call PLOT_P26_LITMUS_RULE,$\
+		$(PLOTSDIR)/bench_p26_litmus_%_h.svg,$\
+		$(foreach fs, $(BENCH_FSS),$\
+			$(foreach sim, $(BENCH_SIMS),$\
+				$(RESULTSDIR)/bench_p26_litmus_%.$(fs).$(sim).avg.csv $\
+				$(RESULTSDIR)/bench_p26_litmus_%.$(fs).$(sim).per.avg.csv)),$\
+		"$$* file heap usage",$\
+		bench_readed,$\
+		heap,$\
+		per,$\
+		-DMODE=2 --x2 --xunits=B --y2 --yunits=B))
 $(eval $(call PLOT_P26_LITMUS_RULE,$\
 		$(PLOTSDIR)/bench_p26_litmus_%.svg,$\
 		$(foreach fs, $(BENCH_FSS),$\
