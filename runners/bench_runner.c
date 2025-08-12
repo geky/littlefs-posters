@@ -1562,9 +1562,14 @@ static s32_t bench_bd_spiffs_read(struct spiffs_t *spiffs,
     if (cfg->cfg.read_size == 1) {
         return bench_bd_read(&cfg->cfg, block, off, dst, size);
     } else {
-        if (bench_bd_spiffs_buffer_size < cfg->cfg.read_size) {
+        // bit of a hack here to cache the allocated buffer without
+        // breaking our heap measurements
+        bench_heap_inc(cfg->cfg.read_size);
+        if (cfg->cfg.read_size > bench_bd_spiffs_buffer_size) {
+            bench_heap_pause();
             free(bench_bd_spiffs_buffer);
             bench_bd_spiffs_buffer = malloc(cfg->cfg.read_size);
+            bench_heap_resume();
         }
 
         while (size > 0) {
@@ -1576,6 +1581,7 @@ static s32_t bench_bd_spiffs_read(struct spiffs_t *spiffs,
             int err = bench_bd_read(&cfg->cfg, block, aligned_off,
                     bench_bd_spiffs_buffer, cfg->cfg.read_size);
             if (err) {
+                bench_heap_dec(cfg->cfg.read_size);
                 return err;
             }
 
@@ -1585,6 +1591,7 @@ static s32_t bench_bd_spiffs_read(struct spiffs_t *spiffs,
             off += d;
         }
 
+        bench_heap_dec(cfg->cfg.read_size);
         return 0;
     }
 }
@@ -1598,9 +1605,14 @@ static s32_t bench_bd_spiffs_write(struct spiffs_t *spiffs,
     if (cfg->cfg.read_size == 1) {
         return bench_bd_prog(&cfg->cfg, block, off, src, size);
     } else {
-        if (bench_bd_spiffs_buffer_size < cfg->cfg.prog_size) {
+        // bit of a hack here to cache the allocated buffer without
+        // breaking our heap measurements
+        bench_heap_inc(cfg->cfg.prog_size);
+        if (cfg->cfg.prog_size > bench_bd_spiffs_buffer_size) {
+            bench_heap_pause();
             free(bench_bd_spiffs_buffer);
             bench_bd_spiffs_buffer = malloc(cfg->cfg.prog_size);
+            bench_heap_resume();
         }
 
         while (size > 0) {
@@ -1614,6 +1626,7 @@ static s32_t bench_bd_spiffs_write(struct spiffs_t *spiffs,
             int err = bench_bd_prog(&cfg->cfg, block, aligned_off,
                     bench_bd_spiffs_buffer, cfg->cfg.prog_size);
             if (err) {
+                bench_heap_dec(cfg->cfg.prog_size);
                 return err;
             }
 
@@ -1622,6 +1635,7 @@ static s32_t bench_bd_spiffs_write(struct spiffs_t *spiffs,
             off += d;
         }
 
+        bench_heap_dec(cfg->cfg.prog_size);
         return 0;
     }
 }
