@@ -1,0 +1,14 @@
+# overrideable results dir
+RESULTSDIR ?= results_ps_1M
+# overrideable plots dir
+PLOTSDIR ?= plots_ps_1M
+
+
+# 1MiB sizes
+DISK_SIZE ?= 268435456
+P26_T_SIZE ?= 1048576
+
+
+# page size Makefile does most of the work
+include Makefile_ps
+
