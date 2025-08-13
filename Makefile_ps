@@ -241,7 +241,7 @@ $(eval $(call PLOT_P26_PS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_ps_%.$(fs).$(sim).tsim.csv)),$\
 		"$$* file writes - read/prog sizes - simulated throughput",$\
-		PROG_SIZE,$\
+		PAGE_SIZE,$\
 		$(P26_T_PAGE_SIZES),$\
 		write+tsim,$\
 		--xlabel="read/prog size" --y2 --yunits=B/s))
@@ -252,7 +252,7 @@ $(eval $(call PLOT_P26_PS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_ps_%.$(fs).$(sim).csv)),$\
 		"$$* file writes - read/prog sizes - disk usage",$\
-		PROG_SIZE,$\
+		PAGE_SIZE,$\
 		$(P26_T_PAGE_SIZES),$\
 		usage,$\
 		--xlabel="read/prog size" --y2 --yunits=B))
@@ -263,7 +263,7 @@ $(eval $(call PLOT_P26_PS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_ps_%.$(fs).$(sim).ram.csv)),$\
 		"$$* file writes - read/prog sizes - RAM usage",$\
-		PROG_SIZE,$\
+		PAGE_SIZE,$\
 		$(P26_T_PAGE_SIZES),$\
 		ram,$\
 		--xlabel="read/prog size" --y2 --yunits=B))

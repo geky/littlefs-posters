@@ -5,7 +5,8 @@ PLOTSDIR ?= plots_cs
 
 
 # range of cache sizes to test for throughput testing
-P26_T_CACHE_SIZES ?= 8,32,128,512,2048,8192,32768,131072
+P26_T_NOR_CACHE_SIZES ?= 4,8,16,32,64,128,256,512,1024,2048,4096
+P26_T_NAND_CACHE_SIZES ?= 512,1024,2048,4096,8192,16384,32768,65536,131072
 
 # we only care about NOR and NAND really
 BENCH_SIMS ?= nor nand
@@ -64,18 +65,7 @@ bench-p26-cs-logging: \
 
 
 
-# limit cache sizes to physical read/prog size
-$(foreach sim, $(BENCH_SIMS),$\
-	$(eval P26_T_$(U_$(sim))_CACHE_SIZES := $(shell python -c 'print($\
-			",".join(str(n) for n in [$(P26_T_CACHE_SIZES)] $\
-				if n >= max($\
-					$($(U_$(sim))_READ_SIZE),$\
-					$($(U_$(sim))_PROG_SIZE))))')))
-
-# p26 cache size bench subrule
-#
-# note the *3 to keep things fair with how littlefs uses buffers, this
-# also assumes a minimum page size of 256
+# p26 cache size bench rule
 #
 # $1 - target
 # $2 - bench case
@@ -83,9 +73,9 @@ $(foreach sim, $(BENCH_SIMS),$\
 # $4 - sim type
 # $5 - disk size
 # $6 - file size
-# $7 - cache size
+# $7 - cache sizes
 #
-define BENCH_P26_T_CS_CS_RULE
+define BENCH_P26_T_CS_RULE
 $1: $(BENCH_$(U_$3)_RUNNER)
 	$$(strip ./scripts/bench.py -R$$< -B $2 \
 		$(BENCHFLAGS) \
@@ -101,49 +91,7 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DPROG_TIME=$($(U_$4)_PROG_TIME) \
 		-DERASE_TIME=$($(U_$4)_ERASE_TIME) \
 		-DBLOCK_SIZE=$($(U_$4)_$(U_$3)_BLOCK_SIZE) \
-		-DPCACHE_SIZE=$7 \
-		-DRCACHE_SIZE=$7 \
-		-DFILE_CACHE_SIZE=$7 \
-		-DCACHE_SIZE=$7 \
-		-DPAGECACHE_COUNT=$$(shell python -c '$\
-			print(max(2, __import__("math").ceil($\
-				($7*3) / max($\
-					256,$\
-					$($(U_$4)_READ_SIZE),$\
-					$($(U_$4)_PROG_SIZE)))))') \
-		-o$$@)
-endef
-
-# p26 cache size bench rule
-#
-# $1 - target
-# $2 - bench case
-# $3 - fs type/version
-# $4 - sim type
-# $5 - disk size
-# $6 - file size
-# $7 - cache sizes
-#
-define BENCH_P26_T_CS_RULE
-$(foreach cs, $(subst $(,), ,$(or $7,$(P26_T_$(U_$4)_CACHE_SIZES))), \
-	$(eval $(call BENCH_P26_T_CS_CS_RULE,$\
-		$(1:.csv=.cs_$(cs).csv),$\
-		$2,$\
-		$3,$\
-		$4,$\
-		$5,$\
-		$6,$\
-		$(cs))))
-
-$1: $(foreach cs, $(subst $(,), ,$(or $7,$(P26_T_$(U_$4)_CACHE_SIZES))), \
-		$(patsubst %.csv,%.cs_$(cs).csv,$1))
-	$$(strip ./scripts/csv.py $$^ \
-		-fbench_readed \
-		-fbench_proged \
-		-fbench_erased \
-		-fbench_creaded \
-		-fbench_cproged \
-		-fbench_cerased \
+		-DCACHE_SIZE=$(or $7,$(P26_T_$(U_$4)_CACHE_SIZES)) \
 		-o$$@)
 endef
 
@@ -249,10 +197,8 @@ plot-p26-cs-ram-logging: \
 # $1 - target
 # $2 - sources
 # $3 - title
-# $4 - x-axis
-# $5 - x-ticks
-# $6 - measurement
-# $7 - extra plotmpl.py flags
+# $4 - measurement
+# $5 - extra plotmpl.py flags
 #
 define PLOT_P26_CS_RULE
 $1: $2
@@ -260,15 +206,33 @@ $1: $2
 		-W1500 -H350 \
 		--title=$3 \
 		-bFS \
-		-x$4 \
+		-xCACHE_SIZE \
 		-ybench_readed \
-		-Dm=$6 \
+		-Dm=$4 \
 		--subplot=" \
 			-DERASE_SIZE=$(NOR_ERASE_SIZE) \
-			--title=nor" \
+			--title=nor \
+			-X"$$(shell python -c '$\
+					a=min([$(P26_T_NOR_CACHE_SIZES)]);$\
+					print(a-a/4)'),$\
+				$$(shell python -c '$\
+					b=max([$(P26_T_NOR_CACHE_SIZES)]);$\
+					print(b+b/4)')" \
+			$$(shell python -c '$\
+				for n in [$(P26_T_NOR_CACHE_SIZES)]: $\
+					print("--add-xticklabel=%d=\\\"%%(x)IB\\\"" % n)')" \
 		--subplot-right=" \
 			-DERASE_SIZE=$(NAND_ERASE_SIZE) \
 			--title=nand \
+			-X"$$(shell python -c '$\
+					a=min([$(P26_T_NAND_CACHE_SIZES)]);$\
+					print(a-a/4)'),$\
+				$$(shell python -c '$\
+					b=max([$(P26_T_NAND_CACHE_SIZES)]);$\
+					print(b+b/4)')" \
+			$$(shell python -c '$\
+				for n in [$(P26_T_NAND_CACHE_SIZES)]: $\
+					print("--add-xticklabel=%d=\\\"%%(x)IB\\\"" % n)') \
 			-W0.5" \
 		--legend \
 		$(foreach fs, $(BENCH_FSS),$\
@@ -279,13 +243,8 @@ $1: $2
 			-F'$(N_$(fs))=$(addsuffix -,$(F_$(fs)))') \
 		--xlog \
 		--xticks=4 \
-		-X"$$(shell python -c 'a=min([$5]); print(a-a/4)'),$\
-			$$(shell python -c 'b=max([$5]); print(b+b/4)')" \
 		--x2 --xunits=B \
-		$$(shell python -c '$\
-			for n in [$5]: $\
-				print("--add-xticklabel=%d=\"%%(x)IB\"" % n)') \
-		$7 \
+		$5 \
 		$$(PLOTFLAGS) \
 		-o$$@)
 endef
@@ -297,8 +256,6 @@ $(eval $(call PLOT_P26_CS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_cs_%.$(fs).$(sim).tsim.csv)),$\
 		"$$* file writes - cache sizes - simulated throughput",$\
-		CACHE_SIZE,$\
-		$(P26_T_CACHE_SIZES),$\
 		write+tsim,$\
 		--xlabel="cache size" --y2 --yunits=B/s))
 
@@ -308,8 +265,6 @@ $(eval $(call PLOT_P26_CS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_cs_%.$(fs).$(sim).csv)),$\
 		"$$* file writes - cache sizes - disk usage",$\
-		CACHE_SIZE,$\
-		$(P26_T_CACHE_SIZES),$\
 		usage,$\
 		--xlabel="cache size" --y2 --yunits=B))
 
@@ -319,8 +274,6 @@ $(eval $(call PLOT_P26_CS_RULE,$\
 			$(foreach sim, $(BENCH_SIMS),$\
 				$(RESULTSDIR)/bench_p26_cs_%.$(fs).$(sim).ram.csv)),$\
 		"$$* file writes - cache sizes - RAM usage",$\
-		CACHE_SIZE,$\
-		$(P26_T_CACHE_SIZES),$\
 		ram,$\
 		--xlabel="cache size" --y2 --yunits=B))
 
