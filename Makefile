@@ -1003,8 +1003,8 @@ bench-p26-rt-many: \
 # $4 - sim type
 #
 define BENCH_P26_LITMUS_RULE
-$1: | $(BENCH_$(U_$3)_RUNNER)
-	$$(strip ./scripts/bench.py -R$$| -B $2 \
+$1: $(BENCH_$(U_$3)_RUNNER)
+	$$(strip ./scripts/bench.py -R$$< -B $2 \
 		$(BENCHFLAGS) \
 		-DSIZE=$(P26_LITMUS_SIZE) \
 		-DCHUNK=$(P26_LITMUS_CHUNK) \
@@ -1038,8 +1038,8 @@ $(foreach fs, $(BENCH_FSS),$\
 # $4 - sim type
 #
 define BENCH_P26_T_RULE
-$1: | $(BENCH_$(U_$3)_RUNNER)
-	$$(strip ./scripts/bench.py -R$$| -B $2 \
+$1: $(BENCH_$(U_$3)_RUNNER)
+	$$(strip ./scripts/bench.py -R$$< -B $2 \
 		$(BENCHFLAGS) \
 		-DSIZE=$(P26_T_SIZES) \
 		-DCHUNK=$(P26_T_CHUNK) \
@@ -1131,7 +1131,7 @@ $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
 # $3 - fs type/version
 #
 define BENCH_P26_RAM_RULE
-$1: $2 | $(BENCH_$(U_$3)_RUNNER)
+$1: $(BENCH_$(U_$3)_RUNNER) $2
 	-$$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $2 \
 			-fn \
@@ -1146,7 +1146,7 @@ $1: $2 | $(BENCH_$(U_$3)_RUNNER)
 		-Bm=ram \
 		-fn \
 		-fbench_readed="bench_readed + $$$$( \
-			./scripts/data.py $$| -bfunction -o- \
+			./scripts/data.py $$< -bfunction -o- \
 				| $(BENCH_$(U_$3)_FILTER) \
 				| ./scripts/csv.py - -fdata_size --total)" \
 		-fbench_proged=0 \

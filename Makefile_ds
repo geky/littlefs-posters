@@ -69,8 +69,8 @@ bench-p26-ds-logging: \
 # $5 - disk sizes
 #
 define BENCH_P26_T_DS_RULE
-$1: | $(BENCH_$(U_$3)_RUNNER)
-	$$(strip ./scripts/bench.py -R$$| -B $2 \
+$1: $(BENCH_$(U_$3)_RUNNER)
+	$$(strip ./scripts/bench.py -R$$< -B $2 \
 		$(BENCHFLAGS) \
 		-DDISK_SIZE=$(or $5,$(P26_T_DISK_SIZES)) \
 		-DSIZE=$(P26_T_SIZE) \
