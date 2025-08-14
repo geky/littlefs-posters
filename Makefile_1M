@@ -5,7 +5,7 @@ PLOTSDIR ?= plots_1M
 
 
 # and give us more space for activities
-DISK_SIZE ?= 268435456
+DISK_SIZE ?= 268435456 # 256 MiB
 
 # increase bench sizes to 1 MiB
 P26_LITMUS_SIZE ?= 1048576

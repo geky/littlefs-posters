@@ -1,0 +1,32 @@
+# overrideable results dir
+RESULTSDIR ?= results_1G
+# overrideable plots dir
+PLOTSDIR ?= plots_1G
+
+
+# and give us more space for activities
+DISK_SIZE ?= 8589934592 # 8 GiB
+# prevent parallel benches because of how big disk is
+DISK_BIG = 1
+
+# increase bench sizes to 1 GiB
+P26_LITMUS_SIZE ?= 1073741824
+ifdef PRECISE
+P26_LITMUS_STEP ?= 1024
+else
+P26_LITMUS_STEP ?= 8192 # was 32, prioritizing speed over accuracy
+endif
+
+P26_T_SIZES ?= 33554432,67108864,134217728,268435456,536870912,1073741824
+# bump up chunk size
+# TODO should we do the same for 1M?
+P26_T_CHUNK ?= 4096
+
+# limit filesystems and sims
+BENCH_FSS ?= lfs3 lfs3nb lfs2 yaffs2
+BENCH_SIMS ?= nor nand
+
+
+# default Makefile does most of the work
+include Makefile
+

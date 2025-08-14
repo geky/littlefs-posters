@@ -356,6 +356,11 @@ code = '''
 '''
 
 [cases.bench_p26_wt_many]
+if = [
+    # unfortunately the internal linked-list in yaffs2 scales
+    # O(n), which makes this difficult to benchmark
+    'BENCH_IFDEF_YAFFS2(SIZE <= 1024*1024, true)',
+]
 code = '''
     #if defined(LFS3)
     lfs3_t lfs3;

@@ -839,14 +839,22 @@ $(foreach fs, $(CODEMAP_RDONLY_FSS),$\
 #======================================================================#
 
 # bench.py flags
+# explicit disk path?
+ifdef DISK_PATH
+BENCHFLAGS += -d$(DISK_PATH)
+DISK_BIG = 1
+endif
 # give us a big disk
 BENCHFLAGS += -DDISK_SIZE=$(DISK_SIZE)
 BENCHFLAGS += -b
+# note the presence of a physical disk means we CAN NOT run in parallel
+ifndef DISK_BIG
 # just always run benches in parallel, this makefile uses too much RAM
-# to parallelize at the rule level
+# to easily parallelize at the rule level
 BENCHFLAGS += -j
 # # forward -j flag
 # BENCHFLAGS += $(filter -j%,$(MAKEFLAGS))
+endif
 ifdef PERFGEN
 BENCHFLAGS += -p$(BENCH_LFS3_PERF)
 endif
