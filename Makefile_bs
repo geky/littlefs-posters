@@ -16,9 +16,7 @@ BENCH_RULES ?= \
 	bench-p26-bs
 # use our plot rules
 PLOT_RULES ?= \
-	plot-p26-bs \
-	plot-p26-bs-usage \
-	plot-p26-bs-ram
+	plot-p26-bs
 
 # default Makefile does most of the work
 include Makefile
@@ -106,6 +104,13 @@ $(foreach fs, $(BENCH_FSS),$\
 ## Plot p26 block size benchmarks
 .PHONY: plot-p26-bs
 plot-p26-bs: \
+		plot-p26-bs-bs \
+		plot-p26-bs-usage \
+		plot-p26-bs-ram
+
+## Plot p26 block size block size benchmarks
+.PHONY: plot-p26-bs-bs
+plot-p26-bs-bs: \
 		plot-p26-bs-linear \
 		plot-p26-bs-random \
 		plot-p26-bs-many \

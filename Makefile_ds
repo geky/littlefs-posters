@@ -16,9 +16,7 @@ BENCH_RULES ?= \
 	bench-p26-ds
 # use our plot rules
 PLOT_RULES ?= \
-	plot-p26-ds \
-	plot-p26-ds-usage \
-	plot-p26-ds-ram
+	plot-p26-ds
 
 # default Makefile does most of the work
 include Makefile
@@ -103,6 +101,13 @@ $(foreach fs, $(BENCH_FSS),$\
 ## Plot p26 disk size benchmarks
 .PHONY: plot-p26-ds
 plot-p26-ds: \
+		plot-p26-ds-ds \
+		plot-p26-ds-usage \
+		plot-p26-ds-ram
+
+## Plot p26 disk size disk size benchmarks
+.PHONY: plot-p26-ds-ds
+plot-p26-ds-ds: \
 		plot-p26-ds-linear \
 		plot-p26-ds-random \
 		plot-p26-ds-many \

@@ -1261,13 +1261,8 @@ F_yaffs2 = P # big plus
 # overrideable plot rules
 PLOT_RULES ?= \
 		plot-p26-litmus \
-		plot-p26-litmus-ops \
 		plot-p26-wt \
-		plot-p26-rt \
-		plot-p26-wt-usage \
-		plot-p26-wt-stack \
-		plot-p26-wt-heap \
-		plot-p26-wt-ram
+		plot-p26-rt
 
 ## Plot all benchmarks!
 .PHONY: plot plot-all
@@ -1276,6 +1271,12 @@ plot plot-all: $(PLOT_RULES)
 ## Plot p26 litmus benchmarks
 .PHONY: plot-p26-litmus
 plot-p26-litmus: \
+		plot-p26-litmus-litmus \
+		plot-p26-litmus-ops
+
+## Plot p26 litmus litmus benchmarks
+.PHONY: plot-p26-litmus-litmus
+plot-p26-litmus-litmus: \
 		plot-p26-litmus-linear \
 		plot-p26-litmus-random \
 		plot-p26-litmus-many \
@@ -1352,6 +1353,15 @@ plot-p26-litmus-ops-logging: \
 ## Plot p26 write-throughput benchmarks
 .PHONY: plot-p26-wt
 plot-p26-wt: \
+		plot-p26-wt-wt \
+		plot-p26-wt-usage \
+		plot-p26-wt-stack \
+		plot-p26-wt-heap \
+		plot-p26-wt-ram
+
+## Plot p26 write-throughput write-throughput benchmarks
+.PHONY: plot-p26-wt-wt
+plot-p26-wt-wt: \
 		plot-p26-wt-linear \
 		plot-p26-wt-random \
 		plot-p26-wt-many \
@@ -1380,6 +1390,11 @@ plot-p26-wt-logging: \
 ## Plot p26 read-throughput benchmarks
 .PHONY: plot-p26-rt
 plot-p26-rt: \
+		plot-p26-rt-rt
+
+## Plot p26 read-throughput read-throughput benchmarks
+.PHONY: plot-p26-rt-rt
+plot-p26-rt-rt: \
 		plot-p26-rt-linear \
 		plot-p26-rt-random \
 		plot-p26-rt-many

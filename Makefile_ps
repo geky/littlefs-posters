@@ -16,9 +16,7 @@ BENCH_RULES ?= \
 	bench-p26-ps
 # use our plot rules
 PLOT_RULES ?= \
-	plot-p26-ps \
-	plot-p26-ps-usage \
-	plot-p26-ps-ram
+	plot-p26-ps
 
 # default Makefile does most of the work
 include Makefile
@@ -105,6 +103,13 @@ $(foreach fs, $(BENCH_FSS),$\
 ## Plot p26 read/prog size benchmarks
 .PHONY: plot-p26-ps
 plot-p26-ps: \
+		plot-p26-ps-ps \
+		plot-p26-ps-usage \
+		plot-p26-ps-ram
+
+## Plot p26 read/prog size read/prog size benchmarks
+.PHONY: plot-p26-ps-ps
+plot-p26-ps-ps: \
 		plot-p26-ps-linear \
 		plot-p26-ps-random \
 		plot-p26-ps-many \
