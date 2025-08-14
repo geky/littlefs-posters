@@ -1543,47 +1543,38 @@ $1: $2
 		-xn \
 		-y$4_avg -y$4_bnd \
 		--subplot=" \
-				-DERASE_SIZE='$(EMMC_ERASE_SIZE)' \
+				-DERASE_SIZE='$($(U_$(firstword $(BENCH_SIMS)))_ERASE_SIZE)' \
 				-Dm=$5 \
 				$(if $(filter amor,$6),--ylabel=raw) \
 				$(if $(filter per,$6),--ylabel=total) \
-				--title=sd/emmc \
+				--title=$(firstword $(BENCH_SIMS)) \
 				$(if $6,--add-xticklabel=,) \
 				--ylim-ratio=0.98" \
 			$(if $6, \
 			--subplot-below=" \
-				-DERASE_SIZE='$(EMMC_ERASE_SIZE)' \
+				-DERASE_SIZE='$($(U_$(firstword $(BENCH_SIMS)))_ERASE_SIZE)' \
 				-Dm=$5+$6 \
 				$(if $(filter amor,$6),--ylabel=amortized) \
 				$(if $(filter per,$6),--ylabel=per) \
 				--ylim-ratio=0.98 \
 				-H0.5",) \
-		--subplot-right=" \
-				-DERASE_SIZE='$(NOR_ERASE_SIZE)' \
-				-Dm=$5 \
-				--title=nor \
-				$(if $6,--add-xticklabel=,) \
-				--ylim-ratio=0.98 \
-				-W0.5 \
-			$(if $6, \
-			--subplot-below=\" \
-				-DERASE_SIZE='$(NOR_ERASE_SIZE)' \
-				-Dm=$5+$6 \
-				--ylim-ratio=0.98 \
-				-H0.5\",)" \
-		--subplot-right=" \
-				-DERASE_SIZE='$(NAND_ERASE_SIZE)' \
-				-Dm=$5 \
-				--title=nand \
-				$(if $6,--add-xticklabel=,) \
-				--ylim-ratio=0.98 \
-				-W0.33 \
-			$(if $6, \
-			--subplot-below=\" \
-				-DERASE_SIZE='$(NAND_ERASE_SIZE)' \
-				-Dm=$5+$6 \
-				--ylim-ratio=0.98 \
-				-H0.5\",)" \
+		$(foreach sim, $(wordlist 2,$(words $(BENCH_SIMS)),$(BENCH_SIMS)),$\
+			--subplot-right=" \
+					-DERASE_SIZE='$($(U_$(sim))_ERASE_SIZE)' \
+					-Dm=$5 \
+					--title=$(sim) \
+					$(if $6,--add-xticklabel=,) \
+					--ylim-ratio=0.98 \
+					-W$$(shell python -c '$\
+						print(1 / ($\
+							"$(BENCH_SIMS)".split()$\
+								.index("$(sim)")+1))') \
+				$(if $6, \
+				--subplot-below=\" \
+					-DERASE_SIZE='$($(U_$(sim))_ERASE_SIZE)' \
+					-Dm=$5+$6 \
+					--ylim-ratio=0.98 \
+					-H0.5\",)") \
 		--legend \
 		$(foreach fs, $(BENCH_FSS),$\
 			-L'$(N_$(fs)),$4_avg=$(fs)%n$\
@@ -1699,16 +1690,16 @@ $1: $2
 		-ybench_readed \
 		-Dm=$6 \
 		--subplot=" \
-			-DERASE_SIZE=$(EMMC_ERASE_SIZE) \
-			--title=sd/emmc" \
-		--subplot-right=" \
-			-DERASE_SIZE=$(NOR_ERASE_SIZE) \
-			--title=nor \
-			-W0.5" \
-		--subplot-right=" \
-			-DERASE_SIZE=$(NAND_ERASE_SIZE) \
-			--title=nand \
-			-W0.33" \
+			-DERASE_SIZE=$($(U_$(firstword $(BENCH_SIMS)))_ERASE_SIZE) \
+			--title=$(firstword $(BENCH_SIMS))" \
+		$(foreach sim, $(wordlist 2,$(words $(BENCH_SIMS)),$(BENCH_SIMS)),$\
+			--subplot-right=" \
+				-DERASE_SIZE=$($(U_$(sim))_ERASE_SIZE) \
+				--title=$(sim) \
+				-W$$(shell python -c '$\
+					print(1 / ($\
+						"$(BENCH_SIMS)".split()$\
+							.index("$(sim)")+1))')") \
 		--legend \
 		$(foreach fs, $(BENCH_FSS),$\
 			-L'$(N_$(fs))=$(fs)') \
