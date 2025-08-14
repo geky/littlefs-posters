@@ -892,6 +892,11 @@ BENCH_RULES ?= \
 .PHONY: bench bench-all
 bench bench-all: $(BENCH_RULES)
 
+## Mark current results as up-to-date to prevent reruns
+.PHONY: reuse-results
+reuse-results:
+	find $(RESULTSDIR) -name '*.csv' -execdir touch '{}' ';'
+
 ## Run p26 litmus benchmarks
 .PHONY: bench-p26-litmus
 bench-p26-litmus: \
