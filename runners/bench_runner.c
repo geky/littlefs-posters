@@ -1886,6 +1886,14 @@ void perm_run(
     }
     #endif
 
+    // a bit of a hack, but force reset yaffs2 global state
+    #ifdef YAFFS2
+    extern struct list_head yaffsfs_deviceList;
+    INIT_LIST_HEAD(&yaffsfs_deviceList);
+    extern int yaffsfs_handlesInitialised;
+    yaffsfs_handlesInitialised = false;
+    #endif
+
     // run the bench
     printf("running ");
     perm_printid(suite, case_);

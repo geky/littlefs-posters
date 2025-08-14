@@ -246,12 +246,31 @@ BENCH_SPIFFS_CI  := $(BENCH_SPIFFS_OBJ:.o=.ci)
 # we're feeling monstrous today so instead of actually running yaffs2's
 # handle_common.sh script, just parse it for the info we need
 #
+# two hacks:
+#
+# - force inject yaffscfg.h into all files, sometimes redundantly
+#
+#   yaffs2 doesn't seem to consistently include yaffscfg.h, though this
+#   may be a case where I'm misunderstanding yaffs2 configuration works,
+#   that or a side-effect of yaffs2 being Linux-first
+#
+# - force yaffsfs_handlesInitialised to be non-static
+#
+#   there doesn't seem to be any other way to force reset yaffs2's
+#   global state after a bench failure
+#
 YAFFS2_CORE_C := $(shell grep -o '[^ ]*\.c' yaffs2/direct/handle_common.sh)
 YAFFS2_CORE_H := $(shell grep -o '[^ ]*\.h' yaffs2/direct/handle_common.sh)
-YAFFS2_CORE_E := $(shell grep -o '\-e "[^"]*"' yaffs2/direct/handle_common.sh)
+YAFFS2_CORE_E := \
+		-e '1i\#include "yaffscfg.h"' \
+		$(shell grep -o '\-e "[^"]*"' yaffs2/direct/handle_common.sh)
 YAFFS2_DIRECT_C := $(notdir $(wildcard yaffs2/direct/*.c))
 YAFFS2_DIRECT_H := $(filter-out yaffscfg.h,\
 		$(notdir $(wildcard yaffs2/direct/*.h)))
+YAFFS2_DIRECT_E := \
+		-e '1i\#include "yaffscfg.h"' \
+		-e 's/static int yaffsfs_handlesInitialised/$\
+			int yaffsfs_handlesInitialised/'
 BENCH_YAFFS2_RUNNER ?= $(BUILDDIR)/bench_yaffs2_runner
 BENCH_YAFFS2_FILTER ?= sed -n -e'1p' -e'/\<yaffs/p'
 BENCH_YAFFS2_CFLAGS += -DYAFFS2=1
@@ -265,6 +284,11 @@ CODEMAP_YAFFS2_SRC_ := \
 CODEMAP_YAFFS2_OBJ  := $(CODEMAP_YAFFS2_SRC_:.c=.yaffs2.o)
 CODEMAP_YAFFS2_DEP  := $(CODEMAP_YAFFS2_OBJ:.o=.d)
 CODEMAP_YAFFS2_CI   := $(CODEMAP_YAFFS2_OBJ:.o=.ci)
+BENCH_YAFFS2_SRC  ?= \
+		$(CODEMAP_YAFFS2_SRC) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
+		runners/bench_runner.c \
+		benches/bench_helpers.c
 BENCH_YAFFS2_SRC_ := \
 		$(CODEMAP_YAFFS2_SRC_) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
@@ -651,14 +675,7 @@ $(BUILDDIR)/%.b.c: $(BUILDDIR)/%.c $(BENCHES)
 
 # yaffs2 preprocessing rules
 #
-# yaffs2 doesn't seem to consistently include yaffscfg.h, though this
-# may be a case where I'm misunderstanding yaffs2 configuration works,
-# that or a side-effect of yaffs2 being Linux-first
-#
-# to workaround this, we just inject yaffscfg.h into every yaffs2 file,
-# sometimes redundantly
-#
-# yaffs2 also expects some core names to be preprocessed in direct mode,
+# yaffs2 expects some core names to be preprocessed in direct mode,
 # which we've grepped and apply here, see above
 #
 $(BENCH_YAFFS2_OBJ): \
@@ -667,16 +684,16 @@ $(BENCH_YAFFS2_OBJ): \
 			$(YAFFS2_DIRECT_H))
 
 $(BUILDDIR)/yaffs2/%.h: yaffs2/direct/%.h
-	sed $< -e '1i#include "yaffscfg.h"' >$@
+	sed $< $(YAFFS2_DIRECT_E) >$@
 
 $(BUILDDIR)/yaffs2/%.h: yaffs2/core/%.h
-	sed $< -e '1i#include "yaffscfg.h"' $(YAFFS2_CORE_E) >$@
+	sed $< $(YAFFS2_CORE_E) >$@
 
 $(BUILDDIR)/yaffs2/%.c: yaffs2/direct/%.c
-	sed $< -e '1i#include "yaffscfg.h"' >$@
+	sed $< $(YAFFS2_DIRECT_E) >$@
 
 $(BUILDDIR)/yaffs2/%.c: yaffs2/core/%.c
-	sed $< -e '1i#include "yaffscfg.h"' $(YAFFS2_CORE_E) >$@
+	sed $< $(YAFFS2_CORE_E) >$@
 
 
 
