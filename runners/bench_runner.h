@@ -244,7 +244,6 @@ size_t bench_heap(void);
     /* NOTE this was expanded to match littlefs2                           */ \
     BENCH_DEFINE(FILE_CACHE_SIZE,    CACHE_SIZE                             ) \
     BENCH_DEFINE(LOOKAHEAD_SIZE,     16                                     ) \
-    BENCH_DEFINE(TREEDIFF_SIZE,      16                                     ) \
     BENCH_DEFINE(GC_FLAGS,           0                                      ) \
     BENCH_DEFINE(GC_STEPS,           0                                      ) \
     BENCH_DEFINE(GC_COMPACT_THRESH,  0                                      ) \
@@ -395,7 +394,6 @@ struct bench_cfg {
 
 #ifdef LFS3_BMAP
 #define BENCH_BMAP_CFG \
-    .treediff_size      = TREEDIFF_SIZE,        \
     .bmap_scan_thresh   = BMAP_SCAN_THRESH,
 #else
 #define BENCH_BMAP_CFG
