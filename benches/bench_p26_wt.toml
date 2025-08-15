@@ -199,9 +199,9 @@ code = '''
 [cases.bench_p26_wt_random]
 if = [
     # littlefs2 simply doesn't scale well enough for this
-    'BENCH_IFDEF_LFS2(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_LFS2(SIZE <= 16*1024, true)',
     # spiffs simply doesn't scale well enough for this
-    'BENCH_IFDEF_SPIFFS(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_SPIFFS(SIZE <= 16*1024, true)',
 ]
 code = '''
     // ok, one of these needs to be non-zero
@@ -379,14 +379,14 @@ code = '''
 [cases.bench_p26_wt_many]
 if = [
     # littlefs2 simply doesn't scale well enough to create this many files
-    'BENCH_IFDEF_LFS2(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_LFS2(SIZE <= 16*1024, true)',
     # spiffs simply doesn't scale well enough to create this many files
-    'BENCH_IFDEF_SPIFFS(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_SPIFFS(SIZE <= 16*1024, true)',
     # and surprisingly this was an issue for yaffs2 as well! but not on
     # disk! the internal RAM-backed linked-list of on-disk files grows
     # O(n), we aren't benchmarking this but it becomes a problem for
     # actually running this bench
-    'BENCH_IFDEF_YAFFS2(SIZE <= 128*1024, true)',
+    'BENCH_IFDEF_YAFFS2(SIZE <= 16*1024, true)',
 ]
 code = '''
     // ok, one of these needs to be non-zero
