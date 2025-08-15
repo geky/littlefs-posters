@@ -562,6 +562,7 @@ $(foreach fs, $(BENCH_FSS), \
 	$(eval -include $(BENCH_$(U_$(fs))_DEP)))
 .SUFFIXES:
 .SECONDARY:
+.DELETE_ON_ERROR:
 .PHONY: PHONY
 PHONY: ;
 , := ,
