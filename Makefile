@@ -34,13 +34,13 @@ P26_T_SIZES ?= 1024,2048,4096,8192,16384,32768
 P26_T_SIZE ?= $(lastword $(subst $(,), ,$(P26_T_SIZES)))
 # chunks size, i.e. size of writes/reads, for throughput testing?
 P26_T_CHUNK ?= 32
+# simulation time in nanoseconds for throughput testing?
 ifndef P26_T_SIM_TIME
 ifndef P26_T_SIM_SIZE
-# simulation size in bytes for throughput testing
 ifdef PRECISE
-P26_T_SIM_SIZE ?= 524288 # 16*32KiB
+P26_T_SIM_TIME ?= 600000000000 # 10 minutes
 else
-P26_T_SIM_SIZE ?= 131072 # 4*32KiB
+P26_T_SIM_TIME ?= 60000000000 # 1 minute
 endif
 endif
 endif

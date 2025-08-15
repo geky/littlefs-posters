@@ -14,11 +14,14 @@ P26_LITMUS_STEP ?= 32
 else
 P26_LITMUS_STEP ?= 256 # was 32, prioritizing speed over accuracy
 endif
+
 P26_T_SIZES ?= 32768,65536,131072,262144,524288,1048576
+
+# increase simtime for more reliable results
 ifdef PRECISE
-P26_T_SIM_SIZE ?= 16777216 # 4*1MiB
+P26_T_SIM_TIME ?= 3600000000000 # 1 hour
 else
-P26_T_SIM_SIZE ?= 4194304 # 4*1MiB
+P26_T_SIM_TIME ?= 600000000000 # 10 minutes
 endif
 
 

@@ -21,10 +21,12 @@ P26_T_SIZES ?= 33554432,67108864,134217728,268435456,536870912,1073741824
 # bump up chunk size
 # TODO should we do the same for 1M?
 P26_T_CHUNK ?= 4096
+
+# increase simtime for more reliable results
 ifdef PRECISE
-P26_T_SIM_SIZE ?= 17179869184 # 16*1GiB
+P26_T_SIM_TIME ?= 86400000000000 # 1 day
 else
-P26_T_SIM_SIZE ?= 4294967296 # 4*1GiB
+P26_T_SIM_TIME ?= 3600000000000 # 1 hour
 endif
 
 # limit filesystems and sims

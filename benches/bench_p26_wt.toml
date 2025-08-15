@@ -147,7 +147,7 @@ code = '''
         written += CHUNK;
 
         // bail if we get stuck
-        if (SIM_TIME && bench_helpers_simstuck(CFG, written)) {
+        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
@@ -197,12 +197,6 @@ code = '''
 '''
 
 [cases.bench_p26_wt_random]
-if = [
-    # littlefs2 simply doesn't scale well enough for this
-    'BENCH_IFDEF_LFS2(SIZE <= 16*1024, true)',
-    # spiffs simply doesn't scale well enough for this
-    'BENCH_IFDEF_SPIFFS(SIZE <= 16*1024, true)',
-]
 code = '''
     // ok, one of these needs to be non-zero
     LFS3_ASSERT(SIM_TIME > 0 || SIM_SIZE > 0);
@@ -327,7 +321,7 @@ code = '''
         size = lfs3_max(size, pos + CHUNK);
 
         // bail if we get stuck
-        if (SIM_TIME && bench_helpers_simstuck(CFG, written)) {
+        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
@@ -378,15 +372,9 @@ code = '''
 
 [cases.bench_p26_wt_many]
 if = [
-    # littlefs2 simply doesn't scale well enough to create this many files
-    'BENCH_IFDEF_LFS2(SIZE <= 16*1024, true)',
-    # spiffs simply doesn't scale well enough to create this many files
-    'BENCH_IFDEF_SPIFFS(SIZE <= 16*1024, true)',
-    # and surprisingly this was an issue for yaffs2 as well! but not on
-    # disk! the internal RAM-backed linked-list of on-disk files grows
-    # O(n), we aren't benchmarking this but it becomes a problem for
-    # actually running this bench
-    'BENCH_IFDEF_YAFFS2(SIZE <= 16*1024, true)',
+    # unfortunately the internal linked-list in yaffs2 scales
+    # O(n), which makes this difficult to benchmark
+    'BENCH_IFDEF_YAFFS2(SIZE <= 1024*1024, true)',
 ]
 code = '''
     // ok, one of these needs to be non-zero
@@ -509,7 +497,7 @@ code = '''
         written += CHUNK;
 
         // bail if we get stuck
-        if (SIM_TIME && bench_helpers_simstuck(CFG, written)) {
+        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }
@@ -725,7 +713,7 @@ code = '''
         written += CHUNK;
 
         // bail if we get stuck
-        if (SIM_TIME && bench_helpers_simstuck(CFG, written)) {
+        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
             return;
         }
     }

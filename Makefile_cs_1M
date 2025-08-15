@@ -4,9 +4,17 @@ RESULTSDIR ?= results_cs_1M
 PLOTSDIR ?= plots_cs_1M
 
 
-# 1MiB sizes
-DISK_SIZE ?= 268435456
-P26_T_SIZE ?= 1048576
+# give us more space for activities
+DISK_SIZE ?= 268435456 # 256 MiB
+# target size = 1 MiB
+P26_T_SIZE ?= 1048576 # 1 MiB
+
+# increase simtime for more reliable results
+ifdef PRECISE
+P26_T_SIM_TIME ?= 3600000000000 # 1 hour
+else
+P26_T_SIM_TIME ?= 600000000000 # 10 minutes
+endif
 
 
 # page size Makefile does most of the work
