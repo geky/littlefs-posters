@@ -1093,7 +1093,7 @@ $(foreach fs, $(BENCH_FSS),$\
 				$(sim)))))
 
 ## Quick summary of simtimes/simsizes to help debugging
-bench-%-simtime: PHONY
+simtime-%: PHONY
 	$(strip ./scripts/csv.py \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
