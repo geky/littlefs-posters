@@ -216,7 +216,8 @@ size_t bench_heap(void);
 #ifdef BENCH_KIWIBD
 #define BENCH_KIWIBD_DEFINES \
     /* emubd config                                                        */ \
-    BENCH_DEFINE(ERASE_VALUE,        -2                                     )
+    BENCH_DEFINE(ERASE_VALUE,        BENCH_IFDEF_SPIFFS(-2,                   \
+                                        BENCH_IFDEF_YAFFS2(0xff, -1))       )
 #else
 #define BENCH_KIWIBD_DEFINES
 #endif
@@ -225,7 +226,8 @@ size_t bench_heap(void);
 #ifdef BENCH_EMUBD
 #define BENCH_EMUBD_DEFINES \
     /* emubd config                                                        */ \
-    BENCH_DEFINE(ERASE_VALUE,        -2                                     ) \
+    BENCH_DEFINE(ERASE_VALUE,        BENCH_IFDEF_SPIFFS(-2,                   \
+                                        BENCH_IFDEF_YAFFS2(0xff, -1))       ) \
     BENCH_DEFINE(ERASE_CYCLES,       0                                      ) \
     BENCH_DEFINE(BADBLOCK_BEHAVIOR,  LFS3_EMUBD_BADBLOCK_PROGERROR          ) \
     BENCH_DEFINE(POWERLOSS_BEHAVIOR, LFS3_EMUBD_POWERLOSS_ATOMIC            ) \
