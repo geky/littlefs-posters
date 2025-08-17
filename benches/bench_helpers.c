@@ -43,7 +43,13 @@ void bench_helpers_simreset(const struct lfs3_cfg *cfg) {
 bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n) {
     // ok if we've read/progged more than 4x the runtime we're
     // definitely stuck, note these aren't even the same units
-    return (n > 4*bench_helpers_simtime(cfg));
+    uint64_t time = bench_helpers_simtime(cfg);
+    if (n > 4*time) {
+        LFS3_WARN("uh oh, sim is stuck! %jd > 4 * %jd", n, time);
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -132,7 +138,14 @@ void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
 
     for (lfs3_block_t i = 0; i < 2*BLOCK_COUNT; i++) {
         yaffs_lseek(fd, 0, SEEK_SET) => 0;
-        yaffs_write(fd, wbuf, BLOCK_SIZE) => BLOCK_SIZE;
+        // sometimes yaffs_write writes less than requested (BLOCK_SIZE
+        // >= ~1MiB)
+        //
+        // this is not a bug per the POSIX spec, but I'm too lazy to
+        // write a correct write loop here so just ignore when this
+        // happens
+        lfs3_ssize_t d = yaffs_write(fd, wbuf, BLOCK_SIZE);
+        assert(d >= 0);
         yaffs_fsync(fd) => 0;
     }
     yaffs_close(fd) => 0;
