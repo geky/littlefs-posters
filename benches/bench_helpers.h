@@ -8,7 +8,6 @@
 #include "runners/bench_runner.h"
 
 
-
 // get simulated time in nanoseconds since start of bench
 //
 // this is derived form the current read/prog/erase ops
@@ -23,25 +22,22 @@ void bench_helpers_simreset(const struct lfs3_cfg *cfg);
 bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n);
 
 
-// clobber disk such that the filesystem thinks all blocks are unerased
+// warm up the filesystem
 //
-// spiffs and yaffs2 assume a full disk erase during format, but this
-// hides erase costs on large disks, clobbering levels the playing field
-// a bit
+// this writes a 1 block file 2*block_count times to get it into a good
+// state for benchmarking
 //
-// eventually littlefs3 will also support persistent erased-state
-// tracking, but we may want to clobber during benchmarking to avoid
-// weird performance biases on the first pass through disk
-//
-void bench_helpers_clobber(const struct lfs3_cfg *cfg);
+// most importantly this uses up any pre-erased blocks created during
+// format, which is inconsistent across filesystems and messes with
+// benchmarks
+void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs);
 
 
 // find disk usage
 //
 // this is a bit different for each filesystem
 //
-uintmax_t bench_helpers_usage(void *fs);
-
+uintmax_t bench_helpers_usage(const struct lfs3_cfg *cfg, void *fs);
 
 
 #endif

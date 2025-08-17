@@ -48,88 +48,101 @@ bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n) {
 
 
 
-// clobber disk such that the filesystem thinks all blocks are unerased
+// warm up the filesystem
 //
-// spiffs and yaffs2 assume a full disk erase during format, but this
-// hides erase costs on large disks, clobbering levels the playing field
-// a bit
+// this writes a 1 block file 2*block_count times to get it into a good
+// state for benchmarking
 //
-// eventually littlefs3 will also support persistent erased-state
-// tracking, but we may want to clobber during benchmarking to avoid
-// weird performance biases on the first pass through disk
-//
-void bench_helpers_clobber(const struct lfs3_cfg *cfg) {
+// most importantly this uses up any pre-erased blocks created during
+// format, which is inconsistent across filesystems and messes with
+// benchmarks
+void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
+    // TODO can we also pause stack measurements here?
+    extern void bench_heap_pause(void);
+    bench_heap_pause();
+    uint8_t *wbuf = malloc(BLOCK_SIZE);
+    memset(wbuf, '1', BLOCK_SIZE);
+    extern void bench_heap_resume(void);
+    bench_heap_resume();
+
     #if defined(LFS3)
-    // do nothing, littlefs3 currently assumes unerased after format
     (void)cfg;
+    lfs3_t *lfs3 = fs;
+
+    lfs3_file_t file;
+    lfs3_file_open(lfs3, &file, "warmup",
+            LFS3_O_WRONLY | LFS3_O_CREAT | LFS3_O_EXCL) => 0;
+    for (lfs3_block_t i = 0; i < 2*BLOCK_COUNT; i++) {
+        lfs3_file_rewind(lfs3, &file) => 0;
+        lfs3_file_write(lfs3, &file, wbuf, BLOCK_SIZE) => BLOCK_SIZE;
+        lfs3_file_sync(lfs3, &file) => 0;
+    }
+    lfs3_file_close(lfs3, &file) => 0;
+
     #elif defined(LFS2)
-    // do nothing, littlefs2 currently assumes unerased after format
     (void)cfg;
+    lfs2_t *lfs2 = fs;
+
+    lfs2_file_t file;
+    lfs2_file_open(lfs2, &file, "warmup",
+            LFS2_O_WRONLY | LFS2_O_CREAT | LFS2_O_EXCL) => 0;
+    for (lfs2_block_t i = 0; i < 2*BLOCK_COUNT; i++) {
+        lfs2_file_rewind(lfs2, &file) => 0;
+        lfs2_file_write(lfs2, &file, wbuf, BLOCK_SIZE) => BLOCK_SIZE;
+        lfs2_file_sync(lfs2, &file) => 0;
+    }
+    lfs2_file_close(lfs2, &file) => 0;
+
     #elif defined(SPIFFS)
-    // zeroing everything clears spiffs's lookup tables and makes it think
-    // all pages have been deleted
+    spiffs *spiffs = fs;
+
+    // this unfortunately takes way too long with spiffs, so instead
+    // let's just zero disk and run the write loop only a couple times
     //
-    // leave first three blocks erased to be fair
-    extern void bench_heap_pause(void);
-    bench_heap_pause();
-    uint8_t *buffer = malloc(BLOCK_SIZE);
-    memset(buffer, 0, BLOCK_SIZE);
-    for (lfs3_block_t i = 2; i < BLOCK_COUNT; i++) {
+    // zeroing clears spiffs's lookup tables and makes it think all pages
+    // have been deleted, which is mostly the same effect
+    memset(wbuf, 0, BLOCK_SIZE);
+    for (lfs3_block_t i = 0; i < BLOCK_COUNT; i++) {
         cfg->erase(cfg, i) => 0;
-        cfg->prog(cfg, i, 0, buffer, BLOCK_SIZE) => 0;
+        cfg->prog(cfg, i, 0, wbuf, BLOCK_SIZE) => 0;
     }
-    free(buffer);
-    extern void bench_heap_resume(void);
-    bench_heap_resume();
+
+    // update spiffs internal state
+    spiffs_obj_lu_scan(spiffs) => 0;
+
+    memset(wbuf, '1', BLOCK_SIZE);
+    spiffs_file fd = SPIFFS_open(spiffs, "warmup",
+            SPIFFS_WRONLY | SPIFFS_CREAT | SPIFFS_EXCL, 0777);
+    assert(fd >= 0);
+    // only a write a couple times
+    for (lfs3_block_t i = 0; i < 4; i++) {
+        SPIFFS_lseek(spiffs, fd, 0, SPIFFS_SEEK_SET) => 0;
+        SPIFFS_write(spiffs, fd, wbuf, BLOCK_SIZE) => BLOCK_SIZE;
+        s32_t d = SPIFFS_fflush(spiffs, fd);
+        assert(d >= 0);
+    }
+    SPIFFS_close(spiffs, fd) => 0;
+
     #elif defined(YAFFS2)
-    // for yaffs we have to be a bit more clever
-    //
-    // instead of zeroing, fill pages with redundant unused data, this
-    // matches the yaffs_packed_tags2_tags_only struct that gets written
-    // to the end of each page:
-    // - seq_number = 0x1001 (must be >=0x00001000,<=0xefffff00!)
-    //   (YAFFS_LOWEST_SEQUENCE_NUMBER, YAFFS_HIGHEST_SEQUENCE_NUMBER)
-    // - obj_id = 1
-    // - chunk_id = 1
-    // - n_bytes 0
-    //
-    // I think this might still end up with one data page that never gets
-    // fully gced, but that shouldn't interfere with our benchmarks
-    //
-    // leave first three blocks erased to be fair
+    (void)cfg;
+    (void)fs;
+
+    int fd = yaffs_open("warmup", O_WRONLY | O_CREAT | O_EXCL, 0777);
+    assert(fd >= 0);
+
+    for (lfs3_block_t i = 0; i < 2*BLOCK_COUNT; i++) {
+        yaffs_lseek(fd, 0, SEEK_SET) => 0;
+        yaffs_write(fd, wbuf, BLOCK_SIZE) => BLOCK_SIZE;
+        yaffs_fsync(fd) => 0;
+    }
+    yaffs_close(fd) => 0;
+    #endif
+
     extern void bench_heap_pause(void);
     bench_heap_pause();
-    uint8_t *buffer = malloc(BLOCK_SIZE);
-    memset(buffer, 0, BLOCK_SIZE);
-    for (lfs3_size_t i = 0; i < BLOCK_SIZE / YPAGE_SIZE; i++) {
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+0]  = 0x01;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+1]  = 0x10;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+2]  = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+3]  = 0;
-
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+4]  = 0x01;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+5]  = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+6]  = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+7]  = 0;
-
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+8]  = 0x01;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+9]  = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+10] = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+11] = 0;
-
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+12] = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+13] = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+14] = 0;
-        buffer[i*YPAGE_SIZE+YPAGE_SIZE-16+15] = 0;
-    }
-    for (lfs3_block_t i = 2; i < BLOCK_COUNT; i++) {
-        cfg->erase(cfg, i) => 0;
-        cfg->prog(cfg, i, 0, buffer, BLOCK_SIZE) => 0;
-    }
-    free(buffer);
+    free(wbuf);
     extern void bench_heap_resume(void);
     bench_heap_resume();
-    #endif
 }
 
 
@@ -153,8 +166,9 @@ static int bench_helpers_usage_cb(void *ctx, lfs3_block_t block) {
 //
 // this is a bit different for each filesystem
 //
-uintmax_t bench_helpers_usage(void *fs) {
+uintmax_t bench_helpers_usage(const struct lfs3_cfg *cfg, void *fs) {
     #if defined(LFS3)
+    (void)cfg;
     lfs3_t *lfs3 = fs;
     // measure disk usage
     //
@@ -188,6 +202,7 @@ uintmax_t bench_helpers_usage(void *fs) {
     return (uintmax_t)usage * (uintmax_t)BLOCK_SIZE;
 
     #elif defined(LFS2)
+    (void)cfg;
     lfs2_t *lfs2 = fs;
     // measure disk usage
     //
@@ -212,6 +227,7 @@ uintmax_t bench_helpers_usage(void *fs) {
     return (uintmax_t)usage * (uintmax_t)BLOCK_SIZE;
 
     #elif defined(SPIFFS)
+    (void)cfg;
     spiffs *spiffs = fs;
     // measure disk usage
     //
@@ -227,7 +243,9 @@ uintmax_t bench_helpers_usage(void *fs) {
     return used;
 
     #elif defined(YAFFS2)
+    (void)cfg;
     (void)fs;
+
     // measure disk usage
     //
     // we rely on yaffs2's internal bookkeeping here
