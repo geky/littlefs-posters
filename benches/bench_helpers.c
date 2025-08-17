@@ -62,7 +62,7 @@ bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n) {
 // most importantly this uses up any pre-erased blocks created during
 // format, which is inconsistent across filesystems and messes with
 // benchmarks
-void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
+int bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
     // TODO can we also pause stack measurements here?
     extern void bench_heap_pause(void);
     bench_heap_pause();
@@ -141,7 +141,16 @@ void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
         // TODO for some reason yaffs falls apart here when
         // BLOCK_SIZE >= ~1MiB, not sure why, bug in yaffs? disk too
         // small for 1MiB blocks with yaffs's gc heuristics?
-        yaffs_write(fd, wbuf, BLOCK_SIZE) => BLOCK_SIZE;
+        lfs3_soff_t d = yaffs_write(fd, wbuf, BLOCK_SIZE);
+        if (d != BLOCK_SIZE) {
+            // shortened writes are technically allowed by POSIX, but
+            // this is usually a symptom of an error, allow another
+            // write to make sure
+            if (d < 0) {
+                LFS3_ERROR("yaffs2 warmup failed? %d", yaffs_errno);
+                return d;
+            }
+        }
         yaffs_fsync(fd) => 0;
     }
     yaffs_close(fd) => 0;
@@ -152,6 +161,7 @@ void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
     free(wbuf);
     extern void bench_heap_resume(void);
     bench_heap_resume();
+    return 0;
 }
 
 

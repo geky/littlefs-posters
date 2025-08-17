@@ -30,7 +30,7 @@ bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n);
 // most importantly this uses up any pre-erased blocks created during
 // format, which is inconsistent across filesystems and messes with
 // benchmarks
-void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs);
+int bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs);
 
 
 // find disk usage

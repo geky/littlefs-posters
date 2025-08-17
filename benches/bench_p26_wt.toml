@@ -31,12 +31,18 @@ code = '''
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
-    bench_helpers_warmup(CFG, &lfs3);
+    int err = bench_helpers_warmup(CFG, &lfs3);
+    if (err) {
+        return;
+    }
     #elif defined(LFS2)
     lfs2_t lfs2;
     lfs2_format(&lfs2, CFG_LFS2) => 0;
     lfs2_mount(&lfs2, CFG_LFS2) => 0;
-    bench_helpers_warmup(CFG, &lfs2);
+    int err = bench_helpers_warmup(CFG, &lfs2);
+    if (err) {
+        return;
+    }
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
@@ -48,7 +54,10 @@ code = '''
             fd_buffer, FD_SIZE,
             scache_buffer, SCACHE_SIZE,
             NULL) => 0;
-    bench_helpers_warmup(CFG, &spiffs);
+    int err = bench_helpers_warmup(CFG, &spiffs);
+    if (err) {
+        return;
+    }
     #elif defined(YAFFS2)
     // note this implicitly zeros yaffs_dev
     struct yaffs_dev yaffs2 = {
@@ -59,7 +68,10 @@ code = '''
     yaffs_add_device(&yaffs2);
     yaffs_format("/", false, false, false) => 0;
     yaffs_mount("/") => 0;
-    bench_helpers_warmup(CFG, &yaffs2);
+    int err = bench_helpers_warmup(CFG, &yaffs2);
+    if (err) {
+        return;
+    }
     #endif
     uint32_t prng = SEED;
 
@@ -186,12 +198,18 @@ code = '''
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
-    bench_helpers_warmup(CFG, &lfs3);
+    int err = bench_helpers_warmup(CFG, &lfs3);
+    if (err) {
+        return;
+    }
     #elif defined(LFS2)
     lfs2_t lfs2;
     lfs2_format(&lfs2, CFG_LFS2) => 0;
     lfs2_mount(&lfs2, CFG_LFS2) => 0;
-    bench_helpers_warmup(CFG, &lfs2);
+    int err = bench_helpers_warmup(CFG, &lfs2);
+    if (err) {
+        return;
+    }
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
@@ -203,7 +221,10 @@ code = '''
             fd_buffer, FD_SIZE,
             scache_buffer, SCACHE_SIZE,
             NULL) => 0;
-    bench_helpers_warmup(CFG, &spiffs);
+    int err = bench_helpers_warmup(CFG, &spiffs);
+    if (err) {
+        return;
+    }
     #elif defined(YAFFS2)
     // note this implicitly zeros yaffs_dev
     struct yaffs_dev yaffs2 = {
@@ -214,7 +235,10 @@ code = '''
     yaffs_add_device(&yaffs2);
     yaffs_format("/", false, false, false) => 0;
     yaffs_mount("/") => 0;
-    bench_helpers_warmup(CFG, &yaffs2);
+    int err = bench_helpers_warmup(CFG, &yaffs2);
+    if (err) {
+        return;
+    }
     #endif
     uint32_t prng = SEED;
 
@@ -346,12 +370,18 @@ code = '''
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
-    bench_helpers_warmup(CFG, &lfs3);
+    int err = bench_helpers_warmup(CFG, &lfs3);
+    if (err) {
+        return;
+    }
     #elif defined(LFS2)
     lfs2_t lfs2;
     lfs2_format(&lfs2, CFG_LFS2) => 0;
     lfs2_mount(&lfs2, CFG_LFS2) => 0;
-    bench_helpers_warmup(CFG, &lfs2);
+    int err = bench_helpers_warmup(CFG, &lfs2);
+    if (err) {
+        return;
+    }
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
@@ -363,7 +393,10 @@ code = '''
             fd_buffer, FD_SIZE,
             scache_buffer, SCACHE_SIZE,
             NULL) => 0;
-    bench_helpers_warmup(CFG, &spiffs);
+    int err = bench_helpers_warmup(CFG, &spiffs);
+    if (err) {
+        return;
+    }
     #elif defined(YAFFS2)
     // note this implicitly zeros yaffs_dev
     struct yaffs_dev yaffs2 = {
@@ -374,7 +407,10 @@ code = '''
     yaffs_add_device(&yaffs2);
     yaffs_format("/", false, false, false) => 0;
     yaffs_mount("/") => 0;
-    bench_helpers_warmup(CFG, &yaffs2);
+    int err = bench_helpers_warmup(CFG, &yaffs2);
+    if (err) {
+        return;
+    }
     #endif
     uint32_t prng = SEED;
 
@@ -384,9 +420,6 @@ code = '''
     // open a file
     BENCH_START("write", 0);
     uint64_t written = 0;
-    #ifdef LFS2
-    int err;
-    #endif
     while (!(SIM_SIZE
                 && written >= (uint64_t)SIM_SIZE)
             && !(SIM_TIME
@@ -484,7 +517,7 @@ code = '''
 failed:;
     // apparently littlefs2 is very fragile with many files,
     // just log this error and mark the test as bad for now
-    LFS3_ERROR("lfs2 close failure: %d", err);
+    LFS3_ERROR("lfs2 close failure? %d", err);
     lfs2_unmount(&lfs2) => 0;
     return;
     #endif
@@ -499,12 +532,18 @@ code = '''
     lfs3_t lfs3;
     lfs3_format(&lfs3, LFS3_F_RDWR, CFG) => 0;
     lfs3_mount(&lfs3, LFS3_M_RDWR, CFG) => 0;
-    bench_helpers_warmup(CFG, &lfs3);
+    int err = bench_helpers_warmup(CFG, &lfs3);
+    if (err) {
+        return;
+    }
     #elif defined(LFS2)
     lfs2_t lfs2;
     lfs2_format(&lfs2, CFG_LFS2) => 0;
     lfs2_mount(&lfs2, CFG_LFS2) => 0;
-    bench_helpers_warmup(CFG, &lfs2);
+    int err = bench_helpers_warmup(CFG, &lfs2);
+    if (err) {
+        return;
+    }
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
@@ -516,7 +555,10 @@ code = '''
             fd_buffer, FD_SIZE,
             scache_buffer, SCACHE_SIZE,
             NULL) => 0;
-    bench_helpers_warmup(CFG, &spiffs);
+    int err = bench_helpers_warmup(CFG, &spiffs);
+    if (err) {
+        return;
+    }
     #elif defined(YAFFS2)
     // note this implicitly zeros yaffs_dev
     struct yaffs_dev yaffs2 = {
@@ -527,7 +569,10 @@ code = '''
     yaffs_add_device(&yaffs2);
     yaffs_format("/", false, false, false) => 0;
     yaffs_mount("/") => 0;
-    bench_helpers_warmup(CFG, &yaffs2);
+    int err = bench_helpers_warmup(CFG, &yaffs2);
+    if (err) {
+        return;
+    }
     #endif
     uint32_t prng = SEED;
 
