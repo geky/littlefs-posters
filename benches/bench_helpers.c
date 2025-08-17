@@ -152,8 +152,8 @@ void bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
 static int bench_helpers_usage_cb(void *ctx, lfs3_block_t block) {
     uint8_t *usage_bmap = ctx;
     // TODO found a bug in littlefs2? lfs2_fs_traverse is returning the
-    // fake cache block when it shouldn't
-    if ((lfs3_sblock_t)block < 0) {
+    // fake cache block when it shouldn't ... and other garbage?
+    if (!(block >= 0 && block < BLOCK_COUNT)) {
         LFS3_WARN("lfs2_fs_traverse: weird block? %d", block);
         return 0;
     }

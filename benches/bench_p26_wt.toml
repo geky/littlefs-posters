@@ -484,7 +484,7 @@ code = '''
 failed:;
     // apparently littlefs2 is very fragile with many files,
     // just log this error and mark the test as bad for now
-    printf("error: lfs2 close failure: %d\n", err);
+    LFS3_ERROR("lfs2 close failure: %d", err);
     lfs2_unmount(&lfs2) => 0;
     return;
     #endif
