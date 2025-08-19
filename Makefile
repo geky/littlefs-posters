@@ -2126,6 +2126,8 @@ tikz-p26-wt: \
 	$(foreach sim, $(BENCH_SIMS),$\
 		$(foreach bench, linear random many logging,$\
 			$(TIKZDIR)/tikz_p26_wt_ram_$(sim)_$(bench).csv)) \
+	$(foreach sim, $(BENCH_SIMS),$\
+		$(TIKZDIR)/tikz_p26_wt_ram_$(sim).csv)
 
 # write-throughput tikz results
 $(TIKZDIR)/tikz_p26_wt.csv: \
@@ -2379,7 +2381,7 @@ $1: $2
 		$(foreach fs,$(BENCH_FSS),$\
 			<(./scripts/csv.py $$^ \
 				-bsim -Dsim=$3 \
-				-bbench -Dbench=$4 \
+				-bbench $(if $4,-Dbench=$4) \
 				-Dfs=$(fs) \
 				-f$(fs)=ram \
 				-o-)) \
@@ -2395,6 +2397,12 @@ $(foreach sim, $(BENCH_SIMS),$\
 			$(TIKZDIR)/tikz_p26_wt_ram.csv,$\
 			$(sim),$\
 			$(bench)))))
+
+$(foreach sim, $(BENCH_SIMS),$\
+	$(eval $(call TIKZ_T_WT_RAM_RULE,$\
+		$(TIKZDIR)/tikz_p26_wt_ram_$(sim).csv,$\
+		$(TIKZDIR)/tikz_p26_wt_ram.csv,$\
+		$(sim))))
 
 
 
