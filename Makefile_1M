@@ -2,6 +2,8 @@
 RESULTSDIR ?= results_1M
 # overrideable plots dir
 PLOTSDIR ?= plots_1M
+# overrideable tikz dir
+TIKZDIR ?= tikz_1M
 
 
 # give us more space for activities

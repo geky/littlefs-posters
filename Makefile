@@ -1,11 +1,13 @@
 # overrideable build dir, default to ./build
 BUILDDIR ?= build
+# overrideable codemaps dir, defaults to ./codemaps
+CODEMAPSDIR ?= codemaps
 # overrideable results dir, default to ./results
 RESULTSDIR ?= results
 # overrideable plots dir, defaults ./plots
 PLOTSDIR ?= plots
-# overrideable codemaps dir, defaults to ./codemaps
-CODEMAPSDIR ?= codemaps
+# overrideable tikz dir, defaults to ./tikz
+TIKZDIR ?= tikz
 
 
 # overall disk size?
@@ -398,9 +400,10 @@ endif
 ifneq ($(BUILDDIR),.)
 $(if $(findstring n,$(MAKEFLAGS)),, $(shell mkdir -p \
 	$(BUILDDIR) \
-	$(RESULTSDIR) \
 	$(CODEMAPSDIR) \
+	$(RESULTSDIR) \
 	$(PLOTSDIR) \
+	$(TIKZDIR) \
     $(dir \
 		$(foreach fs, $(CODEMAP_FSS), \
 			$(CODEMAP_$(U_$(fs))_OBJ) \
@@ -760,11 +763,14 @@ CODEMAP_COLORS += -C'lfs*_bd=\#9b9b9b'     # was '#cfcfcfbf', # gray
 endif
 
 
-## Generate all codemaps!
-.PHONY: codemap codemaps codemap-all
-codemap codemaps codemap-all: \
+# overrideable codemap rules
+CODEMAP_RULES ?= \
 		codemap-default \
 		codemap-rdonly
+
+## Generate all codemaps!
+.PHONY: codemap codemaps codemap-all
+codemap codemaps codemap-all: $(CODEMAP_RULES)
 
 ## Generate codemaps for the default build
 .PHONY: codemap-default
@@ -2094,6 +2100,109 @@ $(eval $(call PLOT_P26_T_RULE,$\
 
 
 #======================================================================#
+# tikz rules, these just compile results for tikz consumption          #
+#======================================================================#
+
+# overrideable tikz rules
+TIKZ_RULES ?= \
+		tikz-p26-wt
+
+## Generate all tikzs!
+.PHONY: tikz tikz-all
+tikz tikz-all: $(TIKZ_RULES)
+
+## Generate write-throughput tikz results
+.PHONY: tikz-p26-wt
+tikz-p26-wt: \
+	$(TIKZDIR)/tikz_p26_wt.csv \
+	$(foreach sim, $(BENCH_SIMS),$\
+		$(foreach bench, linear random many logging,$\
+			$(TIKZDIR)/tikz_p26_wt_$(sim)_$(bench).csv))
+
+# write-throughput tikz results
+$(TIKZDIR)/tikz_p26_wt.csv: \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					$(RESULTSDIR)/bench_p26_wt_$(bench).$\
+						$(fs).$(sim).csv)))
+	$(strip ./scripts/csv.py \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					<(./scripts/csv.py \
+						<(./scripts/csv.py \
+							$(RESULTSDIR)/bench_p26_wt_$(bench).$\
+								$(fs).$(sim).csv \
+							-fn \
+							-fbench_readed \
+							-fbench_proged \
+							-fbench_erased \
+							-Dbench_creaded='*' \
+							-Dbench_cproged='*' \
+							-Dbench_cerased='*' \
+							-o-) \
+						-bfs=$(fs) \
+						-bsim=$(sim) \
+						-bbench=$(bench) \
+						-Dm=write,read \
+						-DSIZE=$(shell python -c '$\
+							print(max([$(P26_T_SIZES)]))') \
+						-fthroughput=' \
+							float(n) / max( \
+								(float(bench_readed)*float(READ_TIME) \
+									+ float(bench_proged)*float(PROG_TIME) \
+									+ float(bench_erased)*float(ERASE_TIME) \
+									) / 1.0e9, \
+								1.0e-9)' \
+						-fn \
+						-ft=' \
+							(float(bench_readed)*float(READ_TIME) \
+								+ float(bench_proged)*float(PROG_TIME) \
+								+ float(bench_erased)*float(ERASE_TIME) \
+							) / 1.0e9' \
+						-o-)))) \
+		-bfs \
+		-bsim \
+		-bbench \
+		-o$@)
+
+# tikz write-throughput transposition rule
+#
+# $1 - target
+# $2 - source
+# $3 - sim
+# $4 - bench
+#
+define TIKZ_T_WT_RULE
+$1: $2
+	$$(strip ./scripts/csv.py \
+		$(foreach fs,$(BENCH_FSS),$\
+			<(./scripts/csv.py $$^ \
+				-bsim -Dsim=$3 \
+				-bbench -Dbench=$4 \
+				-Dfs=$(fs) \
+				-f$(fs)=throughput \
+				-o-)) \
+		-bsim \
+		-bbench \
+		-o$$@)
+endef
+
+$(foreach sim, $(BENCH_SIMS),$\
+	$(foreach bench, linear random many logging,$\
+		$(eval $(call TIKZ_T_WT_RULE,$\
+			$(TIKZDIR)/tikz_p26_wt_$(sim)_$(bench).csv,$\
+			$(TIKZDIR)/tikz_p26_wt.csv,$\
+			$(sim),$\
+			$(bench)))))
+
+
+
+
+
+
+#======================================================================#
 # cleaning rules, we put everything in build dirs, so this is easy     #
 #======================================================================#
 
@@ -2101,8 +2210,9 @@ $(eval $(call PLOT_P26_T_RULE,$\
 .PHONY: clean
 clean: \
 		clean-build \
-		clean-results \
 		clean-codemaps \
+		clean-tikz \
+		clean-results \
 		clean-plots
 
 ## Clean bench-runner things
@@ -2110,15 +2220,20 @@ clean: \
 clean-build:
 	rm -rf $(BUILDDIR)
 
-## Clean bench results
-.PHONY: clean-results
-clean-results:
-	rm -rf $(RESULTSDIR)
-
 ## Clean codemaps
 .PHONY: clean-codemaps
 clean-codemaps:
 	rm -rf $(CODEMAPSDIR)
+
+## Clean tikz
+.PHONY: clean-tikz
+clean-tikz:
+	rm -rf $(TIKZDIR)
+
+## Clean bench results
+.PHONY: clean-results
+clean-results:
+	rm -rf $(RESULTSDIR)
 
 ## Clean bench plots
 .PHONY: clean-plots

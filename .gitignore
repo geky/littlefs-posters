@@ -1,6 +1,7 @@
 # Build stuff
 build*/
 results*/
+tikz*/
 
 # Intermediate csv files
 *.avg.csv
