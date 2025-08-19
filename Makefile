@@ -2121,7 +2121,11 @@ tikz-p26-wt: \
 	$(TIKZDIR)/tikz_p26_wt_ops.csv \
 	$(foreach sim, $(BENCH_SIMS),$\
 		$(foreach bench, linear random many logging,$\
-			$(TIKZDIR)/tikz_p26_wt_ops_$(sim)_$(bench).csv))
+			$(TIKZDIR)/tikz_p26_wt_ops_$(sim)_$(bench).csv)) \
+	$(TIKZDIR)/tikz_p26_wt_ram.csv \
+	$(foreach sim, $(BENCH_SIMS),$\
+		$(foreach bench, linear random many logging,$\
+			$(TIKZDIR)/tikz_p26_wt_ram_$(sim)_$(bench).csv)) \
 
 # write-throughput tikz results
 $(TIKZDIR)/tikz_p26_wt.csv: \
@@ -2296,6 +2300,99 @@ $(foreach sim, $(BENCH_SIMS),$\
 		$(eval $(call TIKZ_T_WT_OPS_RULE,$\
 			$(TIKZDIR)/tikz_p26_wt_ops_$(sim)_$(bench).csv,$\
 			$(TIKZDIR)/tikz_p26_wt_ops.csv,$\
+			$(sim),$\
+			$(bench)))))
+
+# write-throughput per-n ram tikz results
+$(TIKZDIR)/tikz_p26_wt_ram.csv: \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					$(RESULTSDIR)/bench_p26_wt_$(bench).$\
+						$(fs).$(sim).csv)))
+	$(strip ./scripts/csv.py \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					<(./scripts/csv.py \
+						<(./scripts/data.py $(BENCH_$(U_$(fs))_RUNNER) \
+								-bfunction -o- \
+							| $(BENCH_$(U_$(fs))_FILTER) \
+							| ./scripts/csv.py - \
+								-bfs=$(fs) \
+								-bsim=$(sim) \
+								-bbench=$(bench) \
+								-bSIZE=all \
+								-fdata=data_size \
+								-o-) \
+						<(./scripts/csv.py \
+							$(RESULTSDIR)/bench_p26_wt_$(bench)$\
+								.$(fs).$(sim).csv \
+							-Dm=stack \
+							-fstack=bench_readed \
+							-fn \
+							-Dbench_readed='*' \
+							-Dbench_proged='*' \
+							-Dbench_erased='*' \
+							-Dbench_creaded='*' \
+							-Dbench_cproged='*' \
+							-Dbench_cerased='*' \
+							-o-) \
+						<(./scripts/csv.py \
+							$(RESULTSDIR)/bench_p26_wt_$(bench)$\
+								.$(fs).$(sim).csv \
+							-Dm=heap \
+							-fheap=bench_readed \
+							-fn \
+							-Dbench_readed='*' \
+							-Dbench_proged='*' \
+							-Dbench_erased='*' \
+							-Dbench_creaded='*' \
+							-Dbench_cproged='*' \
+							-Dbench_cerased='*' \
+							-o-) \
+						-bfs=$(fs) \
+						-bsim=$(sim) \
+						-bbench=$(bench) \
+						-DSIZE=all,$(shell python -c '$\
+							print(max([$(P26_T_SIZES)]))') \
+						-fdata \
+						-fstack \
+						-fheap \
+						-fram='data+stack+heap' \
+						-o-)))) \
+		-bfs \
+		-bsim \
+		-bbench \
+		-o$@)
+
+# tikz write-throughput per-n ram transposition rule
+#
+# $1 - target
+# $2 - source
+# $3 - sim
+# $4 - bench
+#
+define TIKZ_T_WT_RAM_RULE
+$1: $2
+	$$(strip ./scripts/csv.py \
+		$(foreach fs,$(BENCH_FSS),$\
+			<(./scripts/csv.py $$^ \
+				-bsim -Dsim=$3 \
+				-bbench -Dbench=$4 \
+				-Dfs=$(fs) \
+				-f$(fs)=ram \
+				-o-)) \
+		-bsim \
+		-bbench \
+		-o$$@)
+endef
+
+$(foreach sim, $(BENCH_SIMS),$\
+	$(foreach bench, linear random many logging,$\
+		$(eval $(call TIKZ_T_WT_RAM_RULE,$\
+			$(TIKZDIR)/tikz_p26_wt_ram_$(sim)_$(bench).csv,$\
+			$(TIKZDIR)/tikz_p26_wt_ram.csv,$\
 			$(sim),$\
 			$(bench)))))
 
