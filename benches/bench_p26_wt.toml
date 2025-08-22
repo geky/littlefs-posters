@@ -46,9 +46,9 @@ code = '''
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
-    uint8_t work_buffer[2*SPAGE_SIZE];
-    uint8_t fd_buffer[FD_SIZE];
-    uint8_t scache_buffer[SCACHE_SIZE];
+    uint8_t *work_buffer = malloc(2*SPAGE_SIZE);
+    uint8_t *fd_buffer = malloc(FD_SIZE);
+    uint8_t *scache_buffer = malloc(SCACHE_SIZE);
     // spiffs format without magic just needs a disk erase
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -183,6 +183,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    free(work_buffer);
+    free(fd_buffer);
+    free(scache_buffer);
     #elif defined(YAFFS2)
     yaffs_unmount("/") => 0;
     yaffs_remove_device(&yaffs2);
@@ -213,9 +216,9 @@ code = '''
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
-    uint8_t work_buffer[2*SPAGE_SIZE];
-    uint8_t fd_buffer[FD_SIZE];
-    uint8_t scache_buffer[SCACHE_SIZE];
+    uint8_t *work_buffer = malloc(2*SPAGE_SIZE);
+    uint8_t *fd_buffer = malloc(FD_SIZE);
+    uint8_t *scache_buffer = malloc(SCACHE_SIZE);
     // spiffs format without magic just needs a disk erase
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -350,6 +353,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    free(work_buffer);
+    free(fd_buffer);
+    free(scache_buffer);
     #elif defined(YAFFS2)
     yaffs_unmount("/") => 0;
     yaffs_remove_device(&yaffs2);
@@ -385,9 +391,9 @@ code = '''
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
-    uint8_t work_buffer[2*SPAGE_SIZE];
-    uint8_t fd_buffer[FD_SIZE];
-    uint8_t scache_buffer[SCACHE_SIZE];
+    uint8_t *work_buffer = malloc(2*SPAGE_SIZE);
+    uint8_t *fd_buffer = malloc(FD_SIZE);
+    uint8_t *scache_buffer = malloc(SCACHE_SIZE);
     // spiffs format without magic just needs a disk erase
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -510,6 +516,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    free(work_buffer);
+    free(fd_buffer);
+    free(scache_buffer);
     #elif defined(YAFFS2)
     yaffs_unmount("/") => 0;
     yaffs_remove_device(&yaffs2);
@@ -541,9 +550,9 @@ code = '''
     #elif defined(SPIFFS)
     spiffs spiffs;
     spiffs.user_data = CFG;
-    uint8_t work_buffer[2*SPAGE_SIZE];
-    uint8_t fd_buffer[FD_SIZE];
-    uint8_t scache_buffer[SCACHE_SIZE];
+    uint8_t *work_buffer = malloc(2*SPAGE_SIZE);
+    uint8_t *fd_buffer = malloc(FD_SIZE);
+    uint8_t *scache_buffer = malloc(SCACHE_SIZE);
     // spiffs format without magic just needs a disk erase
     SPIFFS_mount(&spiffs, (spiffs_config*)CFG_SPIFFS, work_buffer,
             fd_buffer, FD_SIZE,
@@ -719,6 +728,9 @@ code = '''
     lfs2_unmount(&lfs2) => 0;
     #elif defined(SPIFFS)
     SPIFFS_unmount(&spiffs);
+    free(work_buffer);
+    free(fd_buffer);
+    free(scache_buffer);
     #elif defined(YAFFS2)
     yaffs_unmount("/") => 0;
     yaffs_remove_device(&yaffs2);
