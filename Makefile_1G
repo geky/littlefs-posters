@@ -2,6 +2,8 @@
 RESULTSDIR ?= results_1G
 # overrideable plots dir
 PLOTSDIR ?= plots_1G
+# overrideable tikz dir
+TIKZDIR ?= tikz_1G
 
 
 # give us more space for activities
@@ -17,24 +19,103 @@ else
 P26_LITMUS_STEP ?= 8192 # was 32, prioritizing speed over accuracy
 endif
 
-P26_T_SIZES ?= 33554432,67108864,134217728,268435456,536870912,1073741824
+P26_T_SIZES ?= $\
+	1024,2048,4096,8192,16384,32768,$\
+		65536,131072,262144,524288,$\
+	1048576,2097152,4194304,8388608,16777216,33554432,$\
+		67108864,134217728,268435456,536870912,1073741824
 # bump up chunk size
 # TODO should we do the same for 1M?
-P26_T_CHUNK ?= 4096
+# P26_T_CHUNK ?= 4096
 
 # increase simtime for more reliable results
 ifdef PRECISE
 P26_T_SIM_TIME ?= 86400000000000 # 1 day
 else
 P26_T_SIM_TIME ?= 3600000000000 # 1 hour
+SKIP_WARMUP ?= 1
 endif
 
 # limit filesystems and sims
 # TODO can we bench lfs2 here with limits?
-BENCH_FSS ?= lfs3 lfs3nb yaffs2
+BENCH_FSS ?= lfs3 lfs3nb lfs2
 BENCH_SIMS ?= nor nand
+
+
+# litmus testing is not configured correctly...
+BENCH_RULES ?= \
+	bench-p26-wt \
+	bench-p26-rt
+PLOT_RULES ?= \
+	plot-p26-wt \
+	bench-p26-rt
+TIKZ_RULES ?= \
+	tikz-p26-wt-1G
 
 
 # default Makefile does most of the work
 include Makefile
+
+
+
+
+## Generate write-throughput 1G tikz results
+.PHONY: tikz-p26-wt-1G
+tikz-p26-wt-1G: \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					$(TIKZDIR)/tikz_p26_wt_1G_$(bench).$(fs).$(sim).csv)))
+
+# tikz write-throughput 1G rule
+#
+# $1 - target
+# $2 - source
+# $3 - fs type/version
+# $4 - sim
+# $5 - bench
+#
+define TIKZ_T_WT_1G_RULE
+$1: $2
+	$$(strip ./scripts/csv.py \
+		<(./scripts/csv.py $$^ \
+			-fn \
+			-fbench_readed \
+			-fbench_proged \
+			-fbench_erased \
+			-Dbench_creaded='*' \
+			-Dbench_cproged='*' \
+			-Dbench_cerased='*' \
+			-o-) \
+		-bfs=$3 \
+		-bsim=$4 \
+		-bbench=$5 \
+		-Dm=write,read \
+		-bSIZE \
+		-Si=SIZE \
+		-fthroughput=' \
+			float(n) / max( \
+				(float(bench_readed)*float(READ_TIME) \
+					+ float(bench_proged)*float(PROG_TIME) \
+					+ float(bench_erased)*float(ERASE_TIME) \
+					) / 1.0e9, \
+				1.0e-9)' \
+		-fn \
+		-ft=' \
+			(float(bench_readed)*float(READ_TIME) \
+				+ float(bench_proged)*float(PROG_TIME) \
+				+ float(bench_erased)*float(ERASE_TIME) \
+			) / 1.0e9' \
+		-o$$@)
+endef
+
+$(foreach fs, $(BENCH_FSS), \
+	$(foreach sim, $(BENCH_SIMS), \
+		$(foreach bench, linear random many logging, \
+			$(eval $(call TIKZ_T_WT_1G_RULE,$\
+				$(TIKZDIR)/tikz_p26_wt_1G_$(bench).$(fs).$(sim).csv,$\
+				$(RESULTSDIR)/bench_p26_wt_$(bench).$(fs).$(sim).csv,$\
+				$(fs),$\
+				$(sim),$\
+				$(bench))))))
 
