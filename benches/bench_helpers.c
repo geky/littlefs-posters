@@ -63,6 +63,11 @@ bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n) {
 // format, which is inconsistent across filesystems and messes with
 // benchmarks
 int bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
+    // skipping warmup?
+    if (SKIP_WARMUP) {
+        return 0;
+    }
+
     // TODO can we also pause stack measurements here?
     extern void bench_heap_pause(void);
     bench_heap_pause();

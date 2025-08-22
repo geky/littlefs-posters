@@ -207,6 +207,7 @@ size_t bench_heap(void);
     BENCH_DEFINE(READ_TIME,          40                                     ) \
     BENCH_DEFINE(PROG_TIME,          1582                                   ) \
     BENCH_DEFINE(ERASE_TIME,         10986                                  ) \
+    BENCH_DEFINE(SKIP_WARMUP,        false                                  ) \
     /* bd-specific config                                                  */ \
     BENCH_KIWIBD_DEFINES                                                      \
     BENCH_EMUBD_DEFINES                                                       \
