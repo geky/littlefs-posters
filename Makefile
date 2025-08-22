@@ -16,7 +16,7 @@ DISK_SIZE ?= 8388608
 # size to test for litmus testing?
 P26_LITMUS_SIZE ?= 32768
 # chunks size, i.e. size of writes/reads, for litmus testing?
-P26_LITMUS_CHUNK ?= 32
+P26_LITMUS_CHUNK ?= 64
 # step size for litmus testing?
 ifdef PRECISE
 P26_LITMUS_STEP ?= 1
@@ -35,7 +35,7 @@ P26_T_SIZES ?= 1024,2048,4096,8192,16384,32768
 # default size for throughput testing?
 P26_T_SIZE ?= $(lastword $(subst $(,), ,$(P26_T_SIZES)))
 # chunks size, i.e. size of writes/reads, for throughput testing?
-P26_T_CHUNK ?= 32
+P26_T_CHUNK ?= 64
 # simulation time in nanoseconds for throughput testing?
 ifndef P26_T_SIM_TIME
 ifndef P26_T_SIM_SIZE

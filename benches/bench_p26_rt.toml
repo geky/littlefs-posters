@@ -7,7 +7,7 @@
 # all files
 #
 defines.SIZE = 32768
-defines.CHUNK = 32
+defines.CHUNK = 64
 defines.SEED = 42
 
 # simulated time, in nanoseconds, to run the test
