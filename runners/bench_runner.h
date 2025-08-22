@@ -290,7 +290,8 @@ size_t bench_heap(void);
     /*           name                value (overridable)                   */ \
     /* things break below 64 byte pages, but while spiffs technically      */ \
     /* works with <256 byte pages, it performs very poorly                 */ \
-    BENCH_DEFINE(SPAGE_SIZE,         (PAGE_SIZE)                              \
+    BENCH_DEFINE(SPAGE_TIGHT,        false                                  ) \
+    BENCH_DEFINE(SPAGE_SIZE,         (PAGE_SIZE && SPAGE_TIGHT)               \
                                         ? LFS3_MAX(PAGE_SIZE, 64)             \
                                         : LFS3_MAX(PROG_SIZE, 256)          ) \
     BENCH_DEFINE(FD_COUNT,           1                                      ) \
