@@ -1362,7 +1362,7 @@ results-p26-rt-ops:
 
 # simulated/estimated results
 $(RESULTSDIR)/bench_%.sim.csv: $(RESULTSDIR)/bench_%.csv
-	-$(strip ./scripts/csv.py $^ \
+	$(strip ./scripts/csv.py $^ \
 		-Bm='%(m)s+sim' \
 		-fbench_readed=' \
 			(float(bench_readed)*float(READ_TIME) \
@@ -1378,13 +1378,13 @@ $(RESULTSDIR)/bench_%.sim.csv: $(RESULTSDIR)/bench_%.csv
 				) / 1.0e9' \
 		-fbench_cproged=0 \
 		-fbench_cerased=0 \
-		-o$@)
+		-o$@ || touch $@)
 
 # simulated throughput results
 #
 # note we first sum n/readed/proged/erased
 $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
-	-$(strip ./scripts/csv.py \
+	$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $^ \
 			-fn \
 			-fbench_readed \
@@ -1405,7 +1405,7 @@ $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
 				1.0e-9)' \
 		-fbench_proged=0 \
 		-fbench_erased=0 \
-		-o$@)
+		-o$@ || touch $@)
 
 # simulated RAM results
 #
@@ -1417,7 +1417,7 @@ $(RESULTSDIR)/bench_%.tsim.csv: $(RESULTSDIR)/bench_%.csv
 #
 define BENCH_P26_RAM_RULE
 $1: $(BENCH_$(U_$3)_RUNNER) $2
-	-$$(strip ./scripts/csv.py \
+	$$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $$(wordlist 2,$$(words $$^),$$^) \
 			-fn \
 			-fbench_readed \
@@ -1436,7 +1436,7 @@ $1: $(BENCH_$(U_$3)_RUNNER) $2
 				| ./scripts/csv.py - -fdata_size --total)" \
 		-fbench_proged=0 \
 		-fbench_erased=0 \
-		-o$$@)
+		-o$$@ || touch $$@)
 endef
 
 $(foreach fs, $(BENCH_FSS),$\
@@ -1448,16 +1448,16 @@ $(foreach fs, $(BENCH_FSS),$\
 
 # amortized results
 $(RESULTSDIR)/bench_%.amor.csv: $(RESULTSDIR)/bench_%.csv
-	-$(strip ./scripts/csv.py $^ \
+	$(strip ./scripts/csv.py $^ \
 		-Bn -Bm='%(m)s+amor' \
 		-fbench_readed='float(bench_creaded) / float(n)' \
 		-fbench_proged='float(bench_cproged) / float(n)' \
 		-fbench_erased='float(bench_cerased) / float(n)' \
-		-o$@)
+		-o$@ || touch $@
 
 # per-byte/entry usage results
 $(RESULTSDIR)/bench_%.per.csv: $(RESULTSDIR)/bench_%.csv
-	-$(strip ./scripts/csv.py $^ \
+	$(strip ./scripts/csv.py $^ \
 		-Bn -Bm='%(m)s+per' \
 		-Dbench_creaded='*' \
 		-Dbench_cproged='*' \
@@ -1465,11 +1465,11 @@ $(RESULTSDIR)/bench_%.per.csv: $(RESULTSDIR)/bench_%.csv
 		-fbench_readed='float(bench_readed) / float(n)' \
 		-fbench_proged='float(bench_proged) / float(n)' \
 		-fbench_erased='float(bench_erased) / float(n)' \
-		-o$@)
+		-o$@ || touch $@)
 
 # averaged results (over SAMPLES)
 $(RESULTSDIR)/bench_%.avg.csv: $(RESULTSDIR)/bench_%.csv
-	-$(strip ./scripts/csv.py $^ \
+	$(strip ./scripts/csv.py $^ \
 		-DSEED='*' \
 		-Dbench_creaded='*' \
 		-Dbench_cproged='*' \
@@ -1483,7 +1483,7 @@ $(RESULTSDIR)/bench_%.avg.csv: $(RESULTSDIR)/bench_%.csv
 		-fbench_readed_max='max(bench_readed)' \
 		-fbench_proged_max='max(bench_proged)' \
 		-fbench_erased_max='max(bench_erased)' \
-		-o$@)
+		-o$@ || touch $@)
 
 
 
