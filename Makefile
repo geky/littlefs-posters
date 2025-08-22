@@ -695,7 +695,7 @@ $(BUILDDIR)/%.b.c: $(BUILDDIR)/%.c $(BENCHES)
 # yaffs2 expects some core names to be preprocessed in direct mode,
 # which we've grepped and apply here, see above
 #
-$(BENCH_YAFFS2_OBJ): \
+$(CODEMAP_YAFFS2_OBJ) $(BENCH_YAFFS2_OBJ): \
 		$(addprefix $(BUILDDIR)/yaffs2/,\
 			$(YAFFS2_CORE_H) \
 			$(YAFFS2_DIRECT_H))

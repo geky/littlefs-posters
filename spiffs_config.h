@@ -28,6 +28,9 @@
 //#endif
 // ----------- >8 ------------
 
+// needed for LFS3_DEBUG
+#include "lfs3_util.h"
+
 // integer typedefs
 typedef uint32_t u32_t;
 typedef uint16_t u16_t;
