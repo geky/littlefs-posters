@@ -1,0 +1,15 @@
+
+Bugs:
+
+- Sometimes littlefs2 returns garbage in lfs2_fs_traverse. Probably a bug.
+
+- Sometimes littlefs2 just breaks when creating many files. Not sure why.
+
+- yaffs2 does not work with >=1MiB block sizes for some reason, errors
+  with ENOSPC (twisted internally to EINVAL?). Note sure why.
+
+- yaffs2 keeps track of all files (not just opened ones) with a linked-list
+  that makes many testing grow O(n^2). This makes many benchmarking
+  extremely slow and doesn't trigger an early exit because we ignore CPU
+  time.
+
