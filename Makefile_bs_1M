@@ -5,7 +5,7 @@ PLOTSDIR ?= plots_bs_1M
 
 
 # give us more space for activities
-DISK_SIZE ?= 268435456 # 256 MiB
+DISK_SIZE ?= 134217728 # 128 MiB
 # target size = 1 MiB
 P26_T_SIZE ?= 1048576 # 1 MiB
 
