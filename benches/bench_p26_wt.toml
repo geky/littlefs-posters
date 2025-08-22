@@ -445,17 +445,20 @@ code = '''
         lfs2_file_t file;
         err = lfs2_file_open(&lfs2, &file, name,
                 LFS2_O_WRONLY | LFS2_O_CREAT | LFS2_O_TRUNC);
-        // TODO littlefs2 bug?
+        // TODO littlefs2 bug? apparently littlefs2 is very fragile with
+        // many files, just log this error and mark the test as bad for now
         assert(!err || err == LFS2_ERR_NOENT);
         if (err) {
-            goto failed;
+            LFS3_ERROR("lfs2 close failure? %d", err);
+            return;
         }
         lfs2_file_write(&lfs2, &file, wbuf, CHUNK) => CHUNK;
         err = lfs2_file_close(&lfs2, &file);
         // TODO littlefs2 bug?
         assert(!err || err == LFS2_ERR_NOENT);
         if (err) {
-            goto failed;
+            LFS3_ERROR("lfs2 close failure? %d", err);
+            return;
         }
         #elif defined(SPIFFS)
         spiffs_file fd = SPIFFS_open(&spiffs, name,
@@ -512,15 +515,6 @@ code = '''
     yaffs_remove_device(&yaffs2);
     #endif
     return;
-
-    #ifdef LFS2
-failed:;
-    // apparently littlefs2 is very fragile with many files,
-    // just log this error and mark the test as bad for now
-    LFS3_ERROR("lfs2 close failure? %d", err);
-    lfs2_unmount(&lfs2) => 0;
-    return;
-    #endif
 '''
 
 [cases.bench_p26_wt_logging]
