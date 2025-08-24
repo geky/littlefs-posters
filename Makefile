@@ -923,6 +923,7 @@ bench bench-all: $(BENCH_RULES)
 .PHONY: reuse-results touch-results
 reuse-results touch-results:
 	find $(RESULTSDIR) -name '*.csv' -execdir touch '{}' ';'
+	@echo "# note: Make sure you build before plotting!"
 
 ## Run p26 litmus benchmarks
 .PHONY: bench-p26-litmus
