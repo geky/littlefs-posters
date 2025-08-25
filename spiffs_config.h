@@ -43,23 +43,23 @@ typedef int8_t   s8_t;
 
 // Set generic spiffs debug output call.
 #ifndef SPIFFS_DBG
-#define SPIFFS_DBG(...) LFS3_DEBUG(__VA_ARGS__)
+#define SPIFFS_DBG(...) // LFS3_DEBUG(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for garbage collecting.
 #ifndef SPIFFS_GC_DBG
-#define SPIFFS_GC_DBG(...) //printf(_f, ## __VA_ARGS__)
+#define SPIFFS_GC_DBG(...) // LFS3_DEBUG(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for caching.
 #ifndef SPIFFS_CACHE_DBG
-#define SPIFFS_CACHE_DBG(...) //printf(_f, ## __VA_ARGS__)
+#define SPIFFS_CACHE_DBG(...) // LFS3_DEBUG(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for system consistency checks.
 #ifndef SPIFFS_CHECK_DBG
-#define SPIFFS_CHECK_DBG(...) //printf(_f, ## __VA_ARGS__)
+#define SPIFFS_CHECK_DBG(...) // LFS3_DEBUG(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for all api invocations.
 #ifndef SPIFFS_API_DBG
-#define SPIFFS_API_DBG(...) //printf(_f, ## __VA_ARGS__)
+#define SPIFFS_API_DBG(...) // LFS3_DEBUG(__VA_ARGS__)
 #endif
 
 
