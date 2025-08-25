@@ -1,6 +1,7 @@
 # Build stuff
 build*/
 results*/
+plots*/
 tikz*/
 
 # Intermediate csv files
