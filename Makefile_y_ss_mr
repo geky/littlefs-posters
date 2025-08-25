@@ -1,16 +1,17 @@
 # overrideable results dir
-RESULTSDIR ?= results_y_ss_n
+RESULTSDIR ?= results_y_ss_mr
 # overrideable plots dir
-PLOTSDIR ?= plots_y_ss_n
+PLOTSDIR ?= plots_y_ss_mr
 # overrideable tikz dir
-TIKZDIR ?= tikz_y_ss_n
+TIKZDIR ?= tikz_y_ss_mr
 
 
-# 8B -> 4MiB
-P26_T_SIZES ?= $\
-	8,16,32,64,128,256,512,$\
-	1024,2048,4096,8192,16384,32768,$\
-		65536,131072,262144,524288,1048576
+# range of file sizes to test for throughput testing
+P26_T_FILE_SIZES ?= $\
+	8,16,32,$\
+	64,128,256,512,$\
+	1024,2048,4096,8192,16384,32768,65536,131072,$\
+	262144,524288,1048576
 
 # limit the affect of caching
 P26_T_CACHE_SIZE ?= 64
@@ -50,46 +51,43 @@ $(foreach fs,$(BENCH_FSS), \
 
 # use our bench rules
 BENCH_RULES ?= \
-	bench-p26-y-ss-n
+	bench-p26-y-ss-mr
 # use our plot rules
 PLOT_RULES ?= \
-	plot-p26-y-ss-n
+	plot-p26-y-ss-mr
 # use our tikz rules
 TIKZ_RULES ?= \
-	tikz-p26-y-ss-n
+	tikz-p26-y-ss-mr
 
 # default Makefile does most of the work
 include Makefile
 
 
 ## Run p26 shrub size benchmarks
-.PHONY: bench-p26-y-ss-n
-bench-p26-y-ss-n: \
-		bench-p26-y-ss-n-linear \
-		bench-p26-y-ss-n-random \
-		bench-p26-y-ss-n-many \
-		bench-p26-y-ss-n-logging
+.PHONY: bench-p26-y-ss-mr
+bench-p26-y-ss-mr: \
+		bench-p26-y-ss-mr-many
 
 ## Run p26 shrub size linear benchmarks
-.PHONY: bench-p26-y-ss-n-linear
-bench-p26-y-ss-n-linear: \
+.PHONY: bench-p26-y-ss-mr-linear
+bench-p26-y-ss-mr-linear: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_ss_n_linear.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_ss_mr_linear.$(fs).$(sim).csv))
 
 ## Run p26 shrub size random benchmarks
-.PHONY: bench-p26-y-ss-n-random
-bench-p26-y-ss-n-random: \
+.PHONY: bench-p26-y-ss-mr-random
+bench-p26-y-ss-mr-random: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_ss_n_random.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_ss_mr_random.$(fs).$(sim).csv))
 
 ## Run p26 shrub size logging benchmarks
-.PHONY: bench-p26-y-ss-n-logging
-bench-p26-y-ss-n-logging: \
+.PHONY: bench-p26-y-ss-mr-logging
+bench-p26-y-ss-mr-logging: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_ss_n_logging.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_ss_mr_logging.$(fs).$(sim).csv))
 
 
 # p26 shrub size bench rule
@@ -99,14 +97,14 @@ bench-p26-y-ss-n-logging: \
 # $3 - fs type/version
 # $4 - sim type
 #
-define BENCH_P26_T_Y_SS_N_RULE
+define BENCH_P26_T_Y_SS_MR_RULE
 ifndef NO_BENCH
 $1: $(BENCH_$(U_$3)_RUNNER)
 	$$(strip ./scripts/bench.py -R$$< -B $2 \
 		$(BENCHFLAGS) \
 		-DDISK_SIZE=$(DISK_SIZE) \
 		$(if $(SKIP_WARMUP),-DSKIP_WARMUP=$(SKIP_WARMUP)) \
-		-DSIZE=$(P26_T_SIZES) \
+		-DSIZE=$(P26_T_SIZE) \
 		-DCHUNK=$(P26_T_CHUNK) \
 		-DSIM_TIME=$(or $(P26_T_SIM_TIME),0) \
 		-DSIM_SIZE=$(or $(P26_T_SIM_SIZE),0) \
@@ -120,6 +118,7 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DBLOCK_SIZE=$($(U_$4)_$(U_$3)_BLOCK_SIZE) \
 		-DINLINE_SIZE=$(3:lfs3s%=%) \
 		-DCACHE_SIZE=$(P26_T_CACHE_SIZE) \
+		-DFILE_SIZE=$(P26_T_FILE_SIZES) \
 		-o$$@)
 else
 $1:
@@ -130,8 +129,8 @@ endef
 # p26 shrub size bench rules
 $(foreach fs, $(BENCH_FSS),$\
 	$(foreach sim, $(BENCH_SIMS),$\
-		$(eval $(call BENCH_P26_T_Y_SS_N_RULE,$\
-				$(RESULTSDIR)/bench_p26_y_ss_n_%.$(fs).$(sim).csv,$\
+		$(eval $(call BENCH_P26_T_Y_SS_MR_RULE,$\
+				$(RESULTSDIR)/bench_p26_y_ss_mr_%.$(fs).$(sim).csv,$\
 				bench_p26_wt_$$*,$\
 				$(fs),$\
 				$(sim)))))
@@ -139,32 +138,29 @@ $(foreach fs, $(BENCH_FSS),$\
 
 
 ## Plot p26 shrub size benchmarks
-.PHONY: plot-p26-y-ss-n
-plot-p26-y-ss-n: \
-		plot-p26-y-ss-n-linear \
-		plot-p26-y-ss-n-random \
-		plot-p26-y-ss-n-many \
-		plot-p26-y-ss-n-logging
+.PHONY: plot-p26-y-ss-mr
+plot-p26-y-ss-mr: \
+		plot-p26-y-ss-mr-many
 
 ## Plot p26 shrub size linear benchmarks
-.PHONY: plot-p26-y-ss-n-linear
-plot-p26-y-ss-n-linear: \
-		$(PLOTSDIR)/bench_p26_y_ss_n_linear.svg
+.PHONY: plot-p26-y-ss-mr-linear
+plot-p26-y-ss-mr-linear: \
+		$(PLOTSDIR)/bench_p26_y_ss_mr_linear.svg
 
 ## Plot p26 shrub size random benchmarks
-.PHONY: plot-p26-y-ss-n-random
-plot-p26-y-ss-n-random: \
-		$(PLOTSDIR)/bench_p26_y_ss_n_random.svg
+.PHONY: plot-p26-y-ss-mr-random
+plot-p26-y-ss-mr-random: \
+		$(PLOTSDIR)/bench_p26_y_ss_mr_random.svg
 
 ## Plot p26 shrub size many benchmarks
-.PHONY: plot-p26-y-ss-n-many
-plot-p26-y-ss-n-many: \
-		$(PLOTSDIR)/bench_p26_y_ss_n_many.svg
+.PHONY: plot-p26-y-ss-mr-many
+plot-p26-y-ss-mr-many: \
+		$(PLOTSDIR)/bench_p26_y_ss_mr_many.svg
 
 ## Plot p26 shrub size logging benchmarks
-.PHONY: plot-p26-y-ss-n-logging
-plot-p26-y-ss-n-logging: \
-		$(PLOTSDIR)/bench_p26_y_ss_n_logging.svg
+.PHONY: plot-p26-y-ss-mr-logging
+plot-p26-y-ss-mr-logging: \
+		$(PLOTSDIR)/bench_p26_y_ss_mr_logging.svg
 
 
 
@@ -177,7 +173,7 @@ plot-p26-y-ss-n-logging: \
 # $5 - x-ticks
 # $6 - extra plotmpl.py flags
 #
-define PLOT_P26_Y_SS_N_RULE
+define PLOT_P26_Y_SS_MR_RULE
 $1: $2
 	$$(strip ./scripts/plotmpl.py $$^ \
 		-W1500 -H350 \
@@ -217,25 +213,25 @@ $1: $2
 endef
 
 # p26 shrub size plot rules
-$(eval $(call PLOT_P26_Y_SS_N_RULE,$\
-		$(PLOTSDIR)/bench_p26_y_ss_n_%.svg,$\
+$(eval $(call PLOT_P26_Y_SS_MR_RULE,$\
+		$(PLOTSDIR)/bench_p26_y_ss_mr_%.svg,$\
 		$(foreach fs, $(BENCH_FSS),$\
-			$(RESULTSDIR)/bench_p26_y_ss_n_%.$(fs).nand.tsim.csv \
-			$(RESULTSDIR)/bench_p26_y_ss_n_%.$(fs).nand.ram.csv \
-			$(RESULTSDIR)/bench_p26_y_ss_n_%.$(fs).nand.csv),$\
+			$(RESULTSDIR)/bench_p26_y_ss_mr_%.$(fs).nand.tsim.csv \
+			$(RESULTSDIR)/bench_p26_y_ss_mr_%.$(fs).nand.ram.csv \
+			$(RESULTSDIR)/bench_p26_y_ss_mr_%.$(fs).nand.csv),$\
 		"shrub sizes - NAND - $$* - simulated throughput",$\
-		SIZE,$\
-		$(P26_T_SIZES)))
+		FILE_SIZE,$\
+		$(P26_T_FILE_SIZES)))
 
 
 
 
 ## Generate shrub size tikz results
-.PHONY: tikz-p26-y-ss-n
-tikz-p26-y-ss-n: \
+.PHONY: tikz-p26-y-ss-mr
+tikz-p26-y-ss-mr: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach bench, linear random many logging, \
-				$(TIKZDIR)/tikz_p26_y_ss_n_$(bench).$(fs).nand.csv))
+				$(TIKZDIR)/tikz_p26_y_ss_mr_$(bench).$(fs).nand.csv))
 
 # tikz shrub size rule
 #
@@ -245,7 +241,7 @@ tikz-p26-y-ss-n: \
 # $4 - sim
 # $5 - bench
 #
-define TIKZ_T_Y_SS_N_RULE
+define TIKZ_T_Y_SS_MR_RULE
 $1: $2
 	$$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $$^ \
@@ -282,9 +278,9 @@ endef
 $(foreach fs, $(BENCH_FSS), \
 	$(foreach sim, $(BENCH_SIMS), \
 		$(foreach bench, linear random many logging, \
-			$(eval $(call TIKZ_T_Y_SS_N_RULE,$\
-				$(TIKZDIR)/tikz_p26_y_ss_n_$(bench).$(fs).$(sim).csv,$\
-				$(RESULTSDIR)/bench_p26_y_ss_n_$(bench).$(fs).$(sim).csv,$\
+			$(eval $(call TIKZ_T_Y_SS_MR_RULE,$\
+				$(TIKZDIR)/tikz_p26_y_ss_mr_$(bench).$(fs).$(sim).csv,$\
+				$(RESULTSDIR)/bench_p26_y_ss_mr_$(bench).$(fs).$(sim).csv,$\
 				$(fs),$\
 				$(sim),$\
 				$(bench))))))

@@ -1467,7 +1467,7 @@ $(RESULTSDIR)/bench_%.amor.csv: $(RESULTSDIR)/bench_%.csv
 		-fbench_readed='float(bench_creaded) / float(n)' \
 		-fbench_proged='float(bench_cproged) / float(n)' \
 		-fbench_erased='float(bench_cerased) / float(n)' \
-		-o$@ || touch $@
+		-o$@ || touch $@)
 
 # per-byte/entry usage results
 $(RESULTSDIR)/bench_%.per.csv: $(RESULTSDIR)/bench_%.csv
