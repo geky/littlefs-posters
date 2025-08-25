@@ -206,7 +206,8 @@ $1: $2
 		--x2 --xunits=B \
 		$$(shell python -c '$\
 			for n in [$5][::3]: $\
-				print("--add-xticklabel=%d=\"%%(x)IB\"" % n)') \
+				print("--add-xticklabel=%d=\"%%(x)IB%%n(%d)\"" % ($\
+					n, $(P26_T_SIZE)/n))') \
 		$6 \
 		$$(PLOTFLAGS) \
 		-o$$@)
@@ -230,8 +231,11 @@ $(eval $(call PLOT_P26_Y_SS_MR_RULE,$\
 .PHONY: tikz-p26-y-ss-mr
 tikz-p26-y-ss-mr: \
 		$(foreach fs, $(BENCH_FSS), \
-			$(foreach bench, linear random many logging, \
-				$(TIKZDIR)/tikz_p26_y_ss_mr_$(bench).$(fs).nand.csv))
+			$(foreach bench, many, \
+				$(TIKZDIR)/tikz_p26_y_ss_mr_$(bench).$(fs).nand.csv)) \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach bench, many, \
+				$(TIKZDIR)/tikz_p26_y_ss_mr_usage_$(bench).$(fs).nand.csv))
 
 # tikz shrub size rule
 #
@@ -257,8 +261,8 @@ $1: $2
 		-bsim=$4 \
 		-bbench=$5 \
 		-Dm=write,read \
-		-bINLINE_SIZE \
-		-Si=INLINE_SIZE \
+		-bFILE_SIZE \
+		-Si=FILE_SIZE \
 		-fthroughput=' \
 			float(n) / max( \
 				(float(bench_readed)*float(READ_TIME) \
@@ -277,9 +281,40 @@ endef
 
 $(foreach fs, $(BENCH_FSS), \
 	$(foreach sim, $(BENCH_SIMS), \
-		$(foreach bench, linear random many logging, \
+		$(foreach bench, many, \
 			$(eval $(call TIKZ_T_Y_SS_MR_RULE,$\
 				$(TIKZDIR)/tikz_p26_y_ss_mr_$(bench).$(fs).$(sim).csv,$\
+				$(RESULTSDIR)/bench_p26_y_ss_mr_$(bench).$(fs).$(sim).csv,$\
+				$(fs),$\
+				$(sim),$\
+				$(bench))))))
+
+# tikz shrub size disk usage rule
+#
+# $1 - target
+# $2 - source
+# $3 - fs type/version
+# $4 - sim
+# $5 - bench
+#
+define TIKZ_T_Y_SS_MR_USAGE_RULE
+$1: $2
+	$$(strip ./scripts/csv.py $$^ \
+		-bfs=$3 \
+		-bsim=$4 \
+		-bbench=$5 \
+		-bFILE_SIZE \
+		-Si=FILE_SIZE \
+		-Dm=usage \
+		-fusage=bench_readed \
+		-o$$@)
+endef
+
+$(foreach fs, $(BENCH_FSS), \
+	$(foreach sim, $(BENCH_SIMS), \
+		$(foreach bench, many, \
+			$(eval $(call TIKZ_T_Y_SS_MR_USAGE_RULE,$\
+				$(TIKZDIR)/tikz_p26_y_ss_mr_usage_$(bench).$(fs).$(sim).csv,$\
 				$(RESULTSDIR)/bench_p26_y_ss_mr_$(bench).$(fs).$(sim).csv,$\
 				$(fs),$\
 				$(sim),$\

@@ -199,11 +199,18 @@ tikz-p26-x-mr: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(foreach bench, many, \
-					$(TIKZDIR)/tikz_p26_x_mr_$(bench).$(fs).$(sim).csv))) \
+					$(TIKZDIR)/tikz_p26_x_mr_$(bench)$\
+						.$(fs).$(sim).csv))) \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(foreach bench, many, \
-					$(TIKZDIR)/tikz_p26_x_mr_ram_$(bench).$(fs).$(sim).csv)))
+					$(TIKZDIR)/tikz_p26_x_mr_ram_$(bench)$\
+						.$(fs).$(sim).csv))) \
+		$(foreach fs, $(BENCH_FSS), \
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, many, \
+					$(TIKZDIR)/tikz_p26_x_mr_usage_$(bench)$\
+						.$(fs).$(sim).csv)))
 
 # tikz metadata ratio rule
 #
@@ -311,6 +318,37 @@ $(foreach fs, $(BENCH_FSS), \
 		$(foreach bench, many, \
 			$(eval $(call TIKZ_T_X_MR_RAM_RULE,$\
 				$(TIKZDIR)/tikz_p26_x_mr_ram_$(bench).$(fs).$(sim).csv,$\
+				$(RESULTSDIR)/bench_p26_x_mr_$(bench).$(fs).$(sim).csv,$\
+				$(fs),$\
+				$(sim),$\
+				$(bench))))))
+
+# tikz metadata ratio disk usage rule
+#
+# $1 - target
+# $2 - source
+# $3 - fs type/version
+# $4 - sim
+# $5 - bench
+#
+define TIKZ_T_X_MR_USAGE_RULE
+$1: $2
+	$$(strip ./scripts/csv.py $$^ \
+		-bfs=$3 \
+		-bsim=$4 \
+		-bbench=$5 \
+		-bFILE_SIZE \
+		-Si=FILE_SIZE \
+		-Dm=usage \
+		-fusage=bench_readed \
+		-o$$@)
+endef
+
+$(foreach fs, $(BENCH_FSS), \
+	$(foreach sim, $(BENCH_SIMS), \
+		$(foreach bench, many, \
+			$(eval $(call TIKZ_T_X_MR_USAGE_RULE,$\
+				$(TIKZDIR)/tikz_p26_x_mr_usage_$(bench).$(fs).$(sim).csv,$\
 				$(RESULTSDIR)/bench_p26_x_mr_$(bench).$(fs).$(sim).csv,$\
 				$(fs),$\
 				$(sim),$\
