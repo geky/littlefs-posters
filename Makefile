@@ -70,10 +70,9 @@ endif
 EMMC_READ_SIZE  ?= 512
 EMMC_PROG_SIZE  ?= 512
 EMMC_ERASE_SIZE ?= 512
-# TODO does it make sense to shrink the non-bmap's block size?
-EMMC_LFS3_BLOCK_SIZE ?= 1024 # v3 performs better with larger block sizes
-EMMC_LFS3NB_BLOCK_SIZE ?= 1024
-EMMC_LFS2_BLOCK_SIZE ?= 512  # but no reason to penalize v2
+EMMC_LFS3_BLOCK_SIZE ?= 512
+EMMC_LFS3NB_BLOCK_SIZE ?= 512
+EMMC_LFS2_BLOCK_SIZE ?= 512
 EMMC_SPIFFS_BLOCK_SIZE ?= 1024
 EMMC_YAFFS2_BLOCK_SIZE ?= 1024
 EMMC_READ_TIME  ?= 31   # taken from w25n01gv, read time
