@@ -1,9 +1,9 @@
 # overrideable results dir
-RESULTSDIR ?= results_y_bt_1G
+RESULTSDIR ?= results_y_bt_ls_1G
 # overrideable plots dir
-PLOTSDIR ?= plots_y_bt_1G
+PLOTSDIR ?= plots_y_bt_ls_1G
 # overrideable tikz dir
-TIKZDIR ?= tikz_y_bt_1G
+TIKZDIR ?= tikz_y_bt_ls_1G
 
 
 # give us more space for activities
@@ -34,6 +34,6 @@ endif
 
 
 # let the 1M Makefile do most of the work
-include Makefile_y_bt
+include Makefile_y_bt_ls
 
 
