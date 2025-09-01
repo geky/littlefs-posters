@@ -6,11 +6,14 @@ PLOTSDIR ?= plots_y_ct_n
 TIKZDIR ?= tikz_y_ct_n
 
 
-# 1KiB -> 1MiB
+# 64B -> 1MiB
 P26_T_SIZES ?= $\
+	64,128,256,512,$\
 	1024,2048,4096,8192,16384,32768,$\
 		65536,131072,262144,524288,1048576
 
+# limit the affect of caching
+P26_T_CACHE_SIZE ?= 64
 
 # some other tweaks
 P26_T_SIZE ?= 1048576 # 1 MiB
@@ -24,14 +27,14 @@ P26_T_SIM_TIME ?= 600000000000 # 10 minutes
 endif
 
 # bench several configurations
-BENCH_FSS ?= $\
-	lfs3c64 lfs3c256 lfs3c512 lfs3c1024 $\
-	lfs3c4096 lfs3c8192 lfs3c16384 lfs3c32768 lfs3c65536 lfs3c131072 $\
-	lfs3c262144
 #BENCH_FSS ?= $\
-#	lfs3c64 lfs3c128 lfs3c256 lfs3c512 lfs3c1024 lfs3c2048 $\
+#	lfs3c64 lfs3c256 lfs3c512 lfs3c1024 $\
 #	lfs3c4096 lfs3c8192 lfs3c16384 lfs3c32768 lfs3c65536 lfs3c131072 $\
 #	lfs3c262144
+BENCH_FSS ?= $\
+	lfs3c64 lfs3c128 lfs3c256 lfs3c512 lfs3c1024 lfs3c2048 $\
+	lfs3c4096 lfs3c8192 lfs3c16384 lfs3c32768 lfs3c65536 lfs3c131072 $\
+	lfs3c262144
 # we've tuned things for NAND
 BENCH_SIMS ?= nand
 
@@ -128,6 +131,7 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DERASE_TIME=$($(U_$4)_ERASE_TIME) \
 		-DBLOCK_SIZE=$($(U_$4)_$(U_$3)_BLOCK_SIZE) \
 		-DCRYSTAL_THRESH=$(3:lfs3c%=%) \
+		-DCACHE_SIZE=$(P26_T_CACHE_SIZE) \
 		-o$$@)
 else
 $1:
