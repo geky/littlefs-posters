@@ -273,8 +273,8 @@ $1: $2
 		-bsim=$4 \
 		-bbench=$5 \
 		-Dm=write,read \
-		-bCRYSTAL_THRESH \
-		-Si=CRYSTAL_THRESH \
+		-bSIZE \
+		-Si=SIZE \
 		-fthroughput=' \
 			float(n) / max( \
 				(float(bench_readed)*float(READ_TIME) \
