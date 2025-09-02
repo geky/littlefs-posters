@@ -21,8 +21,8 @@ endif
 
 # this only makes sense for littlefs3
 BENCH_FSS ?= lfs3 lfs3nb
-# we only care about NAND here
-BENCH_SIMS ?= nand
+# we mostly care about NAND, but NOR has higher block counts
+BENCH_SIMS ?= nor nand
 
 # use our bench rules
 BENCH_RULES ?= \
@@ -133,22 +133,26 @@ plot-p26-y-br: \
 ## Plot p26 block recycles linear benchmarks
 .PHONY: plot-p26-y-br-linear
 plot-p26-y-br-linear: \
-		$(PLOTSDIR)/bench_p26_y_br_linear.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_$(sim)_linear.svg)
 
 ## Plot p26 block recycles random benchmarks
 .PHONY: plot-p26-y-br-random
 plot-p26-y-br-random: \
-		$(PLOTSDIR)/bench_p26_y_br_random.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_$(sim)_random.svg)
 
 ## Plot p26 block recycles many benchmarks
 .PHONY: plot-p26-y-br-many
 plot-p26-y-br-many: \
-		$(PLOTSDIR)/bench_p26_y_br_many.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_$(sim)_many.svg)
 
 ## Plot p26 block recycles logging benchmarks
 .PHONY: plot-p26-y-br-logging
 plot-p26-y-br-logging: \
-		$(PLOTSDIR)/bench_p26_y_br_logging.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_$(sim)_logging.svg)
 
 
 
@@ -204,16 +208,17 @@ $1: $2
 endef
 
 # p26 block recycles plot rules
-$(eval $(call PLOT_P26_Y_BR_RULE,$\
-		$(PLOTSDIR)/bench_p26_y_br_%.svg,$\
-		$(foreach fs, $(BENCH_FSS),$\
-			$(RESULTSDIR)/bench_p26_y_br_%.$(fs).nand.tsim.csv \
-			$(RESULTSDIR)/bench_p26_y_br_%.$(fs).nand.ram.csv \
-			$(RESULTSDIR)/bench_p26_y_br_%.$(fs).nand.csv),$\
-		"block recycless - NAND - $$* - simulated throughput",$\
-		BLOCK_RECYCLES,$\
-		$(P26_T_BLOCK_RECYCLESS),$\
-		--xlabel="block recycles"))
+$(foreach sim, $(BENCH_SIMS), \
+	$(eval $(call PLOT_P26_Y_BR_RULE,$\
+			$(PLOTSDIR)/bench_p26_y_br_$(sim)_%.svg,$\
+			$(foreach fs, $(BENCH_FSS),$\
+				$(RESULTSDIR)/bench_p26_y_br_%.$(fs).$(sim).tsim.csv \
+				$(RESULTSDIR)/bench_p26_y_br_%.$(fs).$(sim).ram.csv \
+				$(RESULTSDIR)/bench_p26_y_br_%.$(fs).$(sim).csv),$\
+			"block recycless - $(sim) - $$* - simulated throughput",$\
+			BLOCK_RECYCLES,$\
+			$(P26_T_BLOCK_RECYCLESS),$\
+			--xlabel="block recycles")))
 
 
 
@@ -222,8 +227,10 @@ $(eval $(call PLOT_P26_Y_BR_RULE,$\
 .PHONY: tikz-p26-y-br
 tikz-p26-y-br: \
 		$(foreach fs, $(BENCH_FSS), \
-			$(foreach bench, linear random many logging, \
-				$(TIKZDIR)/tikz_p26_y_br_$(bench).$(fs).nand.csv))
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					$(TIKZDIR)/tikz_p26_y_br_$(bench)$\
+						.$(fs).$(sim).csv)))
 
 # tikz block recycles rule
 #
@@ -276,4 +283,5 @@ $(foreach fs, $(BENCH_FSS), \
 				$(fs),$\
 				$(sim),$\
 				$(bench))))))
+
 

@@ -7,7 +7,8 @@ TIKZDIR ?= tikz_y_br_ps
 
 
 # range of erase sizes to test for throughput testing
-P26_T_BLOCK_RECYCLESS ?= -1,0,1,2,4,8,16,32,64,128,256,512,1024
+P26_T_BLOCK_RECYCLESS ?= 1,2,4,8,16,32,64,128,256,512,1024
+#P26_T_BLOCK_RECYCLESS ?= -1,0,1,2,4,8,16,32,64,128,256,512,1024
 # some other tweaks
 P26_T_SIZE ?= 1048576 # 1 MiB
 DISK_SIZE ?= 134217728 # 128 MiB
@@ -24,8 +25,8 @@ endif
 BENCH_FSS ?= lfs3p512 lfs3p1024 $\
 	lfs3p2048 lfs3p4096 lfs3p8192 lfs3p16384 $\
 	lfs3p32768 lfs3p65536 lfs3p131072
-# we only care about NAND here
-BENCH_SIMS ?= nand
+# we mostly care about NAND, but NOR has higher block counts
+BENCH_SIMS ?= nor nand
 
 # extra config, note we don't bother with uppercasing
 $(foreach fs,$(BENCH_FSS), \
@@ -112,7 +113,9 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DSIM_SIZE=$(or $(P26_T_SIM_SIZE),0) \
 		-DFS=$(N_$3) \
 		-DREAD_SIZE=$($(U_$4)_READ_SIZE) \
-		-DPROG_SIZE=$(3:lfs3p%=%) \
+		-DPROG_SIZE=$$(shell python -c 'print(min($\
+			$(3:lfs3p%=%), $\
+			$($(U_$4)_$(U_$3)_BLOCK_SIZE)))') \
 		-DERASE_SIZE=$($(U_$4)_ERASE_SIZE) \
 		-DREAD_TIME=$($(U_$4)_READ_TIME) \
 		-DPROG_TIME=$($(U_$4)_PROG_TIME) \
@@ -148,22 +151,26 @@ plot-p26-y-br-ps: \
 ## Plot p26 block recycles linear benchmarks
 .PHONY: plot-p26-y-br-ps-linear
 plot-p26-y-br-ps-linear: \
-		$(PLOTSDIR)/bench_p26_y_br_ps_linear.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_linear.svg)
 
 ## Plot p26 block recycles random benchmarks
 .PHONY: plot-p26-y-br-ps-random
 plot-p26-y-br-ps-random: \
-		$(PLOTSDIR)/bench_p26_y_br_ps_random.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_random.svg)
 
 ## Plot p26 block recycles many benchmarks
 .PHONY: plot-p26-y-br-ps-many
 plot-p26-y-br-ps-many: \
-		$(PLOTSDIR)/bench_p26_y_br_ps_many.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_many.svg)
 
 ## Plot p26 block recycles logging benchmarks
 .PHONY: plot-p26-y-br-ps-logging
 plot-p26-y-br-ps-logging: \
-		$(PLOTSDIR)/bench_p26_y_br_ps_logging.svg
+		$(foreach sim, $(BENCH_SIMS), \
+			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_logging.svg)
 
 
 
@@ -216,16 +223,17 @@ $1: $2
 endef
 
 # p26 block recycles plot rules
-$(eval $(call PLOT_P26_Y_BR_PS_RULE,$\
-		$(PLOTSDIR)/bench_p26_y_br_ps_%.svg,$\
-		$(foreach fs, $(BENCH_FSS),$\
-			$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).nand.tsim.csv \
-			$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).nand.ram.csv \
-			$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).nand.csv),$\
-		"block recycless - NAND - $$* - simulated throughput",$\
-		BLOCK_RECYCLES,$\
-		$(P26_T_BLOCK_RECYCLESS),$\
-		--xlabel="block recycles"))
+$(foreach sim, $(BENCH_SIMS), \
+	$(eval $(call PLOT_P26_Y_BR_PS_RULE,$\
+			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_%.svg,$\
+			$(foreach fs, $(BENCH_FSS),$\
+				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).tsim.csv \
+				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).ram.csv \
+				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).csv),$\
+			"block recycless - $(sim) - $$* - simulated throughput",$\
+			BLOCK_RECYCLES,$\
+			$(P26_T_BLOCK_RECYCLESS),$\
+			--xlabel="block recycles")))
 
 
 
@@ -234,8 +242,10 @@ $(eval $(call PLOT_P26_Y_BR_PS_RULE,$\
 .PHONY: tikz-p26-y-br-ps
 tikz-p26-y-br-ps: \
 		$(foreach fs, $(BENCH_FSS), \
-			$(foreach bench, linear random many logging, \
-				$(TIKZDIR)/tikz_p26_y_br_ps_$(bench).$(fs).nand.csv))
+			$(foreach sim, $(BENCH_SIMS), \
+				$(foreach bench, linear random many logging, \
+					$(TIKZDIR)/tikz_p26_y_br_ps_$(bench)$\
+						.$(fs).$(sim).csv)))
 
 # tikz block recycles rule
 #
