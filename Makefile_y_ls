@@ -22,7 +22,7 @@ P26_T_SIM_TIME ?= 600000000000 # 10 minutes
 endif
 
 # this only makes sense for littlefs3
-BENCH_FSS ?= lfs3 lfs3nb
+BENCH_FSS ?= lfs3 lfs3nb lfs2
 # we mostly care about NAND, but NOR has higher block counts
 BENCH_SIMS ?= nor nand
 
