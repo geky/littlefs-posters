@@ -70,3 +70,9 @@ Runtime:
   user    843m34.197s
   sys     2m4.110s
 
+- time ( make -f Makefile_y_ct_n plot )
+
+  real    162m45.982s
+  user    909m15.368s
+  sys     1m51.596s
+

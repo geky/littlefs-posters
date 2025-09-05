@@ -13,7 +13,7 @@ P26_T_SIZES ?= $\
 		65536,131072,262144,524288,1048576
 
 # limit the affect of caching
-P26_T_CACHE_SIZE ?= 64
+# P26_T_CACHE_SIZE ?= 64
 
 # some other tweaks
 P26_T_SIZE ?= 1048576 # 1 MiB
@@ -131,7 +131,7 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DERASE_TIME=$($(U_$4)_ERASE_TIME) \
 		-DBLOCK_SIZE=$($(U_$4)_$(U_$3)_BLOCK_SIZE) \
 		-DCRYSTAL_THRESH=$(3:lfs3c%=%) \
-		-DCACHE_SIZE=$(P26_T_CACHE_SIZE) \
+		$(if $(P26_T_CACHE_SIZE),-DCACHE_SIZE=$(P26_T_CACHE_SIZE)) \
 		-o$$@)
 else
 $1:

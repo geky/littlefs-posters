@@ -10,6 +10,10 @@ TIKZDIR ?= tikz_y_ss
 P26_T_SHRUB_SIZES ?= 0,$\
 	1,4,8,16,32,64,128,256,512,$\
 	1024,2048,4096,8192,16384,32768
+
+# limit the affect of caching
+P26_T_CACHE_SIZE ?= 64
+
 # some other tweaks
 P26_T_SIZE ?= 1048576 # 1 MiB
 DISK_SIZE ?= 134217728 # 128 MiB
@@ -106,6 +110,7 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DERASE_TIME=$($(U_$4)_ERASE_TIME) \
 		-DBLOCK_SIZE=$($(U_$4)_$(U_$3)_BLOCK_SIZE) \
 		-DINLINE_SIZE=$(or $5,$(P26_T_SHRUB_SIZES)) \
+		-DCACHE_SIZE=$(P26_T_CACHE_SIZE) \
 		-o$$@)
 else
 $1:
