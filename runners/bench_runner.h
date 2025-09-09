@@ -244,7 +244,7 @@ size_t bench_heap(void);
 // littlefs3 specific implicit defines
 #ifdef LFS3
 #define BENCH_LFS3_DEFINES \
-    BENCH_DEFINE(BLOCK_RECYCLES,     1000                                   ) \
+    BENCH_DEFINE(BLOCK_RECYCLES,     100                                    ) \
     /* NOTE this was expanded to match littlefs2                           */ \
     BENCH_DEFINE(RCACHE_SIZE,        LFS3_MAX(CACHE_SIZE, READ_SIZE)        ) \
     BENCH_DEFINE(PCACHE_SIZE,        LFS3_MAX(CACHE_SIZE, PROG_SIZE)        ) \
@@ -268,7 +268,7 @@ size_t bench_heap(void);
 #ifdef LFS2
 #define BENCH_LFS2_DEFINES \
     /*           name                value (overridable)                   */ \
-    BENCH_DEFINE(BLOCK_CYCLES,       1000                                   ) \
+    BENCH_DEFINE(BLOCK_CYCLES,       100                                    ) \
     BENCH_DEFINE(LCACHE_SIZE,        LFS3_MIN(                                \
                                         LFS3_MAX(                             \
                                             CACHE_SIZE,                       \
