@@ -113,7 +113,7 @@ NOR_ERASE_TIME ?= 10986 # tSE=45 ms, sector=4096 (45 ms / 4096)
 # FR=104 MHz, quad read/prog (9.6 ns * 8/4)
 # => +~19 ns for bus
 #
-NAND_READ_SIZE  ?= 512
+NAND_READ_SIZE  ?= 1
 NAND_PROG_SIZE  ?= 512
 NAND_ERASE_SIZE ?= 131072
 NAND_LFS3_BLOCK_SIZE ?= 131072
