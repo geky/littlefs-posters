@@ -1,7 +1,7 @@
 # overrideable results dir
-RESULTSDIR ?= results_ps_1M
+RESULTSDIR ?= results_gs_1M
 # overrideable plots dir
-PLOTSDIR ?= plots_ps_1M
+PLOTSDIR ?= plots_gs_1M
 
 
 # give us more space for activities
@@ -18,5 +18,5 @@ endif
 
 
 # page size Makefile does most of the work
-include Makefile_ps
+include Makefile_gs
 

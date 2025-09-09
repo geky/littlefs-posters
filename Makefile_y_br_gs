@@ -1,9 +1,9 @@
 # overrideable results dir
-RESULTSDIR ?= results_y_br_ps
+RESULTSDIR ?= results_y_br_gs
 # overrideable plots dir
-PLOTSDIR ?= plots_y_br_ps
+PLOTSDIR ?= plots_y_br_gs
 # overrideable tikz dir
-TIKZDIR ?= tikz_y_br_ps
+TIKZDIR ?= tikz_y_br_gs
 
 
 # range of erase sizes to test for throughput testing
@@ -43,13 +43,13 @@ $(foreach fs,$(BENCH_FSS), \
 
 # use our bench rules
 BENCH_RULES ?= \
-	bench-p26-y-br-ps
+	bench-p26-y-br-gs
 # use our plot rules
 PLOT_RULES ?= \
-	plot-p26-y-br-ps
+	plot-p26-y-br-gs
 # use our tikz rules
 TIKZ_RULES ?= \
-	tikz-p26-y-br-ps
+	tikz-p26-y-br-gs
 
 # default Makefile does most of the work
 include Makefile
@@ -57,40 +57,40 @@ include Makefile
 
 
 ## Run p26 block recycles benchmarks
-.PHONY: bench-p26-y-br-ps
-bench-p26-y-br-ps: \
-		bench-p26-y-br-ps-linear \
-		bench-p26-y-br-ps-random \
-		bench-p26-y-br-ps-many \
-		bench-p26-y-br-ps-logging
+.PHONY: bench-p26-y-br-gs
+bench-p26-y-br-gs: \
+		bench-p26-y-br-gs-linear \
+		bench-p26-y-br-gs-random \
+		bench-p26-y-br-gs-many \
+		bench-p26-y-br-gs-logging
 
 ## Run p26 block recycles linear benchmarks
-.PHONY: bench-p26-y-br-ps-linear
-bench-p26-y-br-ps-linear: \
+.PHONY: bench-p26-y-br-gs-linear
+bench-p26-y-br-gs-linear: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_br_ps_linear.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_br_gs_linear.$(fs).$(sim).csv))
 
 ## Run p26 block recycles random benchmarks
-.PHONY: bench-p26-y-br-ps-random
-bench-p26-y-br-ps-random: \
+.PHONY: bench-p26-y-br-gs-random
+bench-p26-y-br-gs-random: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_br_ps_random.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_br_gs_random.$(fs).$(sim).csv))
 
 ## Run p26 block recycles many benchmarks
-.PHONY: bench-p26-y-br-ps-many
-bench-p26-y-br-ps-many: \
+.PHONY: bench-p26-y-br-gs-many
+bench-p26-y-br-gs-many: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_br_ps_many.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_br_gs_many.$(fs).$(sim).csv))
 
 ## Run p26 block recycles logging benchmarks
-.PHONY: bench-p26-y-br-ps-logging
-bench-p26-y-br-ps-logging: \
+.PHONY: bench-p26-y-br-gs-logging
+bench-p26-y-br-gs-logging: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
-				$(RESULTSDIR)/bench_p26_y_br_ps_logging.$(fs).$(sim).csv))
+				$(RESULTSDIR)/bench_p26_y_br_gs_logging.$(fs).$(sim).csv))
 
 
 # p26 block recycles bench rule
@@ -100,7 +100,7 @@ bench-p26-y-br-ps-logging: \
 # $3 - fs type/version
 # $4 - sim type
 #
-define BENCH_P26_T_Y_BR_PS_RULE
+define BENCH_P26_T_Y_BR_GS_RULE
 ifndef NO_BENCH
 $1: $(BENCH_$(U_$3)_RUNNER)
 	$$(strip ./scripts/bench.py -R$$< -B $2 \
@@ -132,8 +132,8 @@ endef
 # p26 block recycles bench rules
 $(foreach fs, $(BENCH_FSS),$\
 	$(foreach sim, $(BENCH_SIMS),$\
-		$(eval $(call BENCH_P26_T_Y_BR_PS_RULE,$\
-				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).csv,$\
+		$(eval $(call BENCH_P26_T_Y_BR_GS_RULE,$\
+				$(RESULTSDIR)/bench_p26_y_br_gs_%.$(fs).$(sim).csv,$\
 				bench_p26_wt_$$*,$\
 				$(fs),$\
 				$(sim)))))
@@ -141,36 +141,36 @@ $(foreach fs, $(BENCH_FSS),$\
 
 
 ## Plot p26 block recycles benchmarks
-.PHONY: plot-p26-y-br-ps
-plot-p26-y-br-ps: \
-		plot-p26-y-br-ps-linear \
-		plot-p26-y-br-ps-random \
-		plot-p26-y-br-ps-many \
-		plot-p26-y-br-ps-logging
+.PHONY: plot-p26-y-br-gs
+plot-p26-y-br-gs: \
+		plot-p26-y-br-gs-linear \
+		plot-p26-y-br-gs-random \
+		plot-p26-y-br-gs-many \
+		plot-p26-y-br-gs-logging
 
 ## Plot p26 block recycles linear benchmarks
-.PHONY: plot-p26-y-br-ps-linear
-plot-p26-y-br-ps-linear: \
+.PHONY: plot-p26-y-br-gs-linear
+plot-p26-y-br-gs-linear: \
 		$(foreach sim, $(BENCH_SIMS), \
-			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_linear.svg)
+			$(PLOTSDIR)/bench_p26_y_br_gs_$(sim)_linear.svg)
 
 ## Plot p26 block recycles random benchmarks
-.PHONY: plot-p26-y-br-ps-random
-plot-p26-y-br-ps-random: \
+.PHONY: plot-p26-y-br-gs-random
+plot-p26-y-br-gs-random: \
 		$(foreach sim, $(BENCH_SIMS), \
-			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_random.svg)
+			$(PLOTSDIR)/bench_p26_y_br_gs_$(sim)_random.svg)
 
 ## Plot p26 block recycles many benchmarks
-.PHONY: plot-p26-y-br-ps-many
-plot-p26-y-br-ps-many: \
+.PHONY: plot-p26-y-br-gs-many
+plot-p26-y-br-gs-many: \
 		$(foreach sim, $(BENCH_SIMS), \
-			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_many.svg)
+			$(PLOTSDIR)/bench_p26_y_br_gs_$(sim)_many.svg)
 
 ## Plot p26 block recycles logging benchmarks
-.PHONY: plot-p26-y-br-ps-logging
-plot-p26-y-br-ps-logging: \
+.PHONY: plot-p26-y-br-gs-logging
+plot-p26-y-br-gs-logging: \
 		$(foreach sim, $(BENCH_SIMS), \
-			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_logging.svg)
+			$(PLOTSDIR)/bench_p26_y_br_gs_$(sim)_logging.svg)
 
 
 
@@ -183,7 +183,7 @@ plot-p26-y-br-ps-logging: \
 # $5 - x-ticks
 # $6 - extra plotmpl.py flags
 #
-define PLOT_P26_Y_BR_PS_RULE
+define PLOT_P26_Y_BR_GS_RULE
 $1: $2
 	$$(strip ./scripts/plotmpl.py $$^ \
 		-W1500 -H350 \
@@ -224,12 +224,12 @@ endef
 
 # p26 block recycles plot rules
 $(foreach sim, $(BENCH_SIMS), \
-	$(eval $(call PLOT_P26_Y_BR_PS_RULE,$\
-			$(PLOTSDIR)/bench_p26_y_br_ps_$(sim)_%.svg,$\
+	$(eval $(call PLOT_P26_Y_BR_GS_RULE,$\
+			$(PLOTSDIR)/bench_p26_y_br_gs_$(sim)_%.svg,$\
 			$(foreach fs, $(BENCH_FSS),$\
-				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).tsim.csv \
-				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).ram.csv \
-				$(RESULTSDIR)/bench_p26_y_br_ps_%.$(fs).$(sim).csv),$\
+				$(RESULTSDIR)/bench_p26_y_br_gs_%.$(fs).$(sim).tsim.csv \
+				$(RESULTSDIR)/bench_p26_y_br_gs_%.$(fs).$(sim).ram.csv \
+				$(RESULTSDIR)/bench_p26_y_br_gs_%.$(fs).$(sim).csv),$\
 			"block recycless - $(sim) - $$* - simulated throughput",$\
 			BLOCK_RECYCLES,$\
 			$(P26_T_BLOCK_RECYCLESS),$\
@@ -239,12 +239,12 @@ $(foreach sim, $(BENCH_SIMS), \
 
 
 ## Generate block recycles tikz results
-.PHONY: tikz-p26-y-br-ps
-tikz-p26-y-br-ps: \
+.PHONY: tikz-p26-y-br-gs
+tikz-p26-y-br-gs: \
 		$(foreach fs, $(BENCH_FSS), \
 			$(foreach sim, $(BENCH_SIMS), \
 				$(foreach bench, linear random many logging, \
-					$(TIKZDIR)/tikz_p26_y_br_ps_$(bench)$\
+					$(TIKZDIR)/tikz_p26_y_br_gs_$(bench)$\
 						.$(fs).$(sim).csv)))
 
 # tikz block recycles rule
@@ -255,7 +255,7 @@ tikz-p26-y-br-ps: \
 # $4 - sim
 # $5 - bench
 #
-define TIKZ_T_Y_BR_PS_RULE
+define TIKZ_T_Y_BR_GS_RULE
 $1: $2
 	$$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $$^ \
@@ -292,9 +292,9 @@ endef
 $(foreach fs, $(BENCH_FSS), \
 	$(foreach sim, $(BENCH_SIMS), \
 		$(foreach bench, linear random many logging, \
-			$(eval $(call TIKZ_T_Y_BR_PS_RULE,$\
-				$(TIKZDIR)/tikz_p26_y_br_ps_$(bench).$(fs).$(sim).csv,$\
-				$(RESULTSDIR)/bench_p26_y_br_ps_$(bench).$(fs).$(sim).csv,$\
+			$(eval $(call TIKZ_T_Y_BR_GS_RULE,$\
+				$(TIKZDIR)/tikz_p26_y_br_gs_$(bench).$(fs).$(sim).csv,$\
+				$(RESULTSDIR)/bench_p26_y_br_gs_$(bench).$(fs).$(sim).csv,$\
 				$(fs),$\
 				$(sim),$\
 				$(bench))))))
