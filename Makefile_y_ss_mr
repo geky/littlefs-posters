@@ -19,7 +19,8 @@ P26_T_CACHE_SIZE ?= 64
 # some other tweaks
 P26_T_SIZE ?= 1048576 # 1 MiB
 # DISK_SIZE ?= 134217728 # 128 MiB
-DISK_SIZE ?= 268435456 # 256 MiB
+# DISK_SIZE ?= 268435456 # 256 MiB
+DISK_SIZE ?= 536870912 # 512 MiB
 
 # increase simtime for more reliable results
 ifdef PRECISE
