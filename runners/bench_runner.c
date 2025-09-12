@@ -642,8 +642,28 @@ void bench_stack_watermark(void) {
     }
 }
 
+// get the worst-case stack usage
 size_t bench_stack(void) {
     return bench_stack_depth;
+}
+
+// get the bench ctx, i.e. the stack usage of the bench itself, well,
+// technically this just returns the current stack depth
+//
+// note bench_ctx is implicitly included in bench_stack! you should
+// subtract bench_ctx from bench_stack if you want to report these
+// separately!
+//
+// note the noinline here is important for forcing a new stack frame
+__attribute__((noinline))
+size_t bench_ctx(void) {
+    uint8_t *watermark = __builtin_frame_address(0);
+
+    ssize_t depth = watermark - bench_stack_watermark_enter;
+    if (depth < 0) {
+        depth = -depth;
+    }
+    return depth;
 }
 
 
@@ -694,6 +714,7 @@ void bench_heap_dec(size_t size) {
     }
 }
 
+// get the worst-case heap usage
 size_t bench_heap(void) {
     return bench_heap_depth;
 }

@@ -168,10 +168,8 @@ code = '''
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
-
-    // in theory, this is just the current stack frame
-    BENCH_RESULT("bstack", written, bench_helpers_bench_stack());
 
     // find the total disk usage after the benchmark
     #if defined(LFS3)
@@ -341,10 +339,8 @@ code = '''
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
-
-    // in theory, this is just the current stack frame
-    BENCH_RESULT("bstack", written, bench_helpers_bench_stack());
 
     // find the total disk usage after the benchmark
     #if defined(LFS3)
@@ -526,10 +522,8 @@ code = '''
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
-
-    // in theory, this is just the current stack frame
-    BENCH_RESULT("bstack", written, bench_helpers_bench_stack());
 
     // find the total disk usage after the benchmark
     #if defined(LFS3)
@@ -741,10 +735,8 @@ code = '''
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
+    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
-
-    // in theory, this is just the current stack frame
-    BENCH_RESULT("bstack", written, bench_helpers_bench_stack());
 
     // find the total disk usage after the benchmark
     #if defined(LFS3)
