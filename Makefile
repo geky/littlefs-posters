@@ -1325,8 +1325,8 @@ BENCH_T_RESULT_RAM_RECIPE = $(strip ./scripts/csv.py \
 						-DSIZE=all,$(shell python -c '$\
 							print(max([$(P26_T_SIZES)]))') \
 						-fdata \
-						-fstack=stack-ctx \
 						-fctx \
+						-fstack=stack-ctx \
 						-fheap \
 						-ftotal='data+stack+heap' \
 						-o-)))) \
@@ -2408,8 +2408,8 @@ $(TIKZDIR)/tikz_p26_wt_ram.csv: \
 						-DSIZE=all,$(shell python -c '$\
 							print(max([$(P26_T_SIZES)]))') \
 						-fdata \
-						-fstack=stack-ctx \
 						-fctx \
+						-fstack=stack-ctx \
 						-fheap \
 						-fram=data+stack+heap \
 						-o-)))) \
