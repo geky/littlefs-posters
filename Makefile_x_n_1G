@@ -31,8 +31,26 @@ endif
 #
 # this avoids linked-list scaling issues with yaffs2
 
+# also lfs3nf as defined below
+BENCH_FSS ?= lfs3 lfs3nb lfs3nf lfs2 spiffs yaffs2
 # we only care about NOR and NAND really
 BENCH_SIMS ?= nor nand
+
+# extra lfs3nf config
+U_lfs3nf = LFS3NF
+N_lfs3nf = 31
+I_lfs3nf = 6
+ifdef LIGHT
+C_lfs3nf = \#da8bc3bf # pink
+else
+C_lfs3nf = \#da8bc3bf # pink
+endif
+F_lfs3nf = x # small x
+BENCH_LFS3NF_RUNNER ?= $(BENCH_LFS3_RUNNER)
+BENCH_LFS3NF_FILTER ?= $(BENCH_LFS3_FILTER)
+EMMC_LFS3NF_BLOCK_SIZE ?= $(EMMC_LFS3_BLOCK_SIZE)
+NOR_LFS3NF_BLOCK_SIZE  ?= $(NOR_LFS3_BLOCK_SIZE)
+NAND_LFS3NF_BLOCK_SIZE ?= $(NAND_LFS3_BLOCK_SIZE)
 
 # use our bench rules
 BENCH_RULES ?= \
@@ -82,6 +100,7 @@ $1: $(BENCH_$(U_$3)_RUNNER)
 		-DSIM_TIME=$(or $(P26_T_SIM_TIME),0) \
 		-DSIM_SIZE=$(or $(P26_T_SIM_SIZE),0) \
 		-DFS=$(N_$3) \
+		$(if $(filter lfs3nf,$3),-DNO_FRUNCATE=1) \
 		-DREAD_SIZE=$($(U_$4)_READ_SIZE) \
 		-DPROG_SIZE=$($(U_$4)_PROG_SIZE) \
 		-DERASE_SIZE=$($(U_$4)_ERASE_SIZE) \

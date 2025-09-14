@@ -125,3 +125,6 @@ Runtime:
   real    437m31.105s
   user    438m17.043s
   sys     0m36.526s  
+
+# forgot to time this one :/
+- BENCHFLAGS=-j5 BENCH_FSS='lfs3 lfs3nb lfs3nf lfs2' DISK_SIZE=2147483648 PRECISE=1 make -f Makefile_x_n_1G plot
