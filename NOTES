@@ -128,3 +128,9 @@ Runtime:
 
 # forgot to time this one :/
 - BENCHFLAGS=-j5 BENCH_FSS='lfs3 lfs3nb lfs3nf lfs2' DISK_SIZE=2147483648 PRECISE=1 make -f Makefile_x_n_1G plot
+
+- time ( THUMB=1 BENCH_SIMS='nor nand' P26_T_SIZES=1048576 PRECISE=1 make -f Makefile_1M plot-p26-wt -j12 )
+
+  real    247m21.843s
+  user    2207m16.664s
+  sys     5m25.171s
