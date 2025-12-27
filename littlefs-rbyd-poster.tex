@@ -1,0 +1,449 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% littlefs: rbyd B-trees: efficient B-trees when RAM << block size
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix-2020-09}
+
+% newlines in tables
+\usepackage{makecell}
+\renewcommand\theadfont{\normalsize}
+
+% remove padding around lists
+\usepackage{enumitem}
+\renewcommand{\descriptionlabel}[1]{\hspace\labelsep\normalfont\bfseries #1.}
+\setlist[description]{
+    nosep,
+    wide,
+%    labelindent=0.5\parindent,
+    labelindent=0pt,
+%    leftmargin=0pt,
+%    leftmargin=0pt,
+%%    itemindent=2em,
+%    itemsep=0pt,
+%    topsep=1\parsep,
+%    parsep=1\parsep,
+%    partopsep=0pt,
+    %parsep=0pt plus 4pt minus 0pt,
+    %itemsep=0pt plus 4pt minus 0pt,
+}
+\setlist[enumerate]{
+    label={\arabic*.},
+    font=\normalfont\bfseries,
+%    label={\arabic*.},
+    nosep,
+%    wide,
+    labelindent=0pt,
+%    leftmargin=1em,
+%    itemindent=2em,
+%%    leftmargin=1.5em,
+%    itemsep=0pt,
+%    topsep=1\parsep,
+%    parsep=1\parsep,
+%    partopsep=0pt,
+    %parsep=0pt plus 4pt minus 0pt,
+    %itemsep=0pt plus 4pt minus 0pt,
+}
+
+
+
+% new list!
+% 
+% no idea how to make \item implicit :/
+%
+% also no idea why \denumeratei breaks :/
+%
+% it's all an ugly mess :/
+%
+\newcounter{ditemi}
+\renewcommand{\theditemi}{(\number\value{ditemi})}
+\newcommand{\denumeratereset}[0]{
+    \setcounter{ditemi}{0}
+}
+\newcommand{\denumerateitem}[1]{
+    \normalfont\bfseries(\number\value{ditemi})~#1.
+}
+\newcommand{\ditem}[1][]{
+    \refstepcounter{ditemi}
+    \item[#1]
+}
+\newlist{denumerate}{enumerate}{1} % last arg is max-depth
+\setlist[denumerate]{
+    nosep,
+    labelindent=0pt,
+    %labelindent=-0.5\parindent,
+    align=left,
+    itemindent=!,
+    before=\denumeratereset,
+    format=\denumerateitem,
+}
+
+% prevent footnote splitting, write smaller footnotes!
+% \interfootnotelinepenalty=10000
+
+
+% try to condense things
+% TODO we may need to remove these
+\usepackage{microtype}
+\usepackage[compact]{titlesec}
+% \setlength{\intextsep}{3pt} % this is for in-text floats? ohhh
+% \setlength{\textfloatsep}{3pt}
+% \setlength{\dbltextfloatsep}{3pt}
+% \setlength{\abovecaptionskip}{2pt plus 2pt minus 1pt}
+% \setlength{\belowcaptionskip}{2pt plus 2pt minus 1pt}
+\setlength{\textfloatsep}{3pt plus 12pt minus 0pt}
+\setlength{\dbltextfloatsep}{3pt plus 12pt minus 0pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{3pt}
+% \setlength{\abovedisplayskip}{0pt} % these are for maths?
+% \setlength{\belowdisplayskip}{0pt}
+% \setlength{\abovedisplayshortskip}{0pt}
+% \setlength{\belowdisplayshortskip}{0pt}
+
+% fit more figures
+% \setcounter{topnumber}{4}
+% \setcounter{totalnumber}{6}
+% \renewcommand{\topfraction}{.9}
+% \renewcommand{\textfraction}{.1}
+
+
+% to be able to draw some self-contained figs
+\usepackage{tikz}
+% TODO correct?
+\usetikzlibrary{
+    positioning,
+    calc,
+    arrows,
+    arrows.meta,
+    shapes.geometric,
+    patterns,
+    patterns.meta,
+    decorations.pathreplacing,
+    automata,
+    pgfplots.groupplots}
+\usepackage{pgfplots}
+%\usepackage{pgffor}
+\usepackage{xstring}
+\usepackage{subcaption} 
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{ninecolors}
+\usepackage{ifthen}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{refcount}
+\usepackage{verbatim}
+\usepackage{hyphenat}
+\usepackage{xurl}
+
+%% cache tikz figures
+%\usetikzlibrary{external}
+%\tikzexternalize[prefix=build/]
+
+% pgfcompat
+\pgfplotsset{compat=1.18}
+
+% allow hyphenating texttt
+%\DeclareFontFamily{\encodingdefault}{\ttdefault}{\hyphenchar\font=`\-}
+\DeclareFontFamily{\encodingdefault}{\ttdefault}{\hyphenchar\font=`\-}
+
+% hyphenation rules
+% \hyphenation{micro-con-troller}
+
+
+% some conveniences
+\newcommand{\reffig}[1]{Figure~\ref{fig:#1}}
+\newcommand{\refeval}[1]{Figure~\ref{eval:#1}}
+\newcommand{\reftbl}[1]{Table~\ref{tbl:#1}}
+\newcommand{\refsec}[1]{\S\ref{sec:#1}}
+\newcommand{\refeqn}[1]{Equation~\eqref{eqn:#1}}
+
+% subfigure counter
+\newcounter{subfig}[figure]
+\renewcommand{\thesubfig}{\the\numexpr\value{figure}+1(\alph{subfig})}
+\newcommand{\sublabel}[2]{
+    \refstepcounter{subfig}
+    \llap{(\alph{subfig})}
+    \label{#1:\the\numexpr\value{figure}+1:#2}
+}
+\newcommand{\subfig}[1]{\sublabel{fig}{#1}}
+\newcommand{\subeval}[1]{\sublabel{eval}{#1}}
+\newcommand{\refsub}[3]{\hyperref[#1:#2]{\ref*{#1:\getrefnumber{#1:#2}:#3}}}
+\newcommand{\refsubfig}[2]{Figure~\refsub{fig}{#1}{#2}}
+\newcommand{\refsubeval}[2]{Figure~\refsub{eval}{#1}{#2}}
+
+% hack from https://tex.stackexchange.com/a/698806
+%
+% I don't actually know how this works!
+%
+\makeatletter
+\def\footlabel{%
+    \edef\@currentHref{footnote.\the\c@footnote}%
+    % adjust aim up
+    \raisebox{\baselineskip}[0pt]{\hypertarget{\@currentHref}{}}%
+    \label%
+}
+\makeatother
+
+% old habits die hard
+\def\lt{<}
+\def\gt{>}
+
+% some colors
+\colorlet{rbydred}{red!20}
+\colorlet{rbydgreen}{green!20}
+\colorlet{rbydblue}{blue!20}
+\colorlet{rbydyellow}{yellow!30}
+\colorlet{rbydmagenta}{magenta!30}
+\colorlet{rbydcyan}{cyan!30}
+
+\colorlet{rbyddarkred}{red!60!black}
+\colorlet{rbyddarkgreen}{green!60!black}
+\colorlet{rbyddarkblue}{blue!60!black}
+\colorlet{rbyddarkyellow}{yellow!50!black}
+\colorlet{rbyddarkmagenta}{magenta!50!black}
+\colorlet{rbyddarkcyan}{cyan!50!black}
+
+\colorlet{rbydlightred}{red!12}
+\colorlet{rbydlightgreen}{green!12}
+\colorlet{rbydlightblue}{blue!12}
+\colorlet{rbydlightyellow}{yellow!12}
+\colorlet{rbydlightmagenta}{magenta!12}
+\colorlet{rbydlightcyan}{cyan!12}
+
+
+
+%%% YES yes controls %%%
+
+% anonymize for blind review!
+% \def\yesanon{}
+
+% comment these out to speed things up
+%
+\def\yesinputfig{}
+\def\yesinputeval{}
+
+% unfortunately not everything can make the cut...
+% \def\yeschop{}
+
+
+% some aliases
+\def\lfs+{littlefs}
+% anonymize!
+\ifdefined\yesanon
+\def\lfsiii+{avianfs}
+\else
+\def\lfsiii+{littlefs3}
+\fi
+\def\lfsii+{littlefs2}
+\def\spiffs+{SPIFFS}
+\def\yaffsii+{Yaffs2}
+
+% anything with a prefix also needs to be anonymized
+\ifdefined\yesanon
+\def\lfsiiifilefruncate+{\texttt{avfs\_file\_fruncate}}
+\def\lfsiiifsgc+{\texttt{avfs\_fs\_gc}}
+\else
+\def\lfsiiifilefruncate+{\texttt{lfs3\_file\_fruncate}}
+\def\lfsiiifsgc+{\texttt{lfs3\_fs\_gc}}
+\fi
+
+% some other shortcuts
+\def\lfsiiimetadatamax+{\texttt{metadata\_max}}
+\def\lfsiiiblockrecycles+{\texttt{block\_recycles}}
+\def\lfsiiishrubsize+{\texttt{shrub\_size}}
+\def\lfsiiicachesize+{\texttt{cache\_size}}
+\def\lfsiiifragmentsize+{\texttt{fragment\_size}}
+\def\lfsiiicrystalthresh+{\texttt{crystal\_thresh}}
+\def\lfsiiilookaheadsize+{\texttt{lookahead\_size}}
+\def\lfsiiigbmaprebuildthresh+{\texttt{gbmap\_rebuild\_thresh}}
+\def\lfsiiisplitthresh+{\texttt{split\_thresh}}
+
+% Winbond NOR/NAND flash shortcuts
+\def\wnor+{\texttt{W25Q64JV}}
+\def\wnand+{\texttt{W25N01GV}}
+
+
+% disable inputs to speed things up
+\ifdefined\yesinputfig
+    \newcommand{\inputfig}[1]{\input{#1}}
+\else
+    \newcommand{\inputfig}[1]{\texttt{#1.tex}}
+\fi
+\ifdefined\yesinputeval
+    \newcommand{\inputeval}[1]{\input{#1}}
+\else
+    \newcommand{\inputeval}[1]{\texttt{#1.tex}}
+\fi
+
+% this one's always on and makes grepping easy
+\newcommand{\inputwip}[1]{\input{#1}}
+
+% chopping controls
+\ifdefined\yeschop
+    \newenvironment{chop}{}{}
+\else
+    \newenvironment{chop}{\comment}{\endcomment}
+\fi
+
+
+% gimme a line
+\def\linewip{\par\noindent\rule{\linewidth}{0.5pt}}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% don't want date printed
+\date{}
+
+% make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+%\title{\Large \bf \lfs+ v3: A little fail-safe filesystem designed
+%    for microcontrollers}
+%\title{\Large \bf \lfs+ v3: A scalable filesystem in bounded RAM}
+%\title{\Large \bf \lfs+ v3: Scaling a filesystem in bounded RAM}
+%\title{\Large \bf \lfs+ v3: Scaling a filesystem in 4 KiB of RAM}
+%\title{\Large \bf \lfs+ v3: Scaling a filesystem in $<$ 4 KiB of RAM}
+%\title{\Large \bf \lfsiii+: Scaling a filesystem in {$\lt$}4KiB of RAM}
+\title{\Large \bf \lfs+: rbyd B-trees: Efficient B-trees when RAM $\ll$
+    block size}
+
+\ifdefined\yesanon\else
+%for single author (just remove % characters)
+\author{
+{\rm Christopher Haster}\\
+\lfs+
+% copy the following lines to add more authors
+% \and
+% {\rm Name}\\
+%Name Institution
+} % end author
+\fi
+
+\maketitle
+
+
+
+%-------------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:introduction}
+%-------------------------------------------------------------------------------
+
+\lfs+ is a little filesystem targeting microcontrollers, small devices with
+%{$\sim$}256KiB--1MiB of ROM, {$\sim$}32KiB--128KiB of RAM, but---thanks to
+MiBs of ROM, KiBs of RAM, and---thanks to
+increasing storage density---potentially GiBs of storage.
+This creates unique challenges for filesystem design: (1)~strictly
+bounded-RAM, i.e. no non-tail recursion, and (2)~blocks that may not fit in
+a devices working memory.
+% with {$\sim$}4KiB--128KiB--1MiB blocks.
+%This creates a unique challenge for
+%filesystem design: How do you design a filesystem to work efficiently in
+%bounded-RAM?
+
+(1)~libraries are required to run in bounded RAM, limiting data-structures to
+strictly tail-recursive algorithms, and (2)~storage block sizes frequently
+exceed the device's available RAM, making the reading of a full block into RAM
+impossible.
+
+An important piece of this puzzle is finding flexible data-structures that
+can be reused to minimize code cost. For this purpose, B-trees are extremely
+enticing. Unfortunately, existing designs rely on reading a full block into
+RAM, which is simply not possible for many of these devices.
+\lfs+ currently uses {$\sim$}2KiB of RAM, so this is an unreasonable cost even
+for NOR flash's relatively small 4KiB blocks.
+
+Previous versions of \lfs+ avoided B-trees for this reason, however this
+proved problematic for performance.
+% limited \lfs+'s performance.
+In \lfsiii+ we are exploring \emph{rbyd B-trees},
+a modification of the traditional B-tree algorithm in which inner nodes are
+implemented using red-black-yellow Dhara trees (rbyds), self-balancing
+log-encoding trees based on the Dhara FTL~\cite{dhara}.
+Relying entirely on tail-recursive algorithms, rbyd B-trees promise to provide
+a flexible B-tree in strictly bounded RAM.
+
+%In previous versions of \lfs+, we avoided B-trees for this reason, instead
+%relying on simple skip-lists and linked-lists. However, these data-structures
+%are limited and pushed us to explore B-trees more thoroughly.
+%
+%In \lfsiii+ we are exploring the adoption of an \emph{rbyd B-trees}, the
+%composition of an in-block red-black-yellow Dhara tree (rbyd) and B-tree, that
+%provides an efficient B-tree without needing to load full blocks into RAM.
+
+%-------------------------------------------------------------------------------
+\section{Design}
+\label{sec:design}
+%-------------------------------------------------------------------------------
+
+The central idea is to replace the inner nodes of B-trees with a data-structure
+that can be manipulated without being fully read into RAM.
+A promising starting point in this area is the Dhara FTL~\cite{dhara}---%
+a lightweight FTL also targeting microcontrollers---which showed it is possible
+to tail-recursive update a tree encoded in a log by writing only $O(\log n)$
+pointers.
+
+%to encode a radix tree in a log, and tail-recursive update the tree by writing
+%$O(\log n)$ pointers.
+%However, to make this useful for 
+
+%Our starting point is a Dhara tree, the core data-structure of the
+%Dhara FTL~\cite{dhara}, a lightweight FTL also targeting microcontrollers.
+%However, the Dhara FTL only provides a radix tree, and 
+%
+%The Dhara FTL~\cite{dhara}---A lightweight FTL also targeting
+%microcontrollers---showed it is possible to implement a log-encoded radix tree
+%in bounded RAM. We will refer to this as a \emph{Dhara tree}.
+%
+%To make this useful for a multipurpose B-tree
+
+%-----------------------------------
+\subsection{Rebalancing compactions}
+%-----------------------------------
+
+%-----------------------------------------------
+\subsection{Red-black-yellow Dhara (rbyd) trees}
+%-----------------------------------------------
+
+%-------------------------------------------------------------------------------
+\section{Results}
+\label{sec:results}
+%-------------------------------------------------------------------------------
+
+So far, we have focused on static and simulated results. We compare against
+\lfsii+, the previous version of \lfs+, which uses a simpler, append-only
+CTZ skip-list~\cite{ctz-skip-list} data-structure.
+
+Thanks to avoiding recursion, we are able to calculate an upper bound on stack
+usage, which shows an increase from 2.0KiB {$\rightarrow$} 2.9KiB.
+
+% using models based on
+%popular user devices. 
+
+Simulated throughput
+
+%-------------------------------------------------------------------------------
+\section{Discussion}
+\label{sec:discussion}
+%-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+%-------------------------------------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{littlefs-rbyd-poster}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
