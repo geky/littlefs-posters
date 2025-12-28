@@ -535,7 +535,7 @@ runtime $O(\log b) \rightarrow O(b \log b)$.
 
 To solve this, we need to extend the sparse and order-statistic
 properties in to the Dhara tree itself.
-Our solution is a \emph{red-black-yellow Dhara (rbyd) tree}\footnotemark,
+Our solution is a \emph{red-black-yellow Dhara (rbyd) tree}, %\footnotemark,
 in which we use colors to emulate the inner branches of a 2-3-4 tree,
 mimicking a traditional red-black tree~\cite{TODO}.
 % Like a traditional red-black tree, the rbyd algorithm is tail-recursive
@@ -545,17 +545,17 @@ remaining strictly tail-recursive.
 % This implements a self-balancing order-statistic Dhara tree, and is
 % strictly tail-recursive.
 
-\footnotetext{
-    We also explored red-black Dhara (rbd) B-trees, which support sparse keys,
-    but attempting to add order-statistic operations resulted in
-    ambiguities.
-    %in an ambiguous
-    %tree.
-    %We also explored a red-black Dhara (rbd) tree,
-    %which supports sparse
-    %keys, but an additional color was needed to support order-statistic
-    %operations.
-}
+% \footnotetext{
+%     We also explored red-black Dhara (rbd) B-trees, which support sparse keys,
+%     but attempting to add order-statistic operations resulted in
+%     ambiguities.
+%     %in an ambiguous
+%     %tree.
+%     %We also explored a red-black Dhara (rbd) tree,
+%     %which supports sparse
+%     %keys, but an additional color was needed to support order-statistic
+%     %operations.
+% }
 
 The extension of rbyds into a full B-tree is relatively straightforward.
 Rbyds contain either leaf data or indirect B-tree pointers, and most
@@ -676,17 +676,71 @@ over dense arrays.
 \label{sec:discussion}
 %-------------------------------------------------------------------------------
 
-So far, we have focused on static and simulated results. We compare against
-\lfsii+, the previous version of \lfs+, which uses a simpler, append-only
-CTZ skip-list~\cite{ctz-skip-list} data-structure.
+Rbyd B-trees are currently implemented as primary file data-structure in
+\lfsiii+. They have survived significant testing---including assertion
+over the rbyd color-invariants---and simulated measurements show the
+expected logarithmic runtimes.
 
-Thanks to avoiding recursion, we are able to calculate an upper bound on stack
-usage, which shows an increase from 2.0KiB {$\rightarrow$} 2.9KiB.
+Measuring simulated file write throughput shows improved performance
+characteristics around larger block sizes in \lfsiii+ when compared to
+\lfsii+.
+While \lfsii+'s performance degrades as block size increases, \lfsiii+'s
+performance actually improves due to the increased branching-factor.
 
-% using models based on
-%popular user devices. 
+However, the more complex file data-structure is not without downsides.
+Static analysis shows \lfsiii+'s code increasing from
+16.9KiB {$\rightarrow$} 35.8KiB, and RAM increasing from
+2.0KiB {$\rightarrow$} 2.9KiB.
+This includes unrelated changes in the filesystem, but we believe the
+added file complexity and advanced file operations are major culprits.
 
-Simulated throughput
+For future work, we will be looking to better understand overall
+filesystem performance---focusing on throughput and latency, with comparison
+against \lfsii+ and other filesystems in this space---%
+as well as a deeper analysis into the increased code cost and possible
+reclamations.
+
+
+% more complex file data-structure is the main culprit.
+
+% When measuring simulated file write throughput, \lfsiii+ shows much
+% better performance around larger block sizes---as block size increases,
+% \lfsii+'s write throughput degrades, while \lfsiii+'s actually increases
+% due to the increased branching-factor.
+% 
+% 
+% Measuring simulated file write throughput in both \lfsiii+ and \lfsii+
+% shows 
+% 
+% Comparing simulated file write throughput in both \lfsiii+ and \lfsii+
+% shows improved 
+% We've measured simulated throughputs of sequential, random, and logging
+% file operations for both \lfsiii+ and \lfsii+, which 
+% 
+% 
+% 
+% Static analysis shows \lfsiii+ growing 
+% 
+% Comparing 
+% 
+% In total, static analysis shows \lfsiii+ growing 
+% 
+% 
+% , which we plan to stabilize this year.
+% 
+% data-structure,
+% 
+% So far, we have focused on static and simulated results. We compare against
+% \lfsii+, the previous version of \lfs+, which uses a simpler, append-only
+% CTZ skip-list~\cite{ctz-skip-list} data-structure.
+% 
+% Thanks to avoiding recursion, we are able to calculate an upper bound on stack
+% usage, which shows an increase from 2.0KiB {$\rightarrow$} 2.9KiB.
+% 
+% % using models based on
+% %popular user devices. 
+% 
+% Simulated throughput
 
 % %-------------------------------------------------------------------------------
 % \section{Discussion}
