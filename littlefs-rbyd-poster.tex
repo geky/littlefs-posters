@@ -335,39 +335,52 @@
 \label{sec:introduction}
 %-------------------------------------------------------------------------------
 
-\lfs+ is a little filesystem targeting microcontrollers, small devices with
+\lfs+ is a little filesystem targeting microcontrollers---small devices with
 %{$\sim$}256KiB--1MiB of ROM, {$\sim$}32KiB--128KiB of RAM, but---thanks to
-MiBs of ROM, KiBs of RAM, and---thanks to
-increasing storage density---potentially GiBs of storage.
-This creates unique challenges for filesystem design: (1)~strictly
-bounded-RAM, i.e. no non-tail recursion, and (2)~blocks that may not fit in
-a devices working memory.
+MiBs of ROM, KiBs of RAM, and, thanks to
+increasing storage density, potentially GiBs of storage.
+This creates unique challenges for filesystem design.
+(1)~Libraries are required to run in bounded RAM, limiting
+data-structures to strictly tail-recursive algorithms.
+(2)~Storage block sizes frequently exceed the
+device's available RAM, making the reading of a full block into RAM
+impossible.
+
+%(1)~strictly
+%bounded-RAM, i.e. no non-tail recursion, and (2)~blocks that may not fit in
+%a devices working memory.
 % with {$\sim$}4KiB--128KiB--1MiB blocks.
 %This creates a unique challenge for
 %filesystem design: How do you design a filesystem to work efficiently in
 %bounded-RAM?
 
-(1)~libraries are required to run in bounded RAM, limiting data-structures to
-strictly tail-recursive algorithms, and (2)~storage block sizes frequently
-exceed the device's available RAM, making the reading of a full block into RAM
-impossible.
+%\begin{description}
+%
+%\item[Bounded RAM] Libraries are required to run in bounded RAM, limiting
+%data-structures to strictly tail-recursive algorithms.
+%
+%\item[RAM {$\ll$} block size] Storage block sizes frequently exceed the
+%device's available RAM, making the reading of a full block into RAM
+%impossible.
+%
+%\end{description}
 
-An important piece of this puzzle is finding flexible data-structures that
-can be reused to minimize code cost. For this purpose, B-trees are extremely
-enticing. Unfortunately, existing designs rely on reading a full block into
-RAM, which is simply not possible for many of these devices.
-\lfs+ currently uses {$\sim$}2KiB of RAM, so this is an unreasonable cost even
-for NOR flash's relatively small 4KiB blocks.
-
-Previous versions of \lfs+ avoided B-trees for this reason, however this
-proved problematic for performance.
-% limited \lfs+'s performance.
-In \lfsiii+ we are exploring \emph{rbyd B-trees},
-a modification of the traditional B-tree algorithm in which inner nodes are
-implemented using red-black-yellow Dhara trees (rbyds), self-balancing
-log-encoding trees based on the Dhara FTL~\cite{dhara}.
-Relying entirely on tail-recursive algorithms, rbyd B-trees promise to provide
-a flexible B-tree in strictly bounded RAM.
+% An important piece of this puzzle is finding flexible data-structures that
+% can be reused to minimize code cost. For this purpose, B-trees are extremely
+% enticing. Unfortunately, existing designs rely on reading a full block into
+% RAM, which is simply not possible for many of these devices.
+% \lfs+ currently uses {$\sim$}2KiB of RAM, so this is an unreasonable cost even
+% for NOR flash's relatively small 4KiB blocks.
+% 
+% Previous versions of \lfs+ avoided B-trees for this reason, however this
+% proved problematic for performance.
+% % limited \lfs+'s performance.
+% In \lfsiii+ we are exploring \emph{rbyd B-trees},
+% a modification of the traditional B-tree algorithm in which inner nodes are
+% implemented using red-black-yellow Dhara trees (rbyds), self-balancing
+% log-encoding trees based on the Dhara FTL~\cite{dhara}.
+% Relying entirely on tail-recursive algorithms, rbyd B-trees promise to provide
+% a flexible B-tree in strictly bounded RAM.
 
 %In previous versions of \lfs+, we avoided B-trees for this reason, instead
 %relying on simple skip-lists and linked-lists. However, these data-structures
@@ -377,17 +390,44 @@ a flexible B-tree in strictly bounded RAM.
 %composition of an in-block red-black-yellow Dhara tree (rbyd) and B-tree, that
 %provides an efficient B-tree without needing to load full blocks into RAM.
 
+% TODO wait, this is not necessarily the case
+Traditional B-trees use densely packed arrays for their inner
+nodes---optimal in terms of branching factor and storage usage, but
+requires reading a full block into RAM.
+Previous versions of \lfs+~\cite{TODO,TODO} avoided B-trees for these reasons,
+however this has proven problematic for performance.
+In \lfsiii+, we are revisiting B-trees, this time exploring a B-tree variant
+that leverages log-encoded trees pioneered by the Dhara FTL~\cite{dhara}---%
+a lightweight FTL also targeting microcontrollers.
+
+
 %-------------------------------------------------------------------------------
 \section{Design}
 \label{sec:design}
 %-------------------------------------------------------------------------------
 
-The central idea is to replace the inner nodes of B-trees with a data-structure
-that can be manipulated without being fully read into RAM.
-A promising starting point in this area is the Dhara FTL~\cite{dhara}---%
-a lightweight FTL also targeting microcontrollers---which showed it is possible
-to tail-recursive update a tree encoded in a log by writing only $O(\log n)$
-pointers.
+The core idea is to replace the inner nodes of traditional
+B-trees~\cite{btree} with red-black-yellow Dhara (rbyd) trees---a
+self-balancing variant of the Dhara tree implemented in the
+Dhara FTL~\cite{dhara}.
+The result is a flexible B-tree structure with inner nodes that can be
+manipulated without being fully read into RAM.
+
+% The main challenge with adopting Dhara trees is the need for self-balancing
+% operations.
+
+In the Dhara FTL, the original Dhara tree is implemented as a radix tree. This
+works well for the Dhara FTL's virtual{$\rightarrow$}physical block mapping,
+but is limiting as a general purpose data-structure.
+
+
+
+%The central idea is to replace the inner nodes of B-trees with a data-structure
+%that can be manipulated without being fully read into RAM.
+%A promising starting point in this area is the Dhara FTL~\cite{dhara}---%
+%a lightweight FTL also targeting microcontrollers---which showed it is possible
+%to tail-recursive update a tree encoded in a log by writing only $O(\log n)$
+%pointers.
 
 %to encode a radix tree in a log, and tail-recursive update the tree by writing
 %$O(\log n)$ pointers.
@@ -403,13 +443,13 @@ pointers.
 %
 %To make this useful for a multipurpose B-tree
 
-%-----------------------------------
-\subsection{Rebalancing compactions}
-%-----------------------------------
-
-%-----------------------------------------------
-\subsection{Red-black-yellow Dhara (rbyd) trees}
-%-----------------------------------------------
+% %-----------------------------------
+% \subsection{Rebalancing compactions}
+% %-----------------------------------
+% 
+% %-----------------------------------------------
+% \subsection{Red-black-yellow Dhara (rbyd) trees}
+% %-----------------------------------------------
 
 %-------------------------------------------------------------------------------
 \section{Results}
