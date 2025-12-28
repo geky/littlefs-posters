@@ -304,15 +304,19 @@
 \date{}
 
 % make title bold and 14 pt font (Latex default is non-bold, 16 pt)
-%\title{\Large \bf \lfs+ v3: A little fail-safe filesystem designed
-%    for microcontrollers}
-%\title{\Large \bf \lfs+ v3: A scalable filesystem in bounded RAM}
-%\title{\Large \bf \lfs+ v3: Scaling a filesystem in bounded RAM}
-%\title{\Large \bf \lfs+ v3: Scaling a filesystem in 4 KiB of RAM}
-%\title{\Large \bf \lfs+ v3: Scaling a filesystem in $<$ 4 KiB of RAM}
-%\title{\Large \bf \lfsiii+: Scaling a filesystem in {$\lt$}4KiB of RAM}
+% \title{\Large \bf
+%     \lfs+: rbyd B-trees: Efficient B-trees when RAM $\ll$ block size
+% }
+% \title{\Large \bf
+%     \lfs+: rbyd B-trees: Incremental B-trees when RAM $\ll$ block size
+% }
 \title{\Large \bf
-    \lfs+: rbyd B-trees: Incremental B-trees when RAM $\ll$ block size}
+    \lfs+: rbyd B-trees: Flexible incremental B-trees when RAM $\ll$ block size
+}
+% \title{\Large \bf
+%     \lfs+: rbyd B-trees: Incremental order-statistic B-trees when RAM $\ll$
+%     block size
+% }
 
 \ifdefined\yesanon\else
 %for single author (just remove % characters)
@@ -337,25 +341,39 @@
 
 \lfs+ is a little filesystem targeting microcontrollers---small devices with
 %{$\sim$}256KiB--1MiB of ROM, {$\sim$}32KiB--128KiB of RAM, but---thanks to
-MiBs of ROM, KiBs of RAM, and, thanks to
-increasing storage density, potentially GiBs of storage.
-%To make matters worse,
-If this wasn't enough of a challenge,
-increasing storage density is reflected in
-increasing block sizes.
-%NAND flash's {$\sim$}128KiB--1MiB blocks, for example, make
-%block-based CoW algorithms slow, and RAM-dependent algorithms impossible.
-On the upper end, NAND flash's {$\sim$}128KiB--1MiB blocks make
-block-based CoW algorithms slow, and RAM-dependent algorithms
-impossible.
-%With NAND flash block sizes in the
-%{$\sim$}128KiB--1MiB range, block-based CoW algorithms are slow, and
-%RAM-dependent algorithms impossible.
-%Given these constraints,
-To support increasingly dense storage, we are trying to find a B-tree with the
-following constraints: (1)~strictly bounded-RAM, i.e. no non-tail
-recursion, (2)~RAM usage independent of block size, and (3)~incremental,
-i.e. does not rely on full block rewrites.
+MiBs of ROM, KiBs of RAM, and---thanks to
+increasing storage density---potentially GiBs of storage with
+proportionally large block sizes.
+With block sizes in the range of {$\sim$}128KiB--1MiB, CoW algorithms
+are slow, and RAM-dependent algorithms impossible.
+% block sizes in the range of {$\sim$}128KiB--1MiB.
+% These block sizes make block-based CoW algorithms slow, and
+% RAM-dependent algorithms impossible.
+% %To make matters worse,
+% If this wasn't enough of a challenge,
+% increasing storage density is also reflected in
+% increasing block sizes.
+% %NAND flash's {$\sim$}128KiB--1MiB blocks, for example, make
+% %block-based CoW algorithms slow, and RAM-dependent algorithms impossible.
+% On the upper end, the {$\sim$}128KiB--1MiB blocks found in NAND flash
+% make block-based CoW algorithms slow, and RAM-dependent algorithms
+% impossible.
+% %With NAND flash block sizes in the
+% %{$\sim$}128KiB--1MiB range, block-based CoW algorithms are slow, and
+% %RAM-dependent algorithms impossible.
+% %Given these constraints,
+To support increasingly dense storage, we are trying to find a flexible
+B-tree with the following constraints:
+% To support increasingly dense storage, we are trying to find an
+% order-statistic~\cite{TODO} B-tree with the following constraints:
+\begin{enumerate}
+\item Strictly bounded-RAM, i.e. no non-tail recursion
+\item RAM usage independent of block size
+\item Incremental, i.e. does not rely on full block rewrites
+\end{enumerate}
+% \item Support for sparse keys, e.g. file names
+% \item Support for order-statistic keys, e.g. compressable ranges
+% \end{enumerate}
 
 These constraints rule out existing B-tree designs.
 Traditional B-trees implement inner nodes using dense arrays, and while
@@ -371,8 +389,17 @@ however this proved problematic for performance.
 % has shown it's possible to encode
 In \lfsiii+, we are exploring an alternative B-tree that leverages
 log-encoded binary trees pioneered by the Dhara FTL~\cite{dhara}.
-This so-called \emph{red-black-yellow Dhara (rbyd) B-tree} provides a
-flexible incremental B-tree in bounded-RAM.
+This so-called
+% \emph{red-black-yellow Dhara (rbyd) B-tree}
+\emph{rbyd B-tree}
+provides a
+flexible incremental B-tree in bounded-RAM,
+with support for both sparse keys and order-statistic ranges.
+% with support for both sparse
+% keys, e.g. file names, and order-statistic keys~\cite{TODO, TODO}, e.g.
+% compressable ranges.
+% This so-called \emph{red-black-yellow Dhara (rbyd) B-tree} provides an
+% incremental order-statistic B-tree in bounded-RAM.
 %referred to as a \emph{red-black-yellow Dhara (rbyd) B-tree}. Rbyd B-trees 
 %provide a flexible, incremental B-tree in bounded-RAM.
 
@@ -491,30 +518,126 @@ flexible incremental B-tree in bounded-RAM.
 %-------------------------------------------------------------------------------
 
 The core idea is to replace the inner nodes of traditional
-B-trees~\cite{btree} with \emph{red-black-yellow Dhara (rbyd)} trees---a
-self-balancing order-statistic variant of the Dhara tree implemented in the
+B-trees~\cite{btree} with \emph{rbyd trees}---%
+%\emph{red-black-yellow Dhara (rbyd)} trees---%
+a self-balancing order-statistic variant of the Dhara tree implemented in the
 Dhara FTL~\cite{dhara}.
 The result is a flexible B-tree, with inner nodes that can be
-incrementally manipulated without reading into RAM.
-% The result is a flexible B-tree structure with inner nodes that can be
-% manipulated without being fully read into RAM.
+manipulated incrementally without reading into RAM.
 
-% The main challenge with adopting Dhara trees is the need for self-balancing
-% operations.
+The original Dhara tree implements a radix tree, and while it is
+possible to extend the emulated array into a B-tree, the resulting
+B-tree is relatively inflexible.
+Extend a traditional B-tree with sparse keys and order-statistic ranges
+does not change the $O(b) \rightarrow O(b)$ runtime for block size $b$,
+but attempting the same transformation on a Dhara B-tree increases the
+runtime $O(\log b) \rightarrow O(b \log b)$.
 
-Unfortunately, we can't use the original Dhara tree as is, as it only
-implements a radix tree. This works well for Dhara FTL's dense
-virtual{$\rightarrow$}physical block mapping, but results in an unbalanced
-tree when keys are sparse.
+To solve this, we need to extend the sparse and order-statistic
+properties in to the Dhara tree itself.
+Our solution is a \emph{red-black-yellow Dhara (rbyd) tree}\footnotemark,
+in which we use colors to emulate the inner branches of a 2-3-4 tree,
+mimicking a traditional red-black tree~\cite{TODO}.
+% Like a traditional red-black tree, the rbyd algorithm is tail-recursive
+% and runs in bounded-RAM.
+This provides self-balancing and order-statistic operations, while
+remaining strictly tail-recursive.
+% This implements a self-balancing order-statistic Dhara tree, and is
+% strictly tail-recursive.
+
+\footnotetext{
+    We also explored red-black Dhara (rbd) B-trees, which support sparse keys,
+    but attempting to add order-statistic operations resulted in
+    ambiguities.
+    %in an ambiguous
+    %tree.
+    %We also explored a red-black Dhara (rbd) tree,
+    %which supports sparse
+    %keys, but an additional color was needed to support order-statistic
+    %operations.
+}
+
+The extension of rbyds into a full B-tree is relatively straightforward.
+Rbyds contain either leaf data or indirect B-tree pointers, and most
+updates require only a cheap log append. When a log is full, we \emph{compact}
+the relevant rbyd into a new block, at which point the CoW
+semantics of B-trees take over.
+To avoid runaway compactions, we split when half-full, but we only check
+merge/split conditions during compactions.
+This
+%We wait until compaction to check
+%merge/split conditions, which
+%amortizes the relevant costs,
+amortizes merge/split checks,
+introduces hysteresis, and results in
+better
+% optimal
+leaf distribution during
+sequential updates.
+
+We also implement tail-recursive tree rebalancing during compactions,
+which brings the compacted storage cost down
+$O(b \log b) \rightarrow O(b)$.
+In practice, the overhead of rbyds divides the branching-factor by
+{$\sim$}8
+%when compared to dense arrays.
+over dense arrays.
+%of dense
+%arrays by {$\sim$}8.
+% divides the branching-factor by
+% {$\sim$}8.
+
+% Each leaf in a given rbyd points to either a child B-tree node
+% Instead of checking for merge/split conditions every commit, 
 
 
-translation, but 
+% A traditional B-tree can be extended to support sparse keys and
+% order-statistic ranges, but only because inner node operations already
+% scale $O(b)$ for block size $b$. When emulating arrays, Dhara trees scale
+% $O(\log b)$, but attempting to apply the same transformation pushes the total
+% runtime up to $O(b\log b)$.
+%
+%If we attempted to extend Dhara trees
+%the same way, the result would scale 
+%
+%Applying the same transformation to
+%inner nodes backed by Dhara trees pushes the $O(\log b)$ update cost up to
+%$O(b\log b)$.
+%
+%
+%You may think that because traditional B-trees are implemented with
+%arrays, a Dhara B-tree can be extended to support sparse keys and
+%order-statistic ranges, but this is not true.
 
-The original Dhara
-
-In the Dhara FTL, the original Dhara tree is implemented as a radix tree. This
-works well for the Dhara FTL's virtual{$\rightarrow$}physical block mapping,
-but is limiting as a general purpose data-structure.
+% ---
+% 
+% The original Dhara tree implements a radix tree, and, while a radix
+% B-tree may be useful for many applications, it is insufficient for
+% littlefs's use case.
+% 
+% We've actually found three possible B-tree variants, each with support
+% for increasingly complex keys.
+% 
+% 
+% % The result is a flexible B-tree structure with inner nodes that can be
+% % manipulated without being fully read into RAM.
+% 
+% % The main challenge with adopting Dhara trees is the need for self-balancing
+% % operations.
+% 
+% Unfortunately, we can't use the original Dhara tree as is, as it only
+% implements a radix tree. This works well for Dhara FTL's dense
+% virtual{$\rightarrow$}physical block mapping, but results in an unbalanced
+% tree when keys are sparse.
+% 
+% 
+% translation, but 
+% 
+% The original Dhara
+% 
+% In the Dhara FTL, the original Dhara tree is implemented as a radix tree. This
+% works well for the Dhara FTL's virtual{$\rightarrow$}physical block mapping,
+% but is limiting as a general purpose data-structure.
 
 
 
@@ -548,8 +671,9 @@ but is limiting as a general purpose data-structure.
 % %-----------------------------------------------
 
 %-------------------------------------------------------------------------------
-\section{Results}
+\section{Results and Discussion}
 \label{sec:results}
+\label{sec:discussion}
 %-------------------------------------------------------------------------------
 
 So far, we have focused on static and simulated results. We compare against
@@ -564,10 +688,10 @@ usage, which shows an increase from 2.0KiB {$\rightarrow$} 2.9KiB.
 
 Simulated throughput
 
-%-------------------------------------------------------------------------------
-\section{Discussion}
-\label{sec:discussion}
-%-------------------------------------------------------------------------------
+% %-------------------------------------------------------------------------------
+% \section{Discussion}
+% \label{sec:discussion}
+% %-------------------------------------------------------------------------------
 
 
 
