@@ -344,8 +344,9 @@
 MiBs of ROM, KiBs of RAM, and---thanks to
 increasing storage density---potentially GiBs of storage with
 proportionally large block sizes.
-With block sizes in the range of {$\sim$}128KiB--1MiB, CoW algorithms
-are slow, and RAM-dependent algorithms impossible.
+With block sizes in the range of {$\sim$}128KiB--1MiB,
+block-based CoW algorithms are slow, and
+RAM-dependent algorithms impossible.
 % block sizes in the range of {$\sim$}128KiB--1MiB.
 % These block sizes make block-based CoW algorithms slow, and
 % RAM-dependent algorithms impossible.
@@ -376,13 +377,14 @@ B-tree with the following constraints:
 % \end{enumerate}
 
 These constraints rule out existing B-tree designs.
-Traditional B-trees implement inner nodes using dense arrays, and while
+Traditional B-trees~\cite{ubiquitous-btree}
+implement inner nodes using dense arrays, and while
 this may be optimal in terms of branching-factor and storage usage,
 updates require rewriting full blocks.
 Log-backed B-trees, such as those found in bcachefs~\cite{bcachefs},
 support incremental updates, but rely on reconstructing logs in RAM.
 
-Previous versions of \lfs+ avoided B-trees for this reason~\cite{TODO, TODO},
+Previous versions of \lfs+ avoided B-trees for this reason~\cite{littlefs2},
 however this proved problematic for performance.
 % Fortunately, the Dhara FTL~\cite{dhara}
 % %---a lightweight FTL also targeting microcontrollers---
@@ -390,8 +392,8 @@ however this proved problematic for performance.
 In \lfsiii+, we are exploring an alternative B-tree that leverages
 log-encoded binary trees pioneered by the Dhara FTL~\cite{dhara}.
 This so-called
-% \emph{red-black-yellow Dhara (rbyd) B-tree}
-\emph{rbyd B-tree}
+\emph{red-black-yellow Dhara (rbyd) B-tree}
+% \emph{rbyd B-tree}
 provides a
 flexible incremental B-tree in bounded-RAM,
 with support for both sparse keys and order-statistic ranges.
@@ -518,7 +520,7 @@ with support for both sparse keys and order-statistic ranges.
 %-------------------------------------------------------------------------------
 
 The core idea is to replace the inner nodes of traditional
-B-trees~\cite{btree} with \emph{rbyd trees}---%
+B-trees~\cite{ubiquitous-btree} with rbyd trees---%
 %\emph{red-black-yellow Dhara (rbyd)} trees---%
 a self-balancing order-statistic variant of the Dhara tree implemented in the
 Dhara FTL~\cite{dhara}.
@@ -537,7 +539,7 @@ To solve this, we need to extend the sparse and order-statistic
 properties in to the Dhara tree itself.
 Our solution is a \emph{red-black-yellow Dhara (rbyd) tree}, %\footnotemark,
 in which we use colors to emulate the inner branches of a 2-3-4 tree,
-mimicking a traditional red-black tree~\cite{TODO}.
+mimicking a traditional red-black tree~\cite{rbtree}.
 % Like a traditional red-black tree, the rbyd algorithm is tail-recursive
 % and runs in bounded-RAM.
 This provides self-balancing and order-statistic operations, while
@@ -695,7 +697,7 @@ This includes unrelated changes in the filesystem, but we believe the
 added file complexity and advanced file operations are major culprits.
 
 For future work, we will be looking to better understand overall
-filesystem performance---focusing on throughput and latency, with comparison
+filesystem performance---focusing on throughput and latency, comparing 
 against \lfsii+ and other filesystems in this space---%
 as well as a deeper analysis into the increased code cost and possible
 reclamations.
