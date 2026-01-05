@@ -4,9 +4,9 @@ BUILDDIR ?= build
 PORT ?= 2026
 
 # default target
-TARGET ?= build/littlefs-rbyd-poster.pdf
-SRC += littlefs-rbyd-poster.tex
-SRC += littlefs-rbyd-poster.bib
+TARGET ?= build/littlefs-btree-poster.pdf
+SRC += littlefs-btree-poster.tex
+SRC += littlefs-btree-poster.bib
 SRC += usenix-2020-09.sty
 SRC += $(wildcard figs/*.tex)
 SRC += $(wildcard eval/*.tex)
