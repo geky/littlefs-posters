@@ -4,13 +4,12 @@ BUILDDIR ?= build
 PORT ?= 2026
 
 # default target
-TARGET ?= build/littlefs-btree-poster.pdf
-SRC += littlefs-btree-poster.tex
-SRC += littlefs-btree-poster.bib
+POSTER ?= $(BUILDDIR)/littlefs-btree-poster.pdf
+ABSTRACT ?= $(BUILDDIR)/littlefs-btree-abstract.pdf
+TARGET ?= $(POSTER) $(ABSTRACT)
+SRC += $(POSTER:$(BUILDDIR)/%.pdf=%.tex) $(ABSTRACT:$(BUILDDIR)/%.pdf=%.tex)
+SRC += littlefs-btree-abstract.bib
 SRC += usenix-2020-09.sty
-SRC += $(wildcard figs/*.tex)
-SRC += $(wildcard eval/*.tex)
-SRC += $(wildcard eval/*.csv eval/*/*.csv)
 
 # where are our benchmarks?
 BENCHMARKSDIR ?= benchmarks
@@ -67,9 +66,12 @@ vim:
 	vim -S .vimrc $(firstword $(SRC))
 
 # build .pdf from .tex
-$(TARGET): $(SRC)
+$(POSTER): $(POSTER:$(BUILDDIR)/%.pdf=%.tex) $(SRC)
 	$(PDFLATEX) $(PDFLATEXFLAGS) $<
-	$(BIBTEX) $(TARGET:.pdf=.aux)
+
+$(ABSTRACT): $(ABSTRACT:$(BUILDDIR)/%.pdf=%.tex) $(SRC)
+	$(PDFLATEX) $(PDFLATEXFLAGS) $<
+	$(BIBTEX) $(ABSTRACT:.pdf=.aux)
 
 ## Run a local server
 .PHONY: serve server
