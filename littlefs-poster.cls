@@ -22,10 +22,25 @@
 \RequirePackage{tabularx}
 \RequirePackage{multirow}
 
+% give ourselves a few more layers, requires some fudging with tikzposter
+\RequirePackage{tikz-layers}
+\pgfsetlayers{
+    backgroundlayer, % tikzposter
+    background, % tikz-layers
+    behind, % tikz-layers
+    main,
+    above, % tikz-layers
+    glass, % tikz-layers
+    notelayer % tikzposter
+}
+
 \newcommand*{\affilmark}[1]{\raisebox{0pt}[0pt][0pt]{\textsuperscript{#1}}}
 
 
+
+
 \definecolorstyle{littlefscolorstyle} {
+    % bg/fg colors
     \definecolor{bg}{named}{white} % {HTML}{eeecde}
     \definecolor{bgi}{HTML}{e4bc7f}
     \definecolor{bgii}{HTML}{da8447}
@@ -34,6 +49,20 @@
     \definecolor{fgii}{HTML}{8c3549}
     \definecolor{fgi}{HTML}{552941}
     \definecolor{fg}{named}{black} % {HTML}{222222}
+    % dark colors for use in poster
+    \definecolor{fgdarkred}{HTML}{cd2222}
+    \definecolor{fgdarkyellow}{HTML}{8c6b00}
+    \definecolor{fgdarkgreen}{HTML}{008831}
+    \definecolor{fgdarkcyan}{HTML}{007f8d}
+    \definecolor{fgdarkblue}{HTML}{3d61e6}
+    \definecolor{fgdarkpurple}{HTML}{ab34ac}
+    % light colors for use in poster
+    \definecolor{fglightred}{HTML}{ffafad}
+    \definecolor{fglightyellow}{HTML}{f3be5a}
+    \definecolor{fglightgreen}{HTML}{97dd8b}
+    \definecolor{fglightcyan}{HTML}{36e1ea}
+    \definecolor{fglightblue}{HTML}{a8c9ff}
+    \definecolor{fglightpurple}{HTML}{eeabfc}
 }{
     % Background Colors
     \colorlet{backgroundcolor}{bg}
