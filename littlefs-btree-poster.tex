@@ -36,6 +36,10 @@
 
 \usetikzlibrary{positioning}
 
+% old habits die hard
+\def\lt{<}
+\def\gt{>}
+
 
 
 
@@ -68,6 +72,7 @@
     \def\littlefsicopadding{2}
     \input{littlefs-ico}
 };
+
 
 % Problem statement
 \begin{columns}
@@ -110,14 +115,99 @@
 \end{columns}
 
 
+% Dhara and red-black-yellow Dhara trees
+\begin{columns}
+\column{0.5}
+\block{Dhara trees \vphantom{y}}{\Large
+}
+\column{0.5}
+\block{Red-black-yellow Dhara (rbyd) trees}{\Large
+}
+\end{columns}
+
+
 
 % Main rbyd B-tree graphic!
 
 % some defines
 \def\bnodewidth{(1/(2*(1.5*7-0.5)))*\linewidth}
 \def\bnodeheight{1.618*\bnodewidth}
+\def\bcommitnodewidth{\bnodewidth}
+\def\bcommitnodeheight{\bnodeheight}
 \def\rnodewidth{(1/8)*\bnodewidth}
 \def\rnodeheight{\rnodewidth}
+
+% common styles
+\tikzset{
+    % small rbyd tag/alt styles
+    rtag/.style={
+        draw,
+        ultra thick,
+        minimum width=0.6*\rnodewidth,
+        minimum height=0.6*\rnodeheight,
+        inner sep=0,
+        outer sep=0,
+        fill=fglightblue,
+    },
+    ralt/.style={rtag, circle},
+    raltb/.style={ralt},
+    raltr/.style={ralt, draw=fgdarkred},
+    ralty/.style={ralt, draw=fgdarkyellow},
+    raltptr/.style={-{To[scale=0.5]}, ultra thick},
+    raltbptr/.style={raltptr},
+    raltrptr/.style={raltptr, draw=fgdarkred},
+    raltyptr/.style={raltptr, draw=fgdarkyellow},
+    % btree styles
+    btree/.style={
+        draw,
+        ultra thick,
+        fill=fglightblue,
+        minimum width=\bnodewidth,
+        minimum height=\bnodeheight,
+        inner sep=0,
+        outer sep=0,
+    },
+    bptr/.style={
+        ->,
+        %ultra thick,
+        line width=2.4*1.6pt,
+    },
+    bdashedptr/.style={
+        bptr,
+        %loosely dashed,
+        dash pattern=on 6pt off 6pt,
+        shorten <= 0.125*\bnodewidth,
+        shorten >= 0.125*\bnodewidth,
+    },
+    boutline/.style={
+        draw,
+        ultra thick,
+    },
+    bdashedoutline/.style={
+        boutline,
+        %loosely dashed,
+        dash pattern=on 6pt off 6pt,
+    },
+    bbubble/.style={
+        draw,
+        ultra thick,
+        %loosely dashed,
+        dash pattern=on 6pt off 6pt,
+        rounded corners=40pt,
+        inner sep=0,
+        outer sep=0,
+    },
+    bbubbleptr/.style={
+        ->,
+        %ultra thick,
+        line width=2.4*1.6pt,
+        %loosely dashed,
+        dash pattern=on 6pt off 6pt,
+        shorten <= 0.5*\bnodewidth,
+        shorten >= 0.5*\bnodewidth,
+    },
+}
+
 
 % no I'm not reimplementing rbyd trees in tikz
 \newcommand{\rbydvi}[1]{
@@ -126,30 +216,13 @@
         y=\rnodeheight,
         node distance=1,
         on grid,
-        rtag/.style={
-            draw,
-            ultra thick,
-            minimum width=0.6*\rnodewidth,
-            minimum height=0.6*\rnodeheight,
-            inner sep=0,
-            outer sep=0,
-            fill=fglightblue,
-        },
-        ralt/.style={rtag, circle},
-        raltb/.style={ralt},
-        raltr/.style={ralt, draw=fgdarkred},
-        ralty/.style={ralt, draw=fgdarkyellow},
-        raltptr/.style={-{To[scale=0.5]}, ultra thick},
-        raltbptr/.style={raltptr},
-        raltrptr/.style={raltptr, draw=fgdarkred},
-        raltyptr/.style={raltptr, draw=fgdarkyellow},
     ]
         % test node
         %\node at (#1.center) [rtag] {};
 
         % trunk 0
         \begin{scope}[on above layer]
-        \node (#1_r0_0) at ([shift={(-3,-2.5)}]#1.center) [rtag] {};
+        \node (#1_r0_0) [rtag, below left=2.5 and 3 of #1] {};
         \end{scope}
 
         % trunk 1
@@ -235,29 +308,569 @@
     \end{scope}
 }
 
+\newcommand{\rbydreplacevii}[2]{
+    \begin{scope}[
+        x=\rnodewidth,
+        y=\rnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % test node
+        %\node at (#2.center) [rtag] {};
+
+        % trunk 7
+        \begin{scope}[on above layer]
+        \node (#2_r7_0) [rtag, below=2.5 of #2] {};
+        \node (#2_r7_1) [raltb, above=1 of #2_r7_0] {};
+        \node (#2_r7_2) [raltr, above=2 of #2_r7_0] {};
+        \node (#2_r7_3) [raltb, above=3 of #2_r7_0] {};
+        \node (#2_r7_4) [raltr, above=4 of #2_r7_0, alias=#2_rroot] {};
+        \end{scope}
+        \draw[raltbptr] (#2_r7_1) -- (#2_r7_0);
+        \draw[raltbptr] (#2_r7_1) -- (#1_r5_0);
+        \draw[raltrptr] (#2_r7_2) -- (#2_r7_1);
+        \draw[raltbptr] (#2_r7_2) -- (#1_r4_0);
+        \draw[raltbptr] (#2_r7_3) -- (#2_r7_2);
+        \draw[raltbptr] (#2_r7_3) -- (#1_r5_3);
+        \draw[raltrptr] (#2_r7_4) -- (#2_r7_3);
+        \draw[raltbptr] (#2_r7_4) -- (#1_r3_3);
+    \end{scope}
+}
+
+\newcommand{\rbydappendviii}[2]{
+    \begin{scope}[
+        x=\rnodewidth,
+        y=\rnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % test node
+        %\node at (#2.center) [rtag] {};
+
+        % trunk 7
+        \begin{scope}[on above layer]
+        \node (#2_r7_0) [rtag, below=2.5 of #2] {};
+        \node (#2_r7_1) [raltb, above=1 of #2_r7_0] {};
+        \node (#2_r7_2) [raltr, above=2 of #2_r7_0] {};
+        \node (#2_r7_3) [ralty, above=3 of #2_r7_0] {};
+        \node (#2_r7_4) [raltb, above=4 of #2_r7_0] {};
+        \node (#2_r7_5) [raltr, above=5 of #2_r7_0, alias=#2_rroot] {};
+        \end{scope}
+        \draw[raltbptr] (#2_r7_1) -- (#2_r7_0);
+        \draw[raltbptr] (#2_r7_1) -- (#1_r6_0);
+        \draw[raltrptr] (#2_r7_2) -- (#2_r7_1);
+        \draw[raltbptr] (#2_r7_2) -- (#1_r5_0);
+        \draw[raltyptr] (#2_r7_3) -- (#2_r7_2);
+        \draw[raltbptr] (#2_r7_3) -- (#1_r4_0);
+        \draw[raltbptr] (#2_r7_4) -- (#2_r7_3);
+        \draw[raltbptr] (#2_r7_4) -- (#1_r5_3);
+        \draw[raltrptr] (#2_r7_5) -- (#2_r7_4);
+        \draw[raltbptr] (#2_r7_5) -- (#1_r3_3);
+    \end{scope}
+}
+
+\newcommand{\rbydreplaceix}[2]{
+    \begin{scope}[
+        x=\rnodewidth,
+        y=\rnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % test node
+        %\node at (#2.center) [rtag] {};
+
+        % trunk 7
+        \begin{scope}[on above layer]
+        \node (#2_r7_0) [rtag, below left=2.5 and 0.5 of #2] {};
+        \node (#2_r7_1) [raltb, above=1 of #2_r7_0] {};
+        \node (#2_r7_2) [raltr, above=2 of #2_r7_0] {};
+        \node (#2_r7_3) [raltb, above=3 of #2_r7_0] {};
+        \node (#2_r7_4) [raltr, above=4 of #2_r7_0] {};
+        \end{scope}
+        \draw[raltbptr] (#2_r7_1) -- (#2_r7_0);
+        \draw[raltbptr] (#2_r7_1) -- (#1_r5_0);
+        \draw[raltrptr] (#2_r7_2) -- (#2_r7_1);
+        \draw[raltbptr] (#2_r7_2) -- (#1_r4_0);
+        \draw[raltbptr] (#2_r7_3) -- (#2_r7_2);
+        \draw[raltbptr] (#2_r7_3) -- (#1_r5_3);
+        \draw[raltrptr] (#2_r7_4) -- (#2_r7_3);
+        \draw[raltbptr] (#2_r7_4) -- (#1_r3_3);
+
+        % trunk 8
+        \begin{scope}[on above layer]
+        \node (#2_r8_0) [rtag, right=1 of #2_r7_0] {};
+        \node (#2_r8_1) [raltb, above=1 of #2_r8_0] {};
+        \node (#2_r8_2) [raltr, above=2 of #2_r8_0] {};
+        \node (#2_r8_3) [ralty, above=3 of #2_r8_0] {};
+        \node (#2_r8_4) [raltb, above=4 of #2_r8_0] {};
+        \node (#2_r8_5) [raltr, above=5 of #2_r8_0, alias=#2_rroot] {};
+        \end{scope}
+        \draw[raltbptr] (#2_r8_1) -- (#2_r8_0);
+        \draw[raltbptr] (#2_r8_1) -- (#2_r7_0);
+        \draw[raltrptr] (#2_r8_2) -- (#2_r8_1);
+        \draw[raltbptr] (#2_r8_2) -- (#1_r5_0);
+        \draw[raltyptr] (#2_r8_3) -- (#2_r8_2);
+        \draw[raltbptr] (#2_r8_3) -- (#1_r4_0);
+        \draw[raltbptr] (#2_r8_4) -- (#2_r8_3);
+        \draw[raltbptr] (#2_r8_4) -- (#1_r5_3);
+        \draw[raltrptr] (#2_r8_5) -- (#2_r8_4);
+        \draw[raltbptr] (#2_r8_5) -- (#1_r3_3);
+    \end{scope}
+}
+
+\newcommand{\rbydrebalancevi}[1]{
+    \begin{scope}[
+        x=\rnodewidth,
+        y=\rnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % test node
+        %\node at (#1.center) [rtag] {};
+
+        % trunk 0
+        \begin{scope}[on above layer]
+        \node (#1_r0_0) [rtag, below left=2.5 and 3 of #1] {};
+        \end{scope}
+
+        % trunk 1
+        \begin{scope}[on above layer]
+        \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
+        \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r1_1) -- (#1_r1_0);
+        \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
+
+        % trunk 2
+        \begin{scope}[on above layer]
+        \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
+        \end{scope}
+
+        % trunk 3
+        \begin{scope}[on above layer]
+        \node (#1_r3_0) [rtag, right=3 of #1_r0_0] {};
+        \node (#1_r3_1) [raltb, above=1 of #1_r3_0] {};
+        \node (#1_r3_2) [raltb, above=2 of #1_r3_0] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r3_1) -- (#1_r3_0);
+        \draw[raltbptr] (#1_r3_1) -- (#1_r2_0);
+        \draw[raltbptr] (#1_r3_2) -- (#1_r3_1);
+        \draw[raltbptr] (#1_r3_2) -- (#1_r1_1);
+
+        % trunk 4
+        \begin{scope}[on above layer]
+        \node (#1_r4_0) [rtag, right=4 of #1_r0_0] {};
+        \end{scope}
+
+        % trunk 5
+        \begin{scope}[on above layer]
+        \node (#1_r5_0) [rtag, right=5 of #1_r0_0] {};
+        \node (#1_r5_1) [raltb, above=1 of #1_r5_0] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r5_1) -- (#1_r5_0);
+        \draw[raltbptr] (#1_r5_1) -- (#1_r4_0);
+
+        % trunk 6
+        \begin{scope}[on above layer]
+        \node (#1_r6_0) [rtag, right=6 of #1_r0_0] {};
+        \node (#1_r6_1) [raltb, above=1 of #1_r6_0] {};
+        \node (#1_r6_2) [raltb, above=2 of #1_r6_0] {};
+        \node (#1_r6_3) [raltb, above=3 of #1_r6_0, alias=#1_rroot] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r6_1) -- (#1_r6_0);
+        \draw[raltbptr] (#1_r6_2) -- (#1_r6_1);
+        \draw[raltbptr] (#1_r6_2) -- (#1_r5_1);
+        \draw[raltbptr] (#1_r6_3) -- (#1_r6_2);
+        \draw[raltbptr] (#1_r6_3) -- (#1_r3_2);
+    \end{scope}
+}
+
+\newcommand{\rbydrebalanceiv}[1]{
+    \begin{scope}[
+        x=\rnodewidth,
+        y=\rnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % test node
+        %\node at (#1.center) [rtag] {};
+
+        % trunk 0
+        \begin{scope}[on above layer]
+        \node (#1_r0_0) [rtag, below left=2.5 and 1.5 of #1] {};
+        \end{scope}
+
+        % trunk 1
+        \begin{scope}[on above layer]
+        \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
+        \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r1_1) -- (#1_r1_0);
+        \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
+
+        % trunk 2
+        \begin{scope}[on above layer]
+        \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
+        \end{scope}
+
+        % trunk 3
+        \begin{scope}[on above layer]
+        \node (#1_r3_0) [rtag, right=3 of #1_r0_0] {};
+        \node (#1_r3_1) [raltb, above=1 of #1_r3_0] {};
+        \node (#1_r3_2) [raltb, above=2 of #1_r3_0, alias=#1_rroot] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r3_1) -- (#1_r3_0);
+        \draw[raltbptr] (#1_r3_1) -- (#1_r2_0);
+        \draw[raltbptr] (#1_r3_2) -- (#1_r3_1);
+        \draw[raltbptr] (#1_r3_2) -- (#1_r1_1);
+    \end{scope}
+}
+
+\newcommand{\rbydrebalanceiii}[1]{
+    \begin{scope}[
+        x=\rnodewidth,
+        y=\rnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % test node
+        %\node at (#1.center) [rtag] {};
+
+        % trunk 0
+        \begin{scope}[on above layer]
+        \node (#1_r0_0) [rtag, below left=2.5 and 1 of #1] {};
+        \end{scope}
+
+        % trunk 1
+        \begin{scope}[on above layer]
+        \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
+        \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r1_1) -- (#1_r1_0);
+        \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
+
+        % trunk 2
+        \begin{scope}[on above layer]
+        \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
+        \node (#1_r2_1) [raltb, above=1 of #1_r2_0] {};
+        \node (#1_r2_2) [raltb, above=2 of #1_r2_0, alias=#1_rroot] {};
+        \end{scope}
+        \draw[raltbptr] (#1_r2_1) -- (#1_r2_0);
+        \draw[raltbptr] (#1_r2_2) -- (#1_r2_1);
+        \draw[raltbptr] (#1_r2_2) -- (#1_r1_1);
+    \end{scope}
+}
+
+
+% B-tree commit example
+\newcommand{\rbydbtreecommit}[3]{
+    \begin{scope}[
+        x=\bcommitnodewidth,
+        y=\bcommitnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % containing bubble
+        \node (#1) [
+            bbubble,
+            #2 of #3,
+            minimum width=3.25*\bcommitnodewidth,
+            minimum height=3.125*\bcommitnodeheight] {};
+
+        % title
+        \node at (#1.north) [
+            anchor=north,
+            %minimum height=0.25*\bcommitnodeheight,
+            minimum height=0.33*\bcommitnodeheight,
+        ] {\Large
+            Incremental commit
+        };
+
+        % B-tree nodes
+        \node (bc1_0) [
+            btree,
+            above left=2.25 and 0.75 of #1.south,
+            anchor=center,
+            draw=none
+        ] {};
+        \rbydvi{bc1_0};
+
+        \node (bc0_0) [
+            btree,
+            below right=1.5 and 0.5 of bc1_0,
+            draw=none,
+        ] {};
+        \rbydvi{bc0_0};
+
+        \draw[bptr]
+            (bc1_0_r6_0)
+            .. controls +(0,-1) and +(0,+1) ..
+            (bc0_0_rroot);
+
+        % B-tree commit
+        \node (bc1_1) [
+            btree,
+            right=1.25 of bc1_0,
+            minimum width=0.5*\bcommitnodewidth,
+            draw=none,
+        ] {};
+        \scoped[on behind layer] \draw[fill=fglightblue!50!white]
+            (bc1_0.south west) rectangle (bc1_1.north east);
+        \draw[boutline]
+            (bc1_0.north east)
+            -- (bc1_0.north west)
+            -- (bc1_0.south west)
+            -- (bc1_0.south east)
+            (bc1_1.south west)
+            -- (bc1_1.south east)
+            -- (bc1_1.north east)
+            -- (bc1_1.north west);
+        \draw[bdashedoutline]
+            (bc1_0.south east)
+            -- (bc1_1.south west)
+            (bc1_1.north west)
+            -- (bc1_0.north east);
+        \rbydreplacevii{bc1_0}{bc1_1};
+
+        \node (bc0_1) [
+            btree,
+            right=1.25 of bc0_0,
+            minimum width=0.5*\bcommitnodewidth,
+            draw=none,
+        ] {};
+        \scoped[on behind layer] \draw[fill=fglightblue!50!white]
+            (bc0_0.south west) rectangle (bc0_1.north east);
+        \draw[boutline]
+            (bc0_0.north east)
+            -- (bc0_0.north west)
+            -- (bc0_0.south west)
+            -- (bc0_0.south east)
+            (bc0_1.south west)
+            -- (bc0_1.south east)
+            -- (bc0_1.north east)
+            -- (bc0_1.north west);
+        \draw[bdashedoutline]
+            (bc0_0.south east)
+            -- (bc0_1.south west)
+            (bc0_1.north west)
+            -- (bc0_0.north east);
+        \rbydappendviii{bc0_0}{bc0_1};
+
+        \draw[bptr]
+            (bc1_1_r7_0)
+            .. controls +(0,-1) and +(0,+1) ..
+            (bc0_1_rroot);
+
+        % op arrow
+        \draw[bbubbleptr] (#3) -- (#1)
+            node[pos=0.5, anchor=south] {\Large
+                $\text{uncompacted} \le b$
+            };
+    \end{scope}
+}
+
+% B-tree compact example
+\newcommand{\rbydbtreecompact}[3]{
+    \begin{scope}[
+        x=\bcommitnodewidth,
+        y=\bcommitnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % containing bubble
+        \node (#1) [
+            bbubble,
+            #2 of #3,
+            minimum width=3.5*\bcommitnodewidth,
+            minimum height=3.125*\bcommitnodeheight] {};
+
+        % title
+        \node at (#1.north) [
+            anchor=north,
+            %minimum height=0.25*\bcommitnodeheight,
+            minimum height=0.33*\bcommitnodeheight,
+        ] {\Large
+            Compact 
+        };
+
+        % B-tree nodes
+        \node (bc1_0) [
+            btree,
+            above left=2.25 and 0.625 of #1.south,
+            anchor=center,
+            draw=none
+        ] {};
+        \rbydvi{bc1_0};
+
+        \node (bc0_0) [
+            btree,
+            below right=1.5 and -0.25 of bc1_0,
+        ] {};
+        \rbydvi{bc0_0};
+
+        \draw[bptr]
+            (bc1_0_r6_0)
+            .. controls +(0,-1) and +(0,+1) ..
+            (bc0_0_rroot);
+
+        % B-tree commit
+        \node (bc1_1) [
+            btree,
+            right=1.25 of bc1_0,
+            minimum width=0.5*\bcommitnodewidth,
+            draw=none,
+        ] {};
+        \scoped[on behind layer] \draw[fill=fglightblue!50!white]
+            (bc1_0.south west) rectangle (bc1_1.north east);
+        \draw[boutline]
+            (bc1_0.north east)
+            -- (bc1_0.north west)
+            -- (bc1_0.south west)
+            -- (bc1_0.south east)
+            (bc1_1.south west)
+            -- (bc1_1.south east)
+            -- (bc1_1.north east)
+            -- (bc1_1.north west);
+        \draw[bdashedoutline]
+            (bc1_0.south east)
+            -- (bc1_1.south west)
+            (bc1_1.north west)
+            -- (bc1_0.north east);
+        \rbydreplacevii{bc1_0}{bc1_1};
+
+        % B-tree compact
+        \node (bc0_1) [
+            btree,
+            right=1.75 of bc0_0,
+        ] {};
+        \rbydrebalancevi{bc0_1};
+
+        \draw[bptr]
+            (bc1_1_r7_0)
+            .. controls +(0,-1) and +(0,+1) ..
+            (bc0_1_rroot);
+
+        \draw[bdashedptr] (bc0_0) -- (bc0_1);
+
+        % op arrow
+        \draw[bbubbleptr] (#3) -- (#1)
+            node[pos=0.5, anchor=south] {\Large
+                %$\text{compacted} \le b/2$
+                $\text{compacted} \le \frac{b}{2}$
+            };
+    \end{scope}
+}
+
+% B-tree split example
+\newcommand{\rbydbtreesplit}[3]{
+    \begin{scope}[
+        x=\bcommitnodewidth,
+        y=\bcommitnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        % containing bubble
+        \node (#1) [
+            bbubble,
+            #2 of #3,
+            minimum width=4.75*\bcommitnodewidth,
+            minimum height=3.125*\bcommitnodeheight] {};
+
+        % title
+        \node at (#1.north) [
+            anchor=north,
+            %minimum height=0.25*\bcommitnodeheight,
+            minimum height=0.33*\bcommitnodeheight,
+        ] {\Large
+            Split 
+        };
+
+        % B-tree nodes
+        \node (bc1_0) [
+            btree,
+            above left=2.25 and 0.625 of #1.south,
+            anchor=center,
+            draw=none
+        ] {};
+        \rbydvi{bc1_0};
+
+        \node (bc0_0) [
+            btree,
+            below right=1.5 and -0.875 of bc1_0,
+        ] {};
+        \rbydvi{bc0_0};
+
+        \draw[bptr]
+            (bc1_0_r6_0)
+            .. controls +(0,-1) and +(0,+1) ..
+            (bc0_0_rroot);
+
+        % B-tree commit
+        \node (bc1_1) [
+            btree,
+            right=1.25 of bc1_0,
+            minimum width=0.5*\bcommitnodewidth,
+            draw=none,
+        ] {};
+        \scoped[on behind layer] \draw[fill=fglightblue!50!white]
+            (bc1_0.south west) rectangle (bc1_1.north east);
+        \draw[boutline]
+            (bc1_0.north east)
+            -- (bc1_0.north west)
+            -- (bc1_0.south west)
+            -- (bc1_0.south east)
+            (bc1_1.south west)
+            -- (bc1_1.south east)
+            -- (bc1_1.north east)
+            -- (bc1_1.north west);
+        \draw[bdashedoutline]
+            (bc1_0.south east)
+            -- (bc1_1.south west)
+            (bc1_1.north west)
+            -- (bc1_0.north east);
+        \rbydreplaceix{bc1_0}{bc1_1};
+
+        % B-tree split
+        \node (bc0_1) [
+            btree,
+            right=1.75 of bc0_0,
+        ] {};
+        \rbydrebalanceiv{bc0_1};
+        \node (bc0_2) [
+            btree,
+            right=1.25 of bc0_1,
+        ] {};
+        \rbydrebalanceiii{bc0_2};
+
+        \draw[bptr]
+            (bc1_1_r7_0)
+            .. controls +(0,-1) and +(0,+1) ..
+            (bc0_1_rroot);
+        \draw[bptr]
+            (bc1_1_r8_0)
+            .. controls +(0,-1) and +(0,+1.1) ..
+            (bc0_2_rroot);
+
+        \draw[bdashedptr] (bc0_0) -- (bc0_1);
+
+        % op arrow
+        \draw[bbubbleptr] (#3) -- (#1)
+            node[pos=0.5, anchor=south] {\Large
+                %$\text{compacted} \gt b/2$
+                $\text{compacted} \gt \frac{b}{2}$
+            };
+    \end{scope}
+}
+
+
+
 % main B-tree
-\block[bodyinnersep=0pt]{}{
-    \begin{tikzfigure}
-    \flushleft
-    \begin{tikzpicture}[
+\newcommand{\rbydbtree}{
+    \begin{scope}[
         x=\bnodewidth,
         y=\bnodeheight,
         node distance=1,
         on grid,
-        btree/.style={
-            draw,
-            ultra thick,
-            fill=fglightblue,
-            minimum width=\bnodewidth,
-            minimum height=\bnodeheight,
-            inner sep=0,
-            outer sep=0,
-        },
-        bptr/.style={
-            ->,
-            %ultra thick,
-            line width=2.5*1.6pt,
-        },
     ]
         % B-tree nodes
         \node (b0_0) [btree] {};
@@ -305,62 +918,83 @@
             (b1_0_r6_0)
             .. controls +(0,-1) and +(0,+1.3) ..
             (b0_6_rroot);
+
+        % B-tree commit/compact/split examples
+        \rbydbtreecommit{bcommit}{right=6}{broot};
+        \rbydbtreecompact{bcompact}{above right=1 and 3.75}{bcommit};
+        \rbydbtreesplit{bsplit}{below right=0.5 and 7}{bcommit};
+
+    \end{scope}
+}
+
+
+% put big B-tree mess into our poster
+\block[bodyinnersep=0pt]{}{
+    \begin{tikzfigure}
+    \flushleft
+    \begin{tikzpicture}
+        \rbydbtree
     \end{tikzpicture}
     \end{tikzfigure}
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\block{}
-{
-\blindtext
-}
-
+% B-tree details
 \begin{columns}
-\column{0.4}
-\block{More text}{Text and more text}
-
-\column{0.6}
-\block{Something else}{Here, \blindtext \vspace{4cm}}
-\note[%targetoffsetx=-9cm, targetoffsety=-5.5cm%, width=0.5\linewidth
-]{This is a note...}
+\column{0.33}
+\block{Rbyd B-trees}{\Large
+}
+\column{0.33}
+\block{Deferred splits/merges}{\Large
+}
+\column{0.33}
+\block{Rebalancing compactions}{\Large
+}
 \end{columns}
 
-\begin{columns}
-\column{0.5}
-\block{A figure}
-{
-\begin{center}
-    %\includegraphics[width=0.2\textheight]{logo.png}
-    \input{littlefs-ico}
-\end{center}
-}
 
-\block{Outer Block}{
-\blindtext
-\vspace{24pt}
-\innerblock[]{Inner Block}{\blindtext}
+% Results
+\block{Results}{\Large
 }
 
 
-\column{0.5}
-\block{Description of the figure}{\Large\blindtext[2]}
-\end{columns}
+
+
+% \block{}
+% {
+% \blindtext
+% }
+% 
+% \begin{columns}
+% \column{0.4}
+% \block{More text}{Text and more text}
+% 
+% \column{0.6}
+% \block{Something else}{Here, \blindtext \vspace{4cm}}
+% \note[%targetoffsetx=-9cm, targetoffsety=-5.5cm%, width=0.5\linewidth
+% ]{This is a note...}
+% \end{columns}
+% 
+% \begin{columns}
+% \column{0.5}
+% \block{A figure}
+% {
+% \begin{center}
+%     %\includegraphics[width=0.2\textheight]{logo.png}
+%     \input{littlefs-ico}
+% \end{center}
+% }
+% 
+% \block{Outer Block}{
+% \blindtext
+% \vspace{24pt}
+% \innerblock[]{Inner Block}{\blindtext}
+% }
+% 
+% \column{0.5}
+% \block{Description of the figure}{\Large\blindtext[2]}
+% \end{columns}
+
 \end{document}
 
