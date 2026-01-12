@@ -90,6 +90,13 @@
 
 \def\title#1{\gdef\@title{#1}}
 
+\settitle{ \centering \vbox{
+%\@titlegraphic \\[\TP@titlegraphictotitledistance] \centering
+\color{titlefgcolor} {\bfseries \Huge \sc \@title \par}
+%\vspace*{1em}
+%{\huge \@author \par} \vspace*{1em} {\LARGE \@institute}
+}}
+
 \definetitlestyle{littlefstitlestyle}{
     %width=\TP@visibletextwidth,
     %width=\textwidth,
@@ -97,13 +104,15 @@
     roundedcorners=0,
     linewidth=0pt,
     %innersep=40pt,
-    innersep=12pt,
+    %innersep=12pt,
+    %innersep=48pt,
+    innersep=60pt,
+    %innersep=72pt,
     %titletotopverticalspace=25mm,
     %titletoblockverticalspace=15mm,
     titletoblockverticalspace=48pt,
     titletotopverticalspace=0mm,
     %titletoblockverticalspace=0mm,
-    %titlebackgroundheight=10cm,,
     %titlegraphictotitledistance=-100pt,
     titletextscale=20,
 }{

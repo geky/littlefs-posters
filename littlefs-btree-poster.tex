@@ -4,8 +4,16 @@
 % https://github.com/klb2/scientific-poster-template
 %
 \documentclass[25pt, a0paper, portrait]{littlefs-poster}
-%\documentclass[25pt, a0paper, portrait]{tikzposter}
-\geometry{paperheight=48in,paperwidth=36in} % for different sizes than A paper
+%
+% for different sizes than A paper
+%
+% the at stuff is needed to force tikzposter to recalculate margins and stuff
+\geometry{paperheight=48in,paperwidth=36in}
+\makeatletter
+\setlength{\TP@visibletextwidth}{\textwidth-2\TP@innermargin}
+\setlength{\TP@visibletextheight}{\textheight-2\TP@innermargin}
+\makeatother
+
 
 % typesetting things
 \usepackage[english]{babel}
@@ -50,9 +58,10 @@
     littlefs: rbyd B-trees: \\
     Incremental B-trees when RAM $\ll$ block size
 }
-\author{\LARGE
-    Christopher Haster % \quad\textit{littlefs}
-}
+%\author{\LARGE
+%    Christopher Haster % \quad\textit{littlefs}
+%}
+
 %\author{First Author\affilmark{1}, Second Author\affilmark{1,2}, and
 %    Third Author\affilmark{2}}
 %\institute{%
@@ -65,13 +74,15 @@
 
 %\usetitlestyle[titlebackgroundheight=.078\paperheight,titlegraphictotitledistance=1cm]{conferenceTitleStyle}
 
-
 \begin{document}
 \maketitle
-\node[anchor=east] at ($(TP@title.east) +(-56pt,0pt)$) {
-    \def\littlefsicoscale{7pt}
-    \def\littlefsicopadding{2}
-    \input{littlefs-ico}
+\node[anchor=west] at ($(TP@title.west) +(+48pt,0pt)$) {
+    \def\littlefsicoscale{6pt}%
+    \input{littlefs-ico}%
+};
+\node[anchor=east, align=right] at ($(TP@title.east) +(-48pt,0pt)$) {
+    \LARGE Christopher Haster \\
+    \LARGE geky@geky.net
 };
 
 
@@ -93,7 +104,7 @@
     \begin{tikzfigure}
     \centering
     % MCU memory table
-    \begin{tabular}{l@{\hspace{1em}}r}
+    \begin{tabular}{l@{\quad}r}
         \toprule
             & MCU memory \\
         \midrule
@@ -101,9 +112,9 @@
         RAM & {$\sim$}32KiB--128KiB \\
         \bottomrule
     \end{tabular}
-    \quad
+    \qquad
     % Flash memory table
-    \begin{tabular}{l@{\hspace{1em}}r@{\hspace{1em}}r}
+    \begin{tabular}{l@{\quad}r@{\quad}r}
         \toprule
             & NOR flash & NAND flash \\
         \midrule
