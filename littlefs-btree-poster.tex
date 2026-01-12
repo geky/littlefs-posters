@@ -78,7 +78,7 @@
 \begin{columns}
 \column{0.5}
 \block{Problem}{\Large
-    Microcontrollers are very small, flash is very dense.
+    Microcontrollers are very small---flash increasingly dense.
 
     How do you build a B-tree if you can't fit a block in RAM?
 
@@ -132,6 +132,7 @@
 % some defines
 \def\rbydnodewidth{(1/8)*(1/4)*\linewidth}
 \def\rbydnodeheight{\rbydnodewidth}
+\def\rbydnoderatio{0.6}
 \def\bnodewidth{(1/(1.5*7-0.5))*(1/2)*\linewidth}
 \def\bnodeheight{1.618*\bnodewidth}
 \def\bcommitnodewidth{\bnodewidth}
@@ -145,8 +146,8 @@
     rbydtag/.style={
         draw,
         ultra thick,
-        minimum width=0.6*\rbydnodewidth,
-        minimum height=0.6*\rbydnodeheight,
+        minimum width=\rbydnoderatio*\rbydnodewidth,
+        minimum height=\rbydnoderatio*\rbydnodeheight,
         inner sep=0,
         outer sep=0,
         fill=bg,
@@ -185,6 +186,19 @@
     unreachable/.style={
         draw opacity=0.5,
         text opacity=0.5,
+    },
+    rbydbubbleptr/.style={
+        ->,
+        %ultra thick,
+        line width=2.4*1.6pt,
+        %loosely dashed,
+        dash pattern=on 6pt off 6pt,
+        shorten <= 0.25*\rbydnodewidth,
+        shorten >= 0.25*\rbydnodewidth,
+    },
+    rbydoutline/.style={
+        draw,
+        ultra thick,
     },
     % btree rbyd tag/alt styles
     rtag/.style={
@@ -258,19 +272,154 @@
 
 % rbyd stuff
 % on-disk log
+\def\rlogwidth{(7+\rbydnoderatio)*\rbydnodewidth}
+\def\rlogheight{(4+\rbydnoderatio)*\rbydnodeheight}
+\def\rlogsep{12pt}
+\def\rlognodewidth{(1/11)*(\rlogwidth-2*\rlogsep)}
+\def\rlognodeheight{(\rlogheight-2*\rlogsep)}
+\def\rlogdataheight{(1/1.618)*\rlognodeheight}
+\def\rlogaltheight{(1/4)*(1-1/1.618)*\rlognodeheight}
+
 \newcommand{\rlog}[2]{
     \begin{scope}[
         x=\rbydnodewidth,
         y=\rbydnodeheight,
         node distance=1,
         on grid,
+        rlog/.style={
+            rbydtag,
+            draw,
+            fill=fglightblue!50!bg,
+        },
+        rlogdata/.style={
+            rbydtag,
+            fill=bg,
+            minimum width=\rlognodewidth,
+            minimum height=\rlogdataheight,
+            %fill=fglightgreen,
+        },
+        rlogalt/.style={
+            rlogdata,
+            minimum height=\rlogaltheight,
+            fill=bg,
+        },
+        rlogaltb/.style={rlogalt, fill=fg!25!bg},
+        rlogaltr/.style={rlogalt, fill=fglightred},
+        rlogalty/.style={rlogalt, fill=fglightyellow},
+        rlogarrow/.style={
+            ->,
+            %ultra thick,
+            line width=2.4*1.6pt,
+            %loosely dashed,
+            dash pattern=on 6pt off 6pt,
+        },
     ]
         \node (#1) [
             #2,
-            anchor=south west,
+            anchor=center,
             minimum width=(1/4)*\linewidth,
+            minimum height=6.5*\rbydnodeheight,
+            inner sep=0,
+            outer sep=0,
             %draw,
-        ] {HI!};
+        ] {};
+        % test node
+        %\node [#2, anchor=center, rbydtag] {};
+
+        % big log box
+        \node (#1_rlog) [
+            rlog,
+            below=0.75 of #1,
+            minimum width=\rlogwidth,
+            minimum height=\rlogheight,
+        ] {};
+
+        % log data entries
+        \node (#1_r0_0) [
+            rlogdata, 
+            above right=\rlogsep and \rlogsep of #1_rlog.south west,
+            anchor=south west
+        ] {$0$};
+        \node (#1_r1_0) [rlogdata, right=1*\rlognodewidth of #1_r0_0] {$1$};
+        \node (#1_r2_0) [rlogdata, right=2*\rlognodewidth of #1_r0_0] {$2$};
+        \node (#1_r3_0) [rlogdata, right=3*\rlognodewidth of #1_r0_0] {$3$};
+        \node (#1_r4_0) [rlogdata, right=4*\rlognodewidth of #1_r0_0] {$4$};
+        \node (#1_r5_0) [rlogdata, right=5*\rlognodewidth of #1_r0_0] {$5$};
+        \node (#1_r6_0) [rlogdata, right=7*\rlognodewidth of #1_r0_0] {$6$};
+
+        % log alt pointers
+        \node (#1_r0_1) [rlogalt, above=0*\rlogaltheight of #1_r0_0.north] {};
+        \node (#1_r0_2) [rlogalt, above=1*\rlogaltheight of #1_r0_0.north] {};
+        \node (#1_r0_3) [rlogalt, above=2*\rlogaltheight of #1_r0_0.north] {};
+        \node (#1_r0_4) [rlogalt, above=3*\rlogaltheight of #1_r0_0.north] {};
+
+        \node (#1_r1_1) [rlogaltb, above=0*\rlogaltheight of #1_r1_0.north] {};
+        \node (#1_r1_2) [rlogalt, above=1*\rlogaltheight of #1_r1_0.north] {};
+        \node (#1_r1_3) [rlogalt, above=2*\rlogaltheight of #1_r1_0.north] {};
+        \node (#1_r1_4) [rlogalt, above=3*\rlogaltheight of #1_r1_0.north] {};
+
+        \node (#1_r2_1) [rlogaltb, above=0*\rlogaltheight of #1_r2_0.north] {};
+        \node (#1_r2_2) [rlogaltr, above=1*\rlogaltheight of #1_r2_0.north] {};
+        \node (#1_r2_3) [rlogalt, above=2*\rlogaltheight of #1_r2_0.north] {};
+        \node (#1_r2_4) [rlogalt, above=3*\rlogaltheight of #1_r2_0.north] {};
+
+        \node (#1_r3_1) [rlogaltb, above=0*\rlogaltheight of #1_r3_0.north] {};
+        \node (#1_r3_2) [rlogaltr, above=1*\rlogaltheight of #1_r3_0.north] {};
+        \node (#1_r3_3) [rlogalty, above=2*\rlogaltheight of #1_r3_0.north] {};
+        \node (#1_r3_4) [rlogalt, above=3*\rlogaltheight of #1_r3_0.north] {};
+
+        \node (#1_r4_1) [rlogaltb, above=0*\rlogaltheight of #1_r4_0.north] {};
+        \node (#1_r4_2) [rlogaltr, above=1*\rlogaltheight of #1_r4_0.north] {};
+        \node (#1_r4_3) [rlogaltb, above=2*\rlogaltheight of #1_r4_0.north] {};
+        \node (#1_r4_4) [rlogalt, above=3*\rlogaltheight of #1_r4_0.north] {};
+
+        \node (#1_r5_1) [rlogaltb, above=0*\rlogaltheight of #1_r5_0.north] {};
+        \node (#1_r5_2) [rlogaltr, above=1*\rlogaltheight of #1_r5_0.north] {};
+        \node (#1_r5_3) [rlogalty, above=2*\rlogaltheight of #1_r5_0.north] {};
+        \node (#1_r5_4) [rlogaltb, above=3*\rlogaltheight of #1_r5_0.north] {};
+
+        \node (#1_r6_1) [rlogaltb, above=0*\rlogaltheight of #1_r6_0.north] {};
+        \node (#1_r6_2) [rlogaltr, above=1*\rlogaltheight of #1_r6_0.north] {};
+        \node (#1_r6_3) [rlogaltb, above=2*\rlogaltheight of #1_r6_0.north] {};
+        \node (#1_r6_4) [
+            rlogaltr,
+            above=3*\rlogaltheight of #1_r6_0.north,
+            alias=#1_rroot,
+        ] {};
+
+        % relevant alt pointers
+        \draw[rbydaltbptr]
+            (#1_r6_1.center)
+            -- ($(#1_r5_0.north east)-(0,{0.5*\rlogaltheight})$);
+        \draw[rbydaltbptr]
+            (#1_r6_2.center)
+            -- ($(#1_r4_0.north east)-(0,{0.5*\rlogaltheight})$);
+        \draw[rbydaltbptr] (#1_r6_3.center) -- (#1_r5_3);
+        \draw[rbydaltbptr] (#1_r6_4.center) -- (#1_r3_3);
+
+        \draw[rbydaltbptr] (#1_r5_2.center)
+            -- ($(#1_r3_0.north east)-(0,{0.5*\rlogaltheight})$);
+        \draw[rbydaltbptr] (#1_r5_3.center)
+            -- ($(#1_r2_0.north east)-(0,{0.5*\rlogaltheight})$);
+
+        \draw[rbydaltbptr] (#1_r3_2.center)
+            -- ($(#1_r1_0.north east)-(0,{0.5*\rlogaltheight})$);
+        \draw[rbydaltbptr] (#1_r3_3.center)
+            -- ($(#1_r0_0.north east)-(0,{0.5*\rlogaltheight})$);
+
+        % trunk label
+        \node (#1_rtrunk) at ($(#1_rroot |- #1)+(0,2.25)$) {\Large $a$};
+        \draw[rbydaltbptr] (#1_rtrunk) -- (#1_rroot);
+
+        % big fat log arrow
+        \draw [rlogarrow]
+            ($(#1_r6_0.east |- #1_rlog.east)$)
+            -- ($(#1_rlog.east)-({\rlognodewidth},0)$);
+
+        % rbyd label
+        \node at ($(#1)+(0,2.75)$) {\Large
+            On-disk log
+        };
     \end{scope}
 }
 
@@ -282,9 +431,21 @@
         node distance=1,
         on grid,
     ]
+        \node (#1) [
+            #2,
+            anchor=center,
+            minimum width=(1/4)*\linewidth,
+            minimum height=6.5*\rbydnodeheight,
+            inner sep=0,
+            outer sep=0,
+            %draw,
+        ] {};
+        % test node
+        %\node [#2, anchor=center, rbydtag] {};
+
         % trunk 0
         \begin{scope}[on above layer]
-        \node (#1_r0_0) [rbydtag, #2, anchor=south west] {$0$};
+        \node (#1_r0_0) [rbydtag, below left=2.75 and 3.25 of #1] {$0$};
         \end{scope}
 
         % trunk 1
@@ -382,7 +543,7 @@
 
         % rbyd label
         \node at ($(#1_r0_0)!0.5!(#1_r6_0)+(0,5.5)$) {\Large
-            Rbyd tree
+            Log-encoded rbyd tree
         };
     \end{scope}
 }
@@ -395,7 +556,19 @@
         node distance=1,
         on grid,
     ]
-        \node (#1_r0_0) [rbydtag, #2, anchor=south west, shift={(1,0)}] {$0$};
+        \node (#1) [
+            #2,
+            anchor=center,
+            minimum width=(1/4)*\linewidth,
+            minimum height=6.5*\rbydnodeheight,
+            inner sep=0,
+            outer sep=0,
+            %draw,
+        ] {};
+        % test node
+        %\node [#2, anchor=center, rbydtag] {};
+
+        \node (#1_r0_0) [rbydtag, below left=2.75 and 3 of #1] {$0$};
         \node (#1_r0_1) [rbydtag, right=1 of #1_r0_0] {$1$};
         \node (#1_r0_2) [rbydtag, right=2 of #1_r0_0] {$2$};
         \node (#1_r0_3) [rbydtag, right=3 of #1_r0_0] {$3$};
@@ -440,6 +613,105 @@
         % rbyd label
         \node at ($(#1_r0_0)!0.5!(#1_r0_6)+(0,5.5)$) {\Large
             Reachable rbyd tree
+        };
+    \end{scope}
+}
+
+% effective (emulated?) 2-3-4 tree 
+\newcommand{\riiiiiiv}[2]{
+    \begin{scope}[
+        x=\rbydnodewidth,
+        y=\rbydnodeheight,
+        node distance=1,
+        on grid,
+    ]
+        \node (#1) [
+            #2,
+            anchor=center,
+            minimum width=(1/4)*\linewidth,
+            minimum height=6.5*\rbydnodeheight,
+            inner sep=0,
+            outer sep=0,
+            %draw,
+        ] {};
+        % test node
+        %\node [#2, anchor=center, rbydtag] {};
+
+        \node (#1_r0_0) [rbydtag, below left=2.75 and 3 of #1] {$0$};
+        \node (#1_r0_1) [rbydtag, right=1 of #1_r0_0] {$1$};
+        \node (#1_r0_2) [rbydtag, right=2 of #1_r0_0] {$2$};
+        \node (#1_r0_3) [rbydtag, right=3 of #1_r0_0] {$3$};
+        \node (#1_r0_4) [rbydtag, right=4 of #1_r0_0] {$4$};
+        \node (#1_r0_5) [rbydtag, right=5 of #1_r0_0] {$5$};
+        \node (#1_r0_6) [rbydtag, right=6 of #1_r0_0] {$6$};
+
+        \node (#1_r1_0) [rbydtag, above left=2 and 0.5 of #1_r0_1] {$0$};
+        \draw[rbydaltptr] (#1_r1_0) -- (#1_r0_0);
+        \draw[rbydaltptr] (#1_r1_0) -- (#1_r0_1);
+        \node (#1_r1_1) [rbydtag, above left=2 and 0.5 of #1_r0_3] {$2$};
+        \draw[rbydaltptr] (#1_r1_1) -- (#1_r0_2);
+        \draw[rbydaltptr] (#1_r1_1) -- (#1_r0_3);
+        \node (#1_r1_2) [
+            rbydtag,
+            above left=2 and 1 of #1_r0_6,
+            minimum width=(1+\rbydnoderatio)*\rbydnodewidth,
+        ] {};
+        \node (#1_r1_2_0) [
+            rbydtag,
+            left=0.5 of #1_r1_2,
+            draw=none,
+            fill=none,
+        ] {$4$};
+        \node (#1_r1_2_1) [
+            rbydtag,
+            right=0.5 of #1_r1_2,
+            draw=none,
+            fill=none,
+        ] {$5$};
+        %\draw[rbydoutline]
+        %    (#1_r1_2.south west)
+        %    -- (#1_r1_2.north west)
+        %    -- (#1_r1_3.north east)
+        %    -- (#1_r1_3.south east)
+        %    -- cycle;
+        \draw[rbydaltbptr] (#1_r1_2_0) -- (#1_r0_4);
+        %\draw[rbydaltbptr]
+        %    ($(#1_r1_2.south west)!0.5!(#1_r1_3.south east)$)
+        %    -- (#1_r0_5);
+        \draw[rbydaltbptr] (#1_r1_2)   -- (#1_r0_5);
+        \draw[rbydaltbptr] (#1_r1_2_1) -- (#1_r0_6);
+        \draw[rbydaltrptr, -] (#1_r1_2_0) -- (#1_r1_2_1);
+
+        \node (#1_r2_0) [
+            rbydtag,
+            above left=2 and 2 of #1_r1_2,
+            minimum width=1.6*\rbydnodewidth,
+            alias=#1_rroot,
+        ] {};
+        \node (#1_r2_0_0) [
+            rbydtag,
+            left=0.5 of #1_r2_0,
+            draw=none,
+            fill=none,
+        ] {$1$};
+        \node (#1_r2_0_1) [
+            rbydtag,
+            right=0.5 of #1_r2_0,
+            draw=none,
+            fill=none,
+        ] {$3$};
+        \draw[rbydaltbptr] (#1_r2_0_0) -- (#1_r1_0);
+        \draw[rbydaltbptr] (#1_r2_0)   -- (#1_r1_1);
+        \draw[rbydaltbptr] (#1_r2_0_1) -- (#1_r1_2);
+        \draw[rbydaltrptr, -] (#1_r2_0_0) -- (#1_r2_0_1);
+
+        % trunk label
+        \node (#1_rtrunk) [above=1 of #1_rroot] {\Large $a$};
+         \draw[rbydaltbptr] (#1_rtrunk) -- (#1_rroot);
+
+        % rbyd label
+        \node at ($(#1_r0_0)!0.5!(#1_r0_6)+(0,5.5)$) {\Large
+            Emulated 2-3-4 tree
         };
     \end{scope}
 }
@@ -1152,12 +1424,15 @@
         \btree{btree}{right=0 of borigin};
 
         % Rbyd stuff
-        \coordinate (rorigin) at (0,{5*\bnodeheight});
-        \rlog{rlog}{right=(0/4)*\linewidth of rorigin};
-        \rbyd{rbyd}{right=(1/4)*\linewidth of rorigin};
-        \rtree{rtree}{right=(2/4)*\linewidth of rorigin};
+        \coordinate (rorigin) at (0,{6*\bnodeheight});
+        \rlog{rlog}{right=(1/8)*\linewidth of rorigin};
+        \rbyd{rbyd}{right=(3/8)*\linewidth of rorigin};
+        \rtree{rtree}{right=(5/8)*\linewidth of rorigin};
+        \riiiiiiv{riiiiiiv}{right=(7/8)*\linewidth of rorigin};
 
-        \draw[bbubbleptr] (rbyd_rtrunk) -- (rtree_rtrunk);
+        \draw[rbydbubbleptr] (rlog_rtrunk) -- (rbyd_rtrunk);
+        \draw[rbydbubbleptr] (rbyd_rtrunk) -- (rtree_rtrunk);
+        \draw[rbydbubbleptr] (rtree_rtrunk) -- (riiiiiiv_rtrunk);
 
         \node at (rbyd_r0_0) [circle, draw, overlay] {HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII};
 
