@@ -94,18 +94,27 @@
 
 % Problem statement
 \begin{columns}
-\column{0.5}
+\column{0.533}
 \block{Problem}{\Large
-    \begin{hackize}
-        \item Microcontrollers are very small---flash increasingly dense.
-        \item How do you build a B-tree if you can't fit a block in RAM?
+    \begin{minipage}{0.7\linewidth}
+        \begin{hackize}
+            \item Microcontrollers are very small---flash increasingly dense.
+            \item How do you build a B-tree if you can't fit a block in RAM?
+        \end{hackize}
+        %\begin{itemize}
+        %    \item Traditional B-trees read a full block into RAM.
+        %    \item Log-backed B-trees usually reconstruct logs in RAM.
+        %\end{itemize}
+    \end{minipage}
+    \quad
+    \begin{minipage}{0.3\linewidth}
         \begin{itemize}
-            \item Traditional B-trees read a full block into RAM.
-            \item Log-backed B-trees usually reconstruct logs in RAM.
+            \item[\normalfont\bfseries X] Traditional B-trees.
+            \item[\normalfont\bfseries ?] Log-backed B-trees.
         \end{itemize}
-    \end{hackize}
+    \end{minipage}
 }
-\column{0.5}
+\column{0.466}
 \block[bodyinnersep=0pt]{}{\Large
     \begin{tikzfigure}
     \centering
@@ -118,7 +127,8 @@
         RAM & {$\sim$}32KiB--128KiB \\
         \bottomrule
     \end{tabular}
-    \qquad
+    \quad
+    %\qquad
     % Flash memory table
     \begin{tabular}{l@{\quad}r@{\quad}r}
         \toprule
