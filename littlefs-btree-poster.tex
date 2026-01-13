@@ -276,10 +276,17 @@
         \begin{tikzfigure}
         \begin{tikzpicture}
             \dhara{dhara}
+            \coordinate (bbox south west)
+                at ($(current bounding box.south west)
+                    + (0,{3*\dharanodeheight})$);
+            \coordinate (bbox north east)
+                at (current bounding box.north east);
             \pgfresetboundingbox
-            \useasboundingbox
-                ($(dhara_d0_0 |- dhara_droot.south west)$)
-                rectangle (dhara_droot.north east);
+            \useasboundingbox (bbox south west) rectangle (bbox north east);
+            %\draw (bbox south west) rectangle (bbox north east);
+            %\useasboundingbox
+            %    ($(dhara_d0_0 |- dhara_droot.south west)$)
+            %    rectangle (dhara_droot.north east);
             %\draw
             %    ($(dhara_d0_0 |- dhara_droot.south west)$)
             %    rectangle (dhara_droot.north east);
@@ -310,11 +317,32 @@
 \end{columns}
 
 
+% rbyd/B-tree tables
+\newcommand{\rbydtable}{
+    \begin{tabular}{l@{\quad}l@{\quad}r}
+        \toprule
+            && Rbyd runtime \\
+        \midrule
+        \multicolumn{2}{l}{lookup} & $O(\log b)$ \\
+        \multicolumn{2}{l}{append} & $O(\log b)$ \\
+        \multicolumn{2}{l}{compact} & $O(b \log b)$ \\
+        \cmidrule(r){1-2}
+        \multirow{2}*{storage}
+            & uncompacted
+            & $O(b \log b)$ \\
+        & compacted
+            & $O(b)$ \\
+        \bottomrule
+    \end{tabular}
+}
+
+
+
 
 % Main rbyd B-tree graphic!
 
 % some defines
-\def\rbydscale{(1/4)}
+\def\rbydscale{(1/5)}
 \def\rbydnodewidth{(1/8)*\rbydscale*\linewidth}
 \def\rbydnodeheight{\rbydnodewidth}
 \def\rbydnoderatio{0.6}
@@ -1619,6 +1647,18 @@
         \draw[rbydbubbleptr] (rlog_rtrunk) -- (rbyd_rtrunk);
         \draw[rbydbubbleptr] (rbyd_rtrunk) -- (rtree_rtrunk);
         \draw[rbydbubbleptr] (rtree_rtrunk) -- (riiiiiiv_rtrunk);
+
+        % add rbyd table
+        \node [
+            above right=2.5*\rbydnodeheight
+                and 4.45*\rbydscale*\linewidth
+                of rorigin,
+            %draw,
+            anchor=center,
+            overlay,
+        ] {
+            \rbydtable
+        };
 
         % add a magnifying glass
         \begin{scope}[on behind layer]
