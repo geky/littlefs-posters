@@ -102,23 +102,32 @@
 \begin{columns}
 \column{0.533}
 \block{Problem}{\Large
-    \begin{minipage}{0.7\linewidth}
-        \begin{hackize}
-            \item Microcontrollers are very small---flash increasingly dense.
-            \item How do you build a B-tree if you can't fit a block in RAM?
-        \end{hackize}
-        %\begin{itemize}
-        %    \item Traditional B-trees read a full block into RAM.
-        %    \item Log-backed B-trees usually reconstruct logs in RAM.
-        %\end{itemize}
-    \end{minipage}
-    \quad
-    \begin{minipage}{0.3\linewidth}
+    \begin{hackize}
+        \item Microcontrollers are very small---flash increasingly dense.
+            In modern systems, a single flash block can exceed a device's
+            available RAM.
         \begin{itemize}
-            \item[\normalfont\bfseries X] Traditional B-trees.
-            \item[\normalfont\bfseries ?] Log-backed B-trees.
+            \item How do you build a B-tree if you can't fit a block in RAM?
         \end{itemize}
-    \end{minipage}
+    \end{hackize}
+    %
+    % \begin{minipage}{0.7\linewidth}
+    %     \begin{hackize}
+    %         \item Microcontrollers are very small---flash increasingly dense.
+    %         \item How do you build a B-tree if you can't fit a block in RAM?
+    %     \end{hackize}
+    %     %\begin{itemize}
+    %     %    \item Traditional B-trees read a full block into RAM.
+    %     %    \item Log-backed B-trees usually reconstruct logs in RAM.
+    %     %\end{itemize}
+    % \end{minipage}
+    % \quad
+    % \begin{minipage}{0.3\linewidth}
+    %     \begin{itemize}
+    %         \item[\normalfont\bfseries X] Traditional B-trees.
+    %         \item[\normalfont\bfseries ?] Log-backed B-trees.
+    %     \end{itemize}
+    % \end{minipage}
 }
 \column{0.466}
 \block[bodyinnersep=0pt]{}{\Large
