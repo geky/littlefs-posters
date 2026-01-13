@@ -224,11 +224,23 @@
 \begin{columns}
 \column{0.5}
 \block{Dhara trees \vphantom{y}}{\Large
-    \begin{minipage}[t]{0.55\linewidth}
-        Implemented in the Dhara FTL, Dhara trees provide a bounded-RAM
-        log-encoded radix tree.
+    \begin{minipage}[t]{0.6\linewidth}
+        Implemented in the Dhara FTL, Dhara trees provide
+        a log-encoded radix tree
+        %log-encoded radix trees
+        in bounded-RAM.
+        \begin{itemize}
+        \item Limited to radix trees (implicitly balanced).
+        \item Radix B-tree nodes perform poorly with
+            sparse\slash order-statistic keys:
+            \begin{itemize}
+                \item Naive array insertion: $O(b)$
+                \item Radix array insertion: $O(b \log b)$
+                %\item Rbyd array insertion: $O(\log b)$
+            \end{itemize}
+        \end{itemize}
     \end{minipage}%
-    \quad
+    %\quad
     \begin{minipage}{0.45\linewidth}
         \begin{tikzfigure}
         \begin{tikzpicture}
@@ -243,17 +255,6 @@
         \end{tikzpicture}
         \end{tikzfigure}
     \end{minipage}
-    \\[48pt]
-    Limitations:
-    \begin{itemize}
-    \item Limited to radix trees (implicitly balanced).
-    \item Radix B-tree nodes with sparse/order-statistic keys perform poorly:
-        \begin{itemize}
-            \item Naive array insertion: $O(b)$
-            \item Radix array insertion: $O(b \log b)$
-            %\item Rbyd array insertion: $O(\log b)$
-        \end{itemize}
-    \end{itemize}
 }
 \column{0.5}
 \block{Red-black-yellow Dhara (rbyd) trees}{\Large
@@ -264,7 +265,7 @@
         \item Instead of rotating, 2-3-4 splits point to nodes in the history.
         \item Unreachable branches are pruned during later appends.
     \end{itemize}
-    Rbyd B-tree nodes support efficient sparse/order-statistic keys:
+    Rbyd B-tree nodes support efficient sparse\slash order-statistic keys:
     \begin{itemize}
         \item Order-statistic rbyd array insertion: $O(\log b)$
     \end{itemize}
