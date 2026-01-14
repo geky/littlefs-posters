@@ -580,10 +580,12 @@ Rbyds contain either leaf data or indirect B-tree pointers, and most
 updates require only a cheap log append. When a log is full, we \emph{compact}
 the relevant rbyd into a new block, at which point the CoW
 semantics of B-trees take over.
-To avoid compacting too frequently, we split when a node is half-full, but
-only when the
-% relevant
-log needs compaction.
+%To avoid compacting too frequently, we split when a node is half-full, but
+%only when the
+%% relevant
+%log needs compaction.
+To avoid runaway compactions, we split when a node is half-full, but
+only when compaction is necessary.
 % but only check for this condition when the log is full-full.
 % To avoid runaway compactions, we split when half-full, but we only check
 % merge/split conditions during compactions.
@@ -591,12 +593,14 @@ This
 %We wait until compaction to check
 %merge/split conditions, which
 %amortizes the relevant costs,
-amortizes merge/split checks,
+%amortizes merge/split checks,
+amortizes compaction work,
 introduces hysteresis, and results in
-better
-% optimal
+%better
+optimal
 leaf distribution during
-sequential updates.
+%sequential updates.
+sequential writes.
 
 % We also implement tail-recursive tree rebalancing during compactions,
 % which brings the compacted storage cost down
@@ -621,7 +625,8 @@ $O(b \log b) \rightarrow O(b)$.
 % tail-recursive rebalancing during compactions brings this down
 % $O(b \log b) \rightarrow O(b)$.
 In our current implementation, the overhead of rbyds divides the
-branching-factor by {$\sim$}8 over dense arrays.
+%branching-factor by {$\sim$}8 over dense arrays.
+branching-factor by ${\sim}1/8$ over dense arrays.
 
 % Each leaf in a given rbyd points to either a child B-tree node
 % Instead of checking for merge/split conditions every commit, 
@@ -715,8 +720,8 @@ branching-factor by {$\sim$}8 over dense arrays.
 Rbyd B-trees are currently implemented as
 % primary
 the main file data-structure in
-\lfsiii+. They have survived significant testing---including assertion
-over the rbyd color-invariants---and simulated measurements show the
+\lfsiii+. They have survived significant testing, including assertion
+over the rbyd color-invariants, and simulated measurements show the
 expected logarithmic runtimes.
 
 Measuring simulated
