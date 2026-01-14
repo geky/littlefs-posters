@@ -1701,7 +1701,7 @@
         % B-tree offset
         boffset/.initial=36pt,
         % rbyd offset
-        roffset/.initial=5.5*\get{bnodeheight},
+        roffset/.initial=5.25*\get{bnodeheight},
         % styles
         magnifyer/.style={
             draw,
@@ -1778,7 +1778,7 @@
 
         % B-tree commit/compact/split examples
         \btreecommit{bcommit}
-            {below right=0.25*\get{bnodeheight} and 5.5*\get{bnodewidth}
+            {below right=0.75*\get{bnodeheight} and 5.5*\get{bnodewidth}
                 of btree_broot};
         \draw[bbubbleptr] (btree_broot) -- (bcommit)
             node[pos=0.5, anchor=south] {\Large
@@ -1786,7 +1786,8 @@
             };
 
         \btreecompact{bcompact}
-            {below right=0.875*\get{bnodeheight} and 8.75*\get{bnodewidth}
+            {above right=-0.125*\get{bnodeheight}
+                and (8.75-0.125)*\get{bnodewidth}
                 of btree_broot};
         \draw[bbubbleptr] (btree_broot) -- (bcompact)
             node[pos=0.5, anchor=south] {\Large
@@ -1795,7 +1796,7 @@
             };
 
         \btreesplit{bsplit}
-            {above right=0.5*\get{bnodeheight} and 12.5*\get{bnodewidth}
+            {below right=1*\get{bnodeheight} and 12.5*\get{bnodewidth}
                 of btree_broot};
         \draw[bbubbleptr] (btree_broot) -- (bsplit)
             node[pos=0.5, anchor=south] {\Large
@@ -1805,9 +1806,12 @@
 
         % cut off bounding box a bit, the B-tree leaves don't really
         % add anything
-        \coordinate (bounding box south west)
-            at ($(current bounding box.south west)
-                +(0,{0.125*\get{bnodeheight}})$);
+%         \coordinate (bounding box south west)
+%             at ($(current bounding box.south west)
+%                 +(0,{0.125*\get{bnodeheight}})$);
+         \coordinate (bounding box south west)
+             at ($(current bounding box.south west)
+                 +(0,-24pt)$);
         \coordinate (bounding box north east)
             at (current bounding box.north east);
         \pgfresetboundingbox
