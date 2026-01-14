@@ -1778,33 +1778,33 @@
         };
 
         % B-tree commit/compact/split examples
-        \btreesplit{bsplit}
-            {below right=1.25*\get{bnodeheight}
-                and 12.5*\get{bnodewidth}
+        \btreecommit{bcommit}
+            {below right=0*\get{bnodeheight}
+                and (5+0.125)*\get{bnodewidth}
                 of btree_broot};
-        \draw[bbubbleptr] (btree_broot) -- (bsplit.south)
+        \draw[bbubbleptr] (btree_broot) -- (bcommit)
             node[pos=0.5, anchor=south] {\Large
-                %$\text{compacted} \gt b/2$
-                $\text{compacted} \gt \frac{b}{2}$
+                $\text{uncompacted} \le b$
             };
 
         \btreecompact{bcompact}
-            {above right=0.125*\get{bnodeheight}
-                and (9.25-0.125)*\get{bnodewidth}
+            {below right=1.125*\get{bnodeheight}
+                and 8.75*\get{bnodewidth}
                 of btree_broot};
-        \draw[bbubbleptr] (btree_broot) -- (bcompact.north)
+        \draw[bbubbleptr] (btree_broot) -- (bcompact.south)
             node[pos=0.5, anchor=south] {\Large
                 %$\text{compacted} \le b/2$
                 $\text{compacted} \le \frac{b}{2}$
             };
 
-        \btreecommit{bcommit}
-            {below right=0.5*\get{bnodeheight}
-                and (5.5)*\get{bnodewidth}
+        \btreesplit{bsplit}
+            {above right=(0.5-0.125)*\get{bnodeheight}
+                and 12.5*\get{bnodewidth}
                 of btree_broot};
-        \draw[bbubbleptr] (btree_broot) -- (bcommit)
+        \draw[bbubbleptr] (btree_broot) -- (bsplit.north)
             node[pos=0.5, anchor=south] {\Large
-                $\text{uncompacted} \le b$
+                %$\text{compacted} \gt b/2$
+                $\text{compacted} \gt \frac{b}{2}$
             };
 
         % cut off bounding box a bit, the B-tree leaves don't really
