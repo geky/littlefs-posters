@@ -279,13 +279,14 @@
         \begin{tikzfigure}
         \begin{tikzpicture}
             \dhara{dhara}
-            \coordinate (bbox south west)
+            \coordinate (bounding box south west)
                 at ($(current bounding box.south west)
-                    + (0,{3*\dharanodeheight})$);
-            \coordinate (bbox north east)
+                    +(0,{3*\dharanodeheight})$);
+            \coordinate (bounding box north east)
                 at (current bounding box.north east);
             \pgfresetboundingbox
-            \useasboundingbox (bbox south west) rectangle (bbox north east);
+            \useasboundingbox (bounding box south west)
+                rectangle (bounding box north east);
             %\draw (bbox south west) rectangle (bbox north east);
             %\useasboundingbox
             %    ($(dhara_d0_0 |- dhara_droot.south west)$)
@@ -362,8 +363,8 @@
 % common styles
 \tikzset{
     % default scaling
-    rbydscale/.initial=(1/5),
-    rbydnodewidth/.initial=(1/8)*\get{rbydscale}*\linewidth,
+    rbydwidth/.initial=(1/5)*\linewidth,
+    rbydnodewidth/.initial=(1/8)*\get{rbydwidth},
     rbydnodeheight/.initial=\pgfkeysvalueof{/tikz/rbydnodewidth},
     rbydnoderatio/.initial=0.6,
     bnodewidth/.initial=(1/(1.5*7-0.5))*(1/2)*\linewidth,
@@ -551,7 +552,7 @@
         \node (#1) [
             #2,
             anchor=center,
-            minimum width=\get{rbydscale}*\linewidth,
+            minimum width=\get{rbydwidth},
             minimum height=6.5*\get{rbydnodeheight},
             inner sep=0,
             outer sep=0,
@@ -670,7 +671,7 @@
         \node (#1) [
             #2,
             anchor=center,
-            minimum width=\get{rbydscale}*\linewidth,
+            minimum width=\get{rbydwidth},
             minimum height=6.5*\get{rbydnodeheight},
             inner sep=0,
             outer sep=0,
@@ -795,7 +796,7 @@
         \node (#1) [
             #2,
             anchor=center,
-            minimum width=\get{rbydscale}*\linewidth,
+            minimum width=\get{rbydwidth},
             minimum height=6.5*\get{rbydnodeheight},
             inner sep=0,
             outer sep=0,
@@ -864,7 +865,7 @@
         \node (#1) [
             #2,
             anchor=center,
-            minimum width=\get{rbydscale}*\linewidth,
+            minimum width=\get{rbydwidth},
             minimum height=6.5*\get{rbydnodeheight},
             inner sep=0,
             outer sep=0,
@@ -1629,6 +1630,9 @@
 % main B-tree
 \newcommand{\btree}[2]{
     \begin{scope}[
+        % override scaling
+        bnodewidth/.expanded=1.5*\get{bnodewidth},
+        % grid stuff
         x=\get{bnodewidth},
         y=\get{bnodeheight},
         node distance=1,
@@ -1637,52 +1641,53 @@
         % B-tree nodes
         \node (#1_b0_0) [btree, #2, anchor=south west] {};
         \rbydvi{#1_b0_0};
-        \node (#1_b0_1) [btree, right=1*1.5 of #1_b0_0] {};
+        \node (#1_b0_1) [btree, right=1*1.25 of #1_b0_0] {};
         \rbydvi{#1_b0_1};
-        \node (#1_b0_2) [btree, right=2*1.5 of #1_b0_0] {};
+        \node (#1_b0_2) [btree, right=2*1.25 of #1_b0_0] {};
         \rbydvi{#1_b0_2};
-        \node (#1_b0_3) [btree, right=3*1.5 of #1_b0_0] {};
+        \node (#1_b0_3) [btree, right=3*1.25 of #1_b0_0] {};
         \rbydvi{#1_b0_3};
-        \node (#1_b0_4) [btree, right=4*1.5 of #1_b0_0] {};
+        \node (#1_b0_4) [btree, right=4*1.25 of #1_b0_0] {};
         \rbydvi{#1_b0_4};
-        \node (#1_b0_5) [btree, right=5*1.5 of #1_b0_0] {};
+        \node (#1_b0_5) [btree, right=5*1.25 of #1_b0_0] {};
         \rbydvi{#1_b0_5};
-        \node (#1_b0_6) [btree, right=6*1.5 of #1_b0_0] {};
+        \node (#1_b0_6) [btree, right=6*1.25 of #1_b0_0] {};
         \rbydvi{#1_b0_6};
 
+        \scoped[on behind layer]
         \node (#1_b1_0) [
             btree={2*\get{bnodewidth}}{2*\get{bnodeheight}},
-            above right=1.5 and 4.5 of #1_b0_0,
+            above right=1.5/1.2 and 2.75 of #1_b0_0,
             alias=#1_broot
         ] {};
         \rbydvi{#1_b1_0};
         \draw[bptr]
             (#1_b1_0_r0_0)
-            .. controls +(0,-1) and +(0,+1.3) ..
+            .. controls +(0,-1/1.2) and +(0,+1.3/1.2) ..
             (#1_b0_0_rroot);
         \draw[bptr]
             (#1_b1_0_r1_0)
-            .. controls +(0,-1) and +(0,+1.2) ..
+            .. controls +(0,-1/1.2) and +(0,+1.2/1.2) ..
             (#1_b0_1_rroot);
         \draw[bptr]
             (#1_b1_0_r2_0)
-            .. controls +(0,-1) and +(0,+1.1) ..
+            .. controls +(0,-1/1.2) and +(0,+1.1/1.2) ..
             (#1_b0_2_rroot);
         \draw[bptr]
             (#1_b1_0_r3_0)
-            .. controls +(0,-1) and +(0,+1) ..
+            .. controls +(0,-1/1.2) and +(0,+1/1.2) ..
             (#1_b0_3_rroot);
         \draw[bptr]
             (#1_b1_0_r4_0)
-            .. controls +(0,-1) and +(0,+1.1) ..
+            .. controls +(0,-1/1.2) and +(0,+1.1/1.2) ..
             (#1_b0_4_rroot);
         \draw[bptr]
             (#1_b1_0_r5_0)
-            .. controls +(0,-1) and +(0,+1.2) ..
+            .. controls +(0,-1/1.2) and +(0,+1.2/1.2) ..
             (#1_b0_5_rroot);
         \draw[bptr]
             (#1_b1_0_r6_0)
-            .. controls +(0,-1) and +(0,+1.3) ..
+            .. controls +(0,-1/1.2) and +(0,+1.3/1.2) ..
             (#1_b0_6_rroot);
     \end{scope}
 }
@@ -1693,6 +1698,11 @@
     \begin{tikzfigure}
     \flushleft
     \begin{tikzpicture}[
+        % B-tree offset
+        boffset/.initial=36pt,
+        % rbyd offset
+        roffset/.initial=5.5*\get{bnodeheight},
+        % styles
         magnifyer/.style={
             draw,
             thin,
@@ -1700,15 +1710,15 @@
         },
     ]
         % main B-tree
-        \coordinate (borigin) at (0,0);
+        \coordinate (borigin) at (\get{boffset},0);
         \btree{btree}{right=0 of borigin};
 
         % Rbyd stuff
-        \coordinate (rorigin) at (0,{6*\get{bnodeheight}});
-        \rlog{rlog}{right=0.5*\get{rbydscale}*\linewidth of rorigin};
-        \rbyd{rbyd}{right=1.5*\get{rbydscale}*\linewidth of rorigin};
-        \rtree{rtree}{right=2.5*\get{rbydscale}*\linewidth of rorigin};
-        \riiiiiiv{riiiiiiv}{right=3.5*\get{rbydscale}*\linewidth of rorigin};
+        \coordinate (rorigin) at (0,{\get{roffset}});
+        \rlog{rlog}{right=0.5*\get{rbydwidth} of rorigin};
+        \rbyd{rbyd}{right=1.5*\get{rbydwidth} of rorigin};
+        \rtree{rtree}{right=2.5*\get{rbydwidth} of rorigin};
+        \riiiiiiv{riiiiiiv}{right=3.5*\get{rbydwidth} of rorigin};
 
         \draw[rbydbubbleptr] (rlog_rtrunk) -- (rbyd_rtrunk);
         \draw[rbydbubbleptr] (rbyd_rtrunk) -- (rtree_rtrunk);
@@ -1716,8 +1726,8 @@
 
         % add rbyd table
         \node [
-            above right=2.5*\get{rbydnodeheight}
-                and 4.45*\get{rbydscale}*\linewidth
+            above right=2.25*\get{rbydnodeheight}
+                and 4.5*\get{rbydwidth}
                 of rorigin,
             %draw,
             anchor=center,
@@ -1727,41 +1737,38 @@
         };
 
         % add a magnifying glass
-        \begin{scope}[on behind layer]
-        \node (magnifyer_a) at ($(rbyd)-(0,{0.5*\get{rbydnodeheight}})$) [
-            magnifyer,
-            circle,
-            minimum width=9.5*\get{rbydnodewidth},
-        ] {};
-        \end{scope}
-        \node (magnifyer_b) at ($(btree_b1_0)-(0,{0.5*\get{rnodeheight}})$) [
-            magnifyer,
-            circle,
-            minimum width=9.5*\get{rnodewidth}
-        ] {};
-        \begin{scope}[on behind layer]
-        %\draw[magnifyer]
-        %    (tangent cs:node=magnifyer_b,point={(magnifyer_a)},solution=1)
-        %    --
-        %    (tangent cs:node=magnifyer_a,point={(magnifyer_b)},solution=2);
-        %\draw[magnifyer]
-        %    (tangent cs:node=magnifyer_b,point={(magnifyer_a)},solution=2)
-        %    --
-        %    (tangent cs:node=magnifyer_a,point={(magnifyer_b)},solution=1);
-        \draw[magnifyer]
-            ($(magnifyer_b)!{(1/2)*9.5*\get{rnodewidth}}!110:(magnifyer_a)$)
-            --
-            ($(magnifyer_a)!{(1/2)*9.5*\get{rbydnodewidth}}!-70:(magnifyer_b)$);
-        \draw[magnifyer]
-            ($(magnifyer_b)!{(1/2)*9.5*\get{rnodewidth}}!-110:(magnifyer_a)$)
-            --
-            ($(magnifyer_a)!{(1/2)*9.5*\get{rbydnodewidth}}!70:(magnifyer_b)$);
+        \begin{scope}[
+            on behind layer,
+            rnodewidth/.expanded=1.5*\get{rnodewidth},
+            rbydradius/.initial=4.75*\get{rbydnodewidth},
+            rbydoffset/.initial=0.5*\get{rbydnodeheight},
+            rradius/.initial=4.75*\get{rnodewidth},
+            roffset/.initial=0.25*\get{rnodeheight},
+        ]
+            \node (magnifyer_a) at ($(rbyd)-(0,{\get{rbydoffset}})$) [
+                magnifyer,
+                circle,
+                minimum width=2*\get{rbydradius},
+            ] {};
+            \node (magnifyer_b) at ($(btree_b1_0)-(0,{\get{roffset}})$) [
+                magnifyer,
+                circle,
+                minimum width=2*\get{rradius},
+            ] {};
+            \draw[magnifyer]
+                ($(magnifyer_b)!{\get{rradius}}!110:(magnifyer_a)$)
+                --
+                ($(magnifyer_a)!{\get{rbydradius}}!-70:(magnifyer_b)$);
+            \draw[magnifyer]
+                ($(magnifyer_b)!{\get{rradius}}!-110:(magnifyer_a)$)
+                --
+                ($(magnifyer_a)!{\get{rbydradius}}!70:(magnifyer_b)$);
         \end{scope}
 
         % add B-tree table
         \node [
-            above left=0.5*\get{bnodeheight}
-                and 3*\get{bnodewidth}
+            above left=0.2*\get{bnodeheight}
+                and 3.25*\get{bnodewidth}
                 of btree_broot.center,
             anchor=center,
             overlay,
@@ -1771,29 +1778,41 @@
 
         % B-tree commit/compact/split examples
         \btreecommit{bcommit}
-            {right=6*\get{bnodewidth} of btree_broot};
+            {below right=0.25*\get{bnodeheight} and 5.5*\get{bnodewidth}
+                of btree_broot};
         \draw[bbubbleptr] (btree_broot) -- (bcommit)
             node[pos=0.5, anchor=south] {\Large
                 $\text{uncompacted} \le b$
             };
 
         \btreecompact{bcompact}
-            {above right=1*\get{bnodeheight} and 3.75*\get{bnodewidth}
-                of bcommit};
-        \draw[bbubbleptr] (bcommit) -- (bcompact)
+            {below right=0.875*\get{bnodeheight} and 8.75*\get{bnodewidth}
+                of btree_broot};
+        \draw[bbubbleptr] (btree_broot) -- (bcompact)
             node[pos=0.5, anchor=south] {\Large
                 %$\text{compacted} \le b/2$
                 $\text{compacted} \le \frac{b}{2}$
             };
 
         \btreesplit{bsplit}
-            {below right=0.5*\get{bnodeheight} and 7*\get{bnodewidth}
-                of bcommit};
-        \draw[bbubbleptr] (bcommit) -- (bsplit)
+            {above right=0.5*\get{bnodeheight} and 12.5*\get{bnodewidth}
+                of btree_broot};
+        \draw[bbubbleptr] (btree_broot) -- (bsplit)
             node[pos=0.5, anchor=south] {\Large
                 %$\text{compacted} \gt b/2$
                 $\text{compacted} \gt \frac{b}{2}$
             };
+
+        % cut off bounding box a bit, the B-tree leaves don't really
+        % add anything
+        \coordinate (bounding box south west)
+            at ($(current bounding box.south west)
+                +(0,{0.125*\get{bnodeheight}})$);
+        \coordinate (bounding box north east)
+            at (current bounding box.north east);
+        \pgfresetboundingbox
+        \useasboundingbox (bounding box south west)
+            rectangle (bounding box north east);
     \end{tikzpicture}
     \end{tikzfigure}
 }
