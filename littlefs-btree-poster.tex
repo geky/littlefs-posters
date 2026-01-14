@@ -363,28 +363,37 @@
 \def\rbydnoderatio{0.6}
 \def\bnodewidth{(1/(1.5*7-0.5))*(1/2)*\linewidth}
 \def\bnodeheight{1.618*\bnodewidth}
-\def\bcommitnodewidth{\bnodewidth}
-\def\bcommitnodeheight{\bnodeheight}
 \def\rnodewidth{(1/8)*\bnodewidth}
 \def\rnodeheight{\rnodewidth}
+
+\def\bbnodewidth{\bnodewidth}
+\def\bbnodeheight{\bnodeheight}
+\def\brnodewidth{\rnodewidth}
+\def\brnodeheight{\rnodeheight}
+
+\def\bcbnodewidth{\bnodewidth}
+\def\bcbnodeheight{\bnodeheight}
+\def\bcrnodewidth{\rnodewidth}
+\def\bcrnodeheight{\rnodeheight}
 
 % common styles
 \tikzset{
     % rbyd tag/alt styles
-    rbydtag/.style={
+    rbydtag/.style 2 args={
         draw,
         ultra thick,
-        minimum width=\rbydnoderatio*\rbydnodewidth,
-        minimum height=\rbydnoderatio*\rbydnodeheight,
+        minimum width=\rbydnoderatio*#1,
+        minimum height=\rbydnoderatio*#2,
         inner sep=0,
         outer sep=0,
         fill=bg,
         font=\large,
     },
-    rbydalt/.style={rbydtag, circle, font=\normalsize},
-    rbydaltb/.style={rbydalt},
-    rbydaltr/.style={rbydalt, draw=fgdarkred},
-    rbydalty/.style={rbydalt, draw=fgdarkyellow},
+    rbydtag/.default={\rbydnodewidth}{\rbydnodeheight},
+    rbydalt/.style={rbydtag=#1, circle, font=\normalsize},
+    rbydaltb/.style={rbydalt=#1},
+    rbydaltr/.style={rbydalt=#1, draw=fgdarkred},
+    rbydalty/.style={rbydalt=#1, draw=fgdarkyellow},
     rbydaltptr/.style={-{To[scale=2]}, ultra thick},
     rbydaltbptr/.style={rbydaltptr},
     rbydaltrptr/.style={
@@ -421,41 +430,44 @@
         line width=2.4*1.6pt,
         %loosely dashed,
         dash pattern=on 6pt off 6pt,
-        shorten <= 0.25*\rbydnodewidth,
-        shorten >= 0.25*\rbydnodewidth,
+        shorten <= #1,
+        shorten >= #1,
     },
+    rbydbubbleptr/.default=0.25*\rbydnodewidth,
     rbydoutline/.style={
         draw,
         ultra thick,
     },
     % btree rbyd tag/alt styles
-    rtag/.style={
+    rtag/.style 2 args={
         draw,
         ultra thick,
-        minimum width=0.6*\rnodewidth,
-        minimum height=0.6*\rnodeheight,
+        minimum width=0.6*#1,
+        minimum height=0.6*#2,
         inner sep=0,
         outer sep=0,
         fill=fglightblue,
     },
-    ralt/.style={rtag, circle},
-    raltb/.style={ralt},
-    raltr/.style={ralt, draw=fgdarkred},
-    ralty/.style={ralt, draw=fgdarkyellow},
+    rtag/.default={\rnodewidth}{\rnodeheight},
+    ralt/.style={rtag=#1, circle},
+    raltb/.style={ralt=#1},
+    raltr/.style={ralt=#1, draw=fgdarkred},
+    ralty/.style={ralt=#1, draw=fgdarkyellow},
     raltptr/.style={-{To[scale=0.5]}, ultra thick},
     raltbptr/.style={raltptr},
     raltrptr/.style={raltptr, draw=fgdarkred},
     raltyptr/.style={raltptr, draw=fgdarkyellow},
     % btree styles
-    btree/.style={
+    btree/.style 2 args={
         draw,
         ultra thick,
         fill=fglightblue,
-        minimum width=\bnodewidth,
-        minimum height=\bnodeheight,
+        minimum width=#1,
+        minimum height=#2,
         inner sep=0,
         outer sep=0,
     },
+    btree/.default={\bnodewidth}{\bnodeheight},
     bptr/.style={
         ->,
         %ultra thick,
@@ -465,9 +477,10 @@
         bptr,
         %loosely dashed,
         dash pattern=on 6pt off 6pt,
-        shorten <= 0.125*\bnodewidth,
-        shorten >= 0.125*\bnodewidth,
+        shorten <= #1,
+        shorten >= #1,
     },
+    bdashedptr/.default=0.125*\bnodewidth,
     boutline/.style={
         draw,
         ultra thick,
@@ -492,9 +505,10 @@
         line width=2.4*1.6pt,
         %loosely dashed,
         dash pattern=on 6pt off 6pt,
-        shorten <= 0.5*\bnodewidth,
-        shorten >= 0.5*\bnodewidth,
+        shorten <= #1,
+        shorten >= #1,
     },
+    bbubbleptr/.default=0.5*\bnodewidth,
 }
 
 
@@ -947,10 +961,17 @@
 
 
 % no I'm not reimplementing rbyd trees in tikz
-\newcommand{\rbydvi}[1]{
+\newcommand{\rbydvi}[3]{
+    \edef\rnodewidth{\if\relax\detokenize{#2}\relax\rnodewidth\else#2\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#3}\relax\rnodeheight\else#3\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1045,10 +1066,17 @@
     \end{scope}
 }
 
-\newcommand{\rbydreplacevii}[2]{
+\newcommand{\rbydreplacevii}[4]{
+    \edef\rnodewidth{\if\relax\detokenize{#3}\relax\rnodewidth\else#3\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#4}\relax\rnodeheight\else#4\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1074,10 +1102,17 @@
     \end{scope}
 }
 
-\newcommand{\rbydappendviii}[2]{
+\newcommand{\rbydappendviii}[4]{
+    \edef\rnodewidth{\if\relax\detokenize{#3}\relax\rnodewidth\else#3\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#4}\relax\rnodeheight\else#4\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1106,10 +1141,17 @@
     \end{scope}
 }
 
-\newcommand{\rbydreplaceix}[2]{
+\newcommand{\rbydreplaceix}[4]{
+    \edef\rnodewidth{\if\relax\detokenize{#3}\relax\rnodewidth\else#3\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#4}\relax\rnodeheight\else#4\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1155,10 +1197,17 @@
     \end{scope}
 }
 
-\newcommand{\rbydrebalancevi}[1]{
+\newcommand{\rbydrebalancevi}[3]{
+    \edef\rnodewidth{\if\relax\detokenize{#2}\relax\rnodewidth\else#2\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#3}\relax\rnodeheight\else#3\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1222,10 +1271,17 @@
     \end{scope}
 }
 
-\newcommand{\rbydrebalanceiv}[1]{
+\newcommand{\rbydrebalanceiv}[3]{
+    \edef\rnodewidth{\if\relax\detokenize{#2}\relax\rnodewidth\else#2\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#3}\relax\rnodeheight\else#3\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1263,10 +1319,17 @@
     \end{scope}
 }
 
-\newcommand{\rbydrebalanceiii}[1]{
+\newcommand{\rbydrebalanceiii}[3]{
+    \edef\rnodewidth{\if\relax\detokenize{#2}\relax\rnodewidth\else#2\fi}
+    \edef\rnodeheight{\if\relax\detokenize{#3}\relax\rnodeheight\else#3\fi}
     \begin{scope}[
         x=\rnodewidth,
         y=\rnodeheight,
+        rtag/.default={\rnodewidth}{\rnodeheight},
+        ralt/.default={\rnodewidth}{\rnodeheight},
+        raltb/.default={\rnodewidth}{\rnodeheight},
+        raltr/.default={\rnodewidth}{\rnodeheight},
+        ralty/.default={\rnodewidth}{\rnodeheight},
         node distance=1,
         on grid,
     ]
@@ -1302,8 +1365,8 @@
 % B-tree commit example
 \newcommand{\btreecommit}[2]{
     \begin{scope}[
-        x=\bcommitnodewidth,
-        y=\bcommitnodeheight,
+        x=\bcbnodewidth,
+        y=\bcbnodeheight,
         node distance=1,
         on grid,
     ]
@@ -1311,14 +1374,15 @@
         \node (#1) [
             bbubble,
             #2,
-            minimum width=3.25*\bcommitnodewidth,
-            minimum height=3.125*\bcommitnodeheight] {};
+            minimum width=3.25*\bcbnodewidth,
+            minimum height=3.125*\bcbnodeheight,
+        ] {};
 
         % title
         \node at (#1.north) [
             anchor=north,
-            %minimum height=0.25*\bcommitnodeheight,
-            minimum height=0.33*\bcommitnodeheight,
+            %minimum height=0.25*\bcbnodeheight,
+            minimum height=0.33*\bcbnodeheight,
         ] {\Large
             Commit
         };
@@ -1330,14 +1394,14 @@
             anchor=center,
             draw=none
         ] {};
-        \rbydvi{#1_b1_0};
+        \rbydvi{#1_b1_0}{}{};
 
         \node (#1_b0_0) [
             btree,
             below right=1.5 and 0.5 of #1_b1_0,
             draw=none,
         ] {};
-        \rbydvi{#1_b0_0};
+        \rbydvi{#1_b0_0}{}{};
 
         \draw[bptr]
             (#1_b1_0_r6_0)
@@ -1348,7 +1412,7 @@
         \node (#1_b1_1) [
             btree,
             right=1.25 of #1_b1_0,
-            minimum width=0.5*\bcommitnodewidth,
+            minimum width=0.5*\bcbnodewidth,
             draw=none,
         ] {};
         \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
@@ -1367,12 +1431,12 @@
             -- (#1_b1_1.south west)
             (#1_b1_1.north west)
             -- (#1_b1_0.north east);
-        \rbydreplacevii{#1_b1_0}{#1_b1_1};
+        \rbydreplacevii{#1_b1_0}{#1_b1_1}{}{};
 
         \node (#1_b0_1) [
             btree,
             right=1.25 of #1_b0_0,
-            minimum width=0.5*\bcommitnodewidth,
+            minimum width=0.5*\bcbnodewidth,
             draw=none,
         ] {};
         \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
@@ -1391,7 +1455,7 @@
             -- (#1_b0_1.south west)
             (#1_b0_1.north west)
             -- (#1_b0_0.north east);
-        \rbydappendviii{#1_b0_0}{#1_b0_1};
+        \rbydappendviii{#1_b0_0}{#1_b0_1}{}{};
 
         \draw[bptr]
             (#1_b1_1_r7_0)
@@ -1403,8 +1467,8 @@
 % B-tree compact example
 \newcommand{\btreecompact}[2]{
     \begin{scope}[
-        x=\bcommitnodewidth,
-        y=\bcommitnodeheight,
+        x=\bcbnodewidth,
+        y=\bcbnodeheight,
         node distance=1,
         on grid,
     ]
@@ -1412,14 +1476,15 @@
         \node (#1) [
             bbubble,
             #2,
-            minimum width=3.5*\bcommitnodewidth,
-            minimum height=3.125*\bcommitnodeheight] {};
+            minimum width=3.5*\bcbnodewidth,
+            minimum height=3.125*\bcbnodeheight,
+        ] {};
 
         % title
         \node at (#1.north) [
             anchor=north,
-            %minimum height=0.25*\bcommitnodeheight,
-            minimum height=0.33*\bcommitnodeheight,
+            %minimum height=0.25*\bcbnodeheight,
+            minimum height=0.33*\bcbnodeheight,
         ] {\Large
             Compact 
         };
@@ -1431,13 +1496,13 @@
             anchor=center,
             draw=none
         ] {};
-        \rbydvi{#1_b1_0};
+        \rbydvi{#1_b1_0}{}{};
 
         \node (#1_b0_0) [
             btree,
             below right=1.5 and -0.25 of #1_b1_0,
         ] {};
-        \rbydvi{#1_b0_0};
+        \rbydvi{#1_b0_0}{}{};
 
         \draw[bptr]
             (#1_b1_0_r6_0)
@@ -1448,7 +1513,7 @@
         \node (#1_b1_1) [
             btree,
             right=1.25 of #1_b1_0,
-            minimum width=0.5*\bcommitnodewidth,
+            minimum width=0.5*\bcbnodewidth,
             draw=none,
         ] {};
         \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
@@ -1467,14 +1532,14 @@
             -- (#1_b1_1.south west)
             (#1_b1_1.north west)
             -- (#1_b1_0.north east);
-        \rbydreplacevii{#1_b1_0}{#1_b1_1};
+        \rbydreplacevii{#1_b1_0}{#1_b1_1}{}{};
 
         % B-tree compact
         \node (#1_b0_1) [
             btree,
             right=1.75 of #1_b0_0,
         ] {};
-        \rbydrebalancevi{#1_b0_1};
+        \rbydrebalancevi{#1_b0_1}{}{};
 
         \draw[bptr]
             (#1_b1_1_r7_0)
@@ -1488,8 +1553,8 @@
 % B-tree split example
 \newcommand{\btreesplit}[2]{
     \begin{scope}[
-        x=\bcommitnodewidth,
-        y=\bcommitnodeheight,
+        x=\bcbnodewidth,
+        y=\bcbnodeheight,
         node distance=1,
         on grid,
     ]
@@ -1497,14 +1562,15 @@
         \node (#1) [
             bbubble,
             #2,
-            minimum width=4.75*\bcommitnodewidth,
-            minimum height=3.125*\bcommitnodeheight] {};
+            minimum width=4.75*\bcbnodewidth,
+            minimum height=3.125*\bcbnodeheight,
+        ] {};
 
         % title
         \node at (#1.north) [
             anchor=north,
-            %minimum height=0.25*\bcommitnodeheight,
-            minimum height=0.33*\bcommitnodeheight,
+            %minimum height=0.25*\bcbnodeheight,
+            minimum height=0.33*\bcbnodeheight,
         ] {\Large
             Split 
         };
@@ -1516,13 +1582,13 @@
             anchor=center,
             draw=none
         ] {};
-        \rbydvi{#1_b1_0};
+        \rbydvi{#1_b1_0}{}{};
 
         \node (#1_b0_0) [
             btree,
             below right=1.5 and -0.875 of #1_b1_0,
         ] {};
-        \rbydvi{#1_b0_0};
+        \rbydvi{#1_b0_0}{}{};
 
         \draw[bptr]
             (#1_b1_0_r6_0)
@@ -1533,7 +1599,7 @@
         \node (#1_b1_1) [
             btree,
             right=1.25 of #1_b1_0,
-            minimum width=0.5*\bcommitnodewidth,
+            minimum width=0.5*\bcbnodewidth,
             draw=none,
         ] {};
         \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
@@ -1552,19 +1618,19 @@
             -- (#1_b1_1.south west)
             (#1_b1_1.north west)
             -- (#1_b1_0.north east);
-        \rbydreplaceix{#1_b1_0}{#1_b1_1};
+        \rbydreplaceix{#1_b1_0}{#1_b1_1}{}{};
 
         % B-tree split
         \node (#1_b0_1) [
             btree,
             right=1.75 of #1_b0_0,
         ] {};
-        \rbydrebalanceiv{#1_b0_1};
+        \rbydrebalanceiv{#1_b0_1}{}{};
         \node (#1_b0_2) [
             btree,
             right=1.25 of #1_b0_1,
         ] {};
-        \rbydrebalanceiii{#1_b0_2};
+        \rbydrebalanceiii{#1_b0_2}{}{};
 
         \draw[bptr]
             (#1_b1_1_r7_0)
@@ -1591,26 +1657,26 @@
     ]
         % B-tree nodes
         \node (#1_b0_0) [btree, #2, anchor=south west] {};
-        \rbydvi{#1_b0_0};
+        \rbydvi{#1_b0_0}{}{};
         \node (#1_b0_1) [btree, right=1*1.5 of #1_b0_0] {};
-        \rbydvi{#1_b0_1};
+        \rbydvi{#1_b0_1}{}{};
         \node (#1_b0_2) [btree, right=2*1.5 of #1_b0_0] {};
-        \rbydvi{#1_b0_2};
+        \rbydvi{#1_b0_2}{}{};
         \node (#1_b0_3) [btree, right=3*1.5 of #1_b0_0] {};
-        \rbydvi{#1_b0_3};
+        \rbydvi{#1_b0_3}{}{};
         \node (#1_b0_4) [btree, right=4*1.5 of #1_b0_0] {};
-        \rbydvi{#1_b0_4};
+        \rbydvi{#1_b0_4}{}{};
         \node (#1_b0_5) [btree, right=5*1.5 of #1_b0_0] {};
-        \rbydvi{#1_b0_5};
+        \rbydvi{#1_b0_5}{}{};
         \node (#1_b0_6) [btree, right=6*1.5 of #1_b0_0] {};
-        \rbydvi{#1_b0_6};
+        \rbydvi{#1_b0_6}{}{};
 
         \node (#1_b1_0) [
-            btree,
+            btree={2*\bnodewidth}{2*\bnodeheight},
             above right=1.5 and 4.5 of #1_b0_0,
             alias=#1_broot
         ] {};
-        \rbydvi{#1_b1_0};
+        \rbydvi{#1_b1_0}{2*\rnodewidth}{2*\rnodeheight};
         \draw[bptr]
             (#1_b1_0_r0_0)
             .. controls +(0,-1) and +(0,+1.3) ..
@@ -1763,8 +1829,8 @@
         \item Most updates are cheap $O(\log b)$ rbyd appends.
         %\item When logs are full, logs are compacted into new blocks.
         %    Compaction cost amortized $O(b \log b) \rightarrow O(\log b)$.
-        \item When full, %logs
-            rbyds are compacted into new blocks in $O(b \log b)$.
+        %\item When full, logs are compacted into new blocks in $O(b \log b)$.
+        \item When full, rbyds are compacted into new blocks in $O(b \log b)$.
         \item To avoid runaway compactions, nodes split when $\gt b/2$,
             amortizing compaction cost $O(b \log b) \rightarrow O(\log b)$.
     \end{itemize}
