@@ -23,16 +23,19 @@ BENCH_WT_CHUNK ?= 64
 
 # how many samples?
 ifdef PRECISE
-BENCH_SAMPLES ?= 16
+SAMPLES ?= 16
 else
-BENCH_SAMPLES ?= 1
+SAMPLES ?= 1
 endif
 # how long to simulate?
 ifdef PRECISE
-BENCH_SIM_TIME ?= 3600000000000 # 1 hour
+SIM_TIME ?= 3600000000000 # 1 hour
 else
-BENCH_SIM_TIME ?= 600000000000 # 10 minutes
+SIM_TIME ?= 600000000000 # 10 minutes
 endif
+
+# stride of results to filter during tikz processing
+COMB ?= 1
 
 # block sizes for btree benchmarks
 BENCH_BTREE_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
@@ -80,7 +83,7 @@ $(RESULTSDIR)/bench_p26_poster_rbyd.csv: $(BENCH_LFS3NB_RUNNER)
 		$(BENCHFLAGS) \
 		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_lfs3) \
-		-DSEED="range($(BENCH_SAMPLES))" \
+		-DSEED="range($(SAMPLES))" \
 		-DN=$(BENCH_RBYD_N) \
 		-DREAD_TIME=$(NOR_READ_TIME) \
 		-DPROG_TIME=$(NOR_PROG_TIME) \
@@ -96,7 +99,7 @@ $(RESULTSDIR)/bench_p26_poster_btree.csv: $(BENCH_LFS3NB_RUNNER)
 		$(BENCHFLAGS) \
 		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_lfs3) \
-		-DSEED="range($(BENCH_SAMPLES))" \
+		-DSEED="range($(SAMPLES))" \
 		-DN=$(BENCH_BTREE_N) \
 		-DREAD_TIME=$(NOR_READ_TIME) \
 		-DPROG_TIME=$(NOR_PROG_TIME) \
@@ -123,11 +126,11 @@ $1: $(BENCH_$(U_$2)_RUNNER)
 		$(BENCHFLAGS) \
 		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_$2) \
-		-DSEED="range($(BENCH_SAMPLES))" \
+		-DSEED="range($(SAMPLES))" \
 		$(if $(SKIP_WARMUP),-DSKIP_WARMUP=$(SKIP_WARMUP)) \
 		-DSIZE=$(BENCH_WT_SIZE) \
 		-DCHUNK=$(BENCH_WT_CHUNK) \
-		-DSIM_TIME=$(BENCH_SIM_TIME) \
+		-DSIM_TIME=$(SIM_TIME) \
 		-DREAD_TIME=$(NOR_READ_TIME) \
 		-DPROG_TIME=$(NOR_PROG_TIME) \
 		-DERASE_TIME=$(NOR_ERASE_TIME) \
@@ -303,4 +306,122 @@ $(PLOTSDIR)/bench_p26_poster_wt.svg: \
 		-o$@)
 
 
+## Generate rbyd tikz results
+.PHONY: tikz-p26-poster-rbyd
+tikz-p26-poster-rbyd: \
+		$(foreach order, 0 1 2,$\
+			$(TIKZDIR)/tikz_p26_poster_rbyd.$(order).csv \
+			$(TIKZDIR)/tikz_p26_poster_rbyd.$(order).comb.csv)
+
+# $1 - target
+# $2 - source
+# $3 - order
+define TIKZ_P26_POSTER_RBYD_RULE
+$1: $2
+	$$(strip ./scripts/csv.py $$^ \
+		-DORDER=$3 \
+		-Dm=create+sim \
+		-bbench=create \
+		-bORDER \
+		-bn \
+		-Si=n \
+		-ft=bench_readed_avg \
+		-o$$@)
+endef
+
+$(foreach order, 0 1 2,$\
+	$(eval $(call TIKZ_P26_POSTER_RBYD_RULE,$\
+		$(TIKZDIR)/tikz_p26_poster_rbyd.$(order).csv,$\
+		$(RESULTSDIR)/bench_p26_poster_rbyd.sim.avg.csv,$\
+		$(order))))
+
+# filter results
+$(TIKZDIR)/%.comb.csv: $(TIKZDIR)/%.csv
+	$(strip awk \
+		-v n=$$(wc -l < $<) \
+		'NR==1 || NR==2 || NR==n || NR % $(COMB) == 0' \
+		$^ > $@)
+
+## Generate btree tikz results
+.PHONY: tikz-p26-poster-btree
+tikz-p26-poster-btree: \
+		$(foreach bs,$(subst $(,), ,$(BENCH_BTREE_BLOCK_SIZES)),$\
+			$(TIKZDIR)/tikz_p26_poster_btree.$(bs).csv \
+			$(TIKZDIR)/tikz_p26_poster_btree.$(bs).comb.csv)
+
+# $1 - target
+# $2 - source
+# $3 - order
+define TIKZ_P26_POSTER_BTREE_RULE
+$1: $2
+	$$(strip ./scripts/csv.py $$^ \
+		-DORDER=2 \
+		-DBLOCK_SIZE=$3 \
+		-Dm=commit+sim+amor \
+		-bbench=commit \
+		-bBLOCK_SIZE \
+		-bn \
+		-Si=n \
+		-ft=bench_readed_avg \
+		-o$$@)
+endef
+
+$(foreach bs,$(subst $(,), ,$(BENCH_BTREE_BLOCK_SIZES)),$\
+	$(eval $(call TIKZ_P26_POSTER_BTREE_RULE,$\
+		$(TIKZDIR)/tikz_p26_poster_btree.$(bs).csv,$\
+		$(RESULTSDIR)/bench_p26_poster_btree.sim.amor.avg.csv,$\
+		$(bs))))
+
+## Generate write-throughput tikz results
+.PHONY: tikz-p26-poster-wt
+tikz-p26-poster-wt: \
+		$(foreach fs,$(BENCH_FSS),$\
+			$(foreach bench,linear random logging,$\
+				$(TIKZDIR)/tikz_p26_poster_wt.$(fs).$(bench).csv))
+
+# $1 - target
+# $2 - source
+# $3 - fs
+# $4 - bench
+define TIKZ_P26_POSTER_WT_RULE
+$1: $2
+	$$(strip ./scripts/csv.py \
+		<(./scripts/csv.py $$^ \
+			-fn \
+			-fbench_readed \
+			-fbench_proged \
+			-fbench_erased \
+			-Dbench_creaded='*' \
+			-Dbench_cproged='*' \
+			-Dbench_cerased='*' \
+			-o-) \
+		-Dcase=bench_p26_wt_$4 \
+		-Dm=write,read \
+		-bfs=$3 \
+		-bbench=$4 \
+		-bBLOCK_SIZE \
+		-Si=BLOCK_SIZE \
+		-fthroughput=' \
+			float(n) / max( \
+				(float(bench_readed)*float(READ_TIME) \
+					+ float(bench_proged)*float(PROG_TIME) \
+					+ float(bench_erased)*float(ERASE_TIME) \
+					) / 1.0e9, \
+				1.0e-9)' \
+		-fn \
+		-ft=' \
+			(float(bench_readed)*float(READ_TIME) \
+				+ float(bench_proged)*float(PROG_TIME) \
+				+ float(bench_erased)*float(ERASE_TIME) \
+			) / 1.0e9' \
+		-o$$@)
+endef
+
+$(foreach fs,$(BENCH_FSS),$\
+	$(foreach bench,linear random logging,$\
+		$(eval $(call TIKZ_P26_POSTER_WT_RULE,$\
+			$(TIKZDIR)/tikz_p26_poster_wt.$(fs).$(bench).csv,$\
+			$(RESULTSDIR)/bench_p26_poster_wt.$(fs).csv,$\
+			$(fs),$\
+			$(bench)))))
 
