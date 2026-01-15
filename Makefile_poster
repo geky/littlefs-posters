@@ -5,17 +5,32 @@ PLOTSDIR ?= plots_poster
 # overrideable tikz dir
 TIKZDIR ?= tikz_poster
 
+
 # give us more space for activities
 DISK_SIZE ?= 134217728 # 128 MiB
-# block sizes for btree benchmarks
-BENCH_BTREE_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
-	262144,524288,1048576
 
-# enable debug to make sure benches work, otherwise asserts are disabled
-DEBUG ?= 1
+# how many entries to test?
+BENCH_RBYD_N ?= 4096
+BENCH_BTREE_N ?= 4096
+# how big a file to simulate?
+BENCH_WT_SIZE ?= 1048576 # 1 MiB
+# how big a chunk to write?
+BENCH_WT_CHUNK ?= 64
 
 # how many samples?
 BENCH_SAMPLES ?= 1
+# how long to simulate?
+BENCH_SIM_TIME ?= 600000000000 # 10 minutes
+
+# block sizes for btree benchmarks
+BENCH_BTREE_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
+	262144,524288,1048576
+# block sizes for write-throughput benchmarks
+BENCH_WT_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
+	262144,524288,1048576
+
+# enable debug to make sure benches work, otherwise asserts are disabled
+#DEBUG ?= 1
 
 
 # we only care about littlefs3+nogbmap and littlefs2
@@ -27,15 +42,18 @@ BENCH_SIMS ?= nor
 # override bench rules
 BENCH_RULES ?= \
 	bench-p26-poster-rbyd \
-	bench-p26-poster-btree
+	bench-p26-poster-btree \
+	bench-p26-poster-wt
 # override plot rules
 PLOT_RULES ?= \
 	plot-p26-poster-rbyd \
-	plot-p26-poster-btree
+	plot-p26-poster-btree \
+	plot-p26-poster-wt
 # override tikz rules
 TIKZ_RULES ?= \
 	tikz-p26-poster-rbyd \
-	tikz-p26-poster-btree
+	tikz-p26-poster-btree \
+	tikz-p26-poster-wt
 
 # default Makefile does most of the work
 include Makefile
@@ -48,8 +66,10 @@ bench-p26-poster-rbyd: $(RESULTSDIR)/bench_p26_poster_rbyd.csv
 $(RESULTSDIR)/bench_p26_poster_rbyd.csv: $(BENCH_LFS3NB_RUNNER)
 	$(strip ./scripts/bench.py -R$< -B bench_p26_rbyd \
 		$(BENCHFLAGS) \
+		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_lfs3) \
 		-DSEED="range($(BENCH_SAMPLES))" \
+		-DN=$(BENCH_RBYD_N) \
 		-DREAD_TIME=$(NOR_READ_TIME) \
 		-DPROG_TIME=$(NOR_PROG_TIME) \
 		-DERASE_TIME=$(NOR_ERASE_TIME) \
@@ -62,14 +82,48 @@ bench-p26-poster-btree: $(RESULTSDIR)/bench_p26_poster_btree.csv
 $(RESULTSDIR)/bench_p26_poster_btree.csv: $(BENCH_LFS3NB_RUNNER)
 	$(strip ./scripts/bench.py -R$< -B bench_p26_btree \
 		$(BENCHFLAGS) \
+		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_lfs3) \
 		-DSEED="range($(BENCH_SAMPLES))" \
+		-DN=$(BENCH_BTREE_N) \
 		-DREAD_TIME=$(NOR_READ_TIME) \
 		-DPROG_TIME=$(NOR_PROG_TIME) \
 		-DERASE_TIME=$(NOR_ERASE_TIME) \
 		-DORDER=2 \
 		-DBLOCK_SIZE="$(BENCH_BTREE_BLOCK_SIZES)" \
 		-o$@)
+
+## Run write-throughput benchmarks
+.PHONY: bench-p26-poster-wt
+bench-p26-poster-wt: \
+		$(foreach fs,$(BENCH_FSS),\
+			$(RESULTSDIR)/bench_p26_poster_wt.$(fs).csv)
+
+# $1 - target
+# $2 - fs type/version
+# $3 - block sizes
+define BENCH_P26_POSTER_WT_RULE
+$1: $(BENCH_$(U_$2)_RUNNER)
+	$$(strip ./scripts/bench.py -R$$< -B bench_p26_wt \
+		$(BENCHFLAGS) \
+		-DDISK_SIZE=$(DISK_SIZE) \
+		-DFS=$(N_$2) \
+		-DSEED="range($(BENCH_SAMPLES))" \
+		$(if $(SKIP_WARMUP),-DSKIP_WARMUP=$(SKIP_WARMUP)) \
+		-DSIZE=$(BENCH_WT_SIZE) \
+		-DCHUNK=$(BENCH_WT_CHUNK) \
+		-DSIM_TIME=$(BENCH_SIM_TIME) \
+		-DREAD_TIME=$(NOR_READ_TIME) \
+		-DPROG_TIME=$(NOR_PROG_TIME) \
+		-DERASE_TIME=$(NOR_ERASE_TIME) \
+		-DBLOCK_SIZE="$(or $3,$(BENCH_WT_BLOCK_SIZES))" \
+		-o$$@)
+endef
+
+$(foreach fs,$(BENCH_FSS),$\
+	$(eval $(call BENCH_P26_POSTER_WT_RULE,$\
+		$(RESULTSDIR)/bench_p26_poster_wt.$(fs).csv,$\
+		$(fs))))
 
 
 ## Plot rbyd benchmarks
@@ -185,5 +239,57 @@ $(PLOTSDIR)/bench_p26_poster_btree.svg: \
 			-W0.25" \
 		$(PLOTFLAGS) \
 		-o$@)
+
+## Plot write-throughput benchmarks
+.PHONY: plot-p26-poster-wt
+plot-p26-poster-wt: $(PLOTSDIR)/bench_p26_poster_wt.svg
+
+$(PLOTSDIR)/bench_p26_poster_wt.svg: \
+		$(foreach fs, $(BENCH_FSS), \
+			$(RESULTSDIR)/bench_p26_poster_wt.$(fs).tsim.csv)
+	$(strip ./scripts/plotmpl.py $^ \
+		-W1500 -H350 \
+		--title='file write throughput' \
+		-bFS \
+		-xBLOCK_SIZE \
+		-ybench_readed \
+		-Dm=write+tsim \
+		--subplot=" \
+			-Dcase=bench_p26_wt_linear \
+			--title=linear" \
+		--subplot-right=" \
+			-Dcase=bench_p26_wt_random \
+			--title=random \
+			-W0.5" \
+		--subplot-right=" \
+			-Dcase=bench_p26_wt_many \
+			--title=many \
+			-W0.33" \
+		--subplot-right=" \
+			-Dcase=bench_p26_wt_logging \
+			--title=logging \
+			-W0.25" \
+		--legend \
+		$(foreach fs, $(BENCH_FSS),$\
+			-L'$(N_$(fs))=$(fs)') \
+		$(foreach fs, $(BENCH_FSS),$\
+			-C'$(N_$(fs))=$(C_$(fs))') \
+		$(foreach fs, $(BENCH_FSS),$\
+			-F'$(N_$(fs))=$(addsuffix -,$(F_$(fs)))') \
+		--xlog \
+		--xticks=4 \
+		-X"$(shell python -c $\
+				'a=min([$(BENCH_WT_BLOCK_SIZES)]); print(a-a/4)'),$\
+			$(shell python -c $\
+				'b=max([$(BENCH_WT_BLOCK_SIZES)]); print(b+b/4)')" \
+		--x2 --xunits=B \
+		$(shell python -c '$\
+			for n in [$(BENCH_WT_BLOCK_SIZES)]: $\
+				print("--add-xticklabel=%d=\"%%(x)IB\"" % n)') \
+		--xlabel='block size' \
+		--y2 --yunits=B/s \
+		$(PLOTFLAGS) \
+		-o$@)
+
 
 
