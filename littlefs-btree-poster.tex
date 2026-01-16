@@ -121,10 +121,10 @@
 \block{Problem}{\Large
     \begin{hackize}
         \item Microcontrollers are very small---flash increasingly dense.
-            In modern systems, a single flash block can exceed a device's
-            available RAM.
+            In modern systems, a single flash block risks exceeding a
+            device's available RAM, creating a unique challenge:
         \begin{itemize}
-            \item How do you build a B-tree if you can't fit a block in RAM?
+            \item How do you build a B-tree when you can't fit a block in RAM?
         \end{itemize}
     \end{hackize}
     %
@@ -333,9 +333,11 @@
     \begin{itemize}
         \item Based on red-black trees, but with slightly different coloring
             rules to avoid rotations.
-        \item Instead of rotating, 2-3-4 splits point to existing branches in
-            history.
-        \item Unreachable branches are pruned during later appends.
+        \item Instead of rotating, emulated 2-3-4 splits point to existing
+            branches in history.
+        %\item Unreachable branches are pruned during later appends.
+        \item This introduces unreachable branches, which are pruned during
+            later appends.
     \end{itemize}
     Rbyd B-tree nodes support efficient sparse\slash order-statistic keys:
     \begin{itemize}
@@ -1658,6 +1660,7 @@
     \begin{scope}[
         % override scaling
         bnodewidth/.expanded=1.5*\get{bnodewidth},
+        raltptr/.append style={-{To[scale=1.5*0.5]}},
         % grid stuff
         x=\get{bnodewidth},
         y=\get{bnodeheight},
@@ -1931,38 +1934,50 @@
         %\item When logs are full, logs are compacted into new blocks.
         %    Compaction cost amortized $O(b \log b) \rightarrow O(\log b)$.
         %\item When full, logs are compacted into new blocks in $O(b \log b)$.
-        \item When full, rbyds are compacted into new blocks in $O(b \log b)$.
+        %\item When full, rbyds are compacted into new blocks in $O(b \log b)$.
+        \item When full, rbyds are compacted $O(b \log b)$ into new blocks.
         \item To avoid runaway compactions, nodes split when $\gt b/2$,
-            amortizing compaction cost $O(b \log b) \rightarrow O(\log b)$.
+            amortizing compaction cost
+            $O(b \log b)/O(b/2) \rightarrow O(\log b)$.
     \end{itemize}
 }
 \column{0.31}
 \block{Rebalancing compactions}{\Large
-    \begin{hackize}
+    Naively, rbyd appends result in $O(b \log b)$ storage.
+    To avoid this, rbyds are compacted using a tail-recursive
+    rebalancing algorithm:
+    %\begin{hackize}
         %Naively copying rbyds results in $O(b \log b)$ storage.
-        \item Naively, rbyd appends result in $O(b \log b)$ storage.
-        \item To avoid this, rbyds are compacted using a tail-recursive
-            rebalancing algorithm:
+        %\item Naively, rbyd appends result in $O(b \log b)$ storage.
+        %\item To avoid this, rbyds are compacted using a tail-recursive
+        %    rebalancing algorithm:
         %\item Instead, rbyds are compacted using a tail-recursive
         %    rebalancing algorithm:
-        \begin{itemize}
-            %\item Brings compacted storage cost down
-            %    $O(b \log b) \rightarrow O(b)$.
-            \item Brings compacted storage cost down to $O(b)$.
-            %\item Divides branching factor by a constant, currently {$\sim$}8.
-            \item Divides branching factor by a constant ${\sim}1/8$.
-        \end{itemize}
-    \end{hackize}
+    \begin{itemize}
+        %\item Brings compacted storage cost down
+        %    $O(b \log b) \rightarrow O(b)$.
+        \item Brings compacted storage cost down to $O(b)$.
+        %\item Divides branching factor by a constant, currently {$\sim$}8.
+        %\item Divides branching factor by a constant ${\sim}1/8$.
+        \item Divides branching factor by a constant, currently ${\sim}1/8$
+            over dense arrays.
+    \end{itemize}
+    %\end{hackize}
 }
 \column{0.31}
-\block{Deferred splits/merges}{\Large
-    No reason to split/merge until compaction.
+\block{Deferred splits\slash merges}{\Large
+    No reason to split\slash merge until compaction.
     \begin{itemize}
-        \item Amortizes split/merge checks.
+        \item Amortizes split\slash merge checks.
         % \item Introduces hysterisis, no split{$\leftrightarrow$}merge
         %     oscillation.
-        \item Minimizes split{$\leftrightarrow$}merge oscillation.
-        \item Results in optimal B-tree distribution after
+        %\item Minimizes split{$\leftrightarrow$}merge oscillation.
+        \item Introduces hysterisis, dampening split\slash merges. %oscillation.
+        %\item Results in optimal B-tree distribution after
+        %    sequential writes.
+        %\item Results in optimal leaf distribution after
+        %    sequential writes.
+        \item Results in optimal B-tree leaf distribution after
             sequential writes.
         % \item Optimal B-tree distribution after sequential writes.
     \end{itemize}
@@ -1981,12 +1996,12 @@
             \item Flexibility leads to code reuse (mtree,
                 gbmap). However, upfront cost is high.
         \end{itemize}
-        %\vspace{16pt}
+        \vspace{12pt}
         %\vspace{24pt}
-        \vspace{36pt}
-        %\begin{center}
+        %\vspace{36pt}
+        \begin{tikzfigure}
+            \flushleft
             % Code/RAM sizes
-            % TODO recalculate these?
             \begin{tabular}{l@{\qquad\quad}r@{\quad}r@{\quad}r}
                 \toprule
                 & code & ctx & stack \\
@@ -1996,6 +2011,7 @@
                 \bottomrule
             \end{tabular}
         %\end{center}
+        \end{tikzfigure}
     \end{minipage}
     \quad
     \begin{minipage}[t]{0.75\linewidth}
