@@ -466,6 +466,7 @@
     raltbptr/.style={raltptr},
     raltrptr/.style={raltptr, draw=fgdarkred},
     raltyptr/.style={raltptr, draw=fgdarkyellow},
+    on rtag layer/.style={on above layer},
     % btree styles
     btree/.style 2 args={
         draw,
@@ -989,12 +990,12 @@
         %\node at (#1.center) [rtag] {};
 
         % trunk 0
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r0_0) [rtag, below left=2.5 and 3 of #1] {};
         \end{scope}
 
         % trunk 1
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
         \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
         \end{scope}
@@ -1002,7 +1003,7 @@
         \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
 
         % trunk 2
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
         \node (#1_r2_1) [raltb, above=1 of #1_r2_0] {};
         \node (#1_r2_2) [raltr, above=2 of #1_r2_0] {};
@@ -1013,7 +1014,7 @@
         \draw[raltbptr] (#1_r2_2) -- (#1_r0_0);
 
         % trunk 3
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r3_0) [rtag, right=3 of #1_r0_0] {};
         \node (#1_r3_1) [raltb, above=1 of #1_r3_0] {};
         \node (#1_r3_2) [raltr, above=2 of #1_r3_0] {};
@@ -1027,7 +1028,7 @@
         \draw[raltbptr] (#1_r3_3) -- (#1_r0_0);
 
         % trunk 4
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r4_0) [rtag, right=4 of #1_r0_0] {};
         \node (#1_r4_1) [raltb, above=1 of #1_r4_0] {};
         \node (#1_r4_2) [raltr, above=2 of #1_r4_0] {};
@@ -1041,7 +1042,7 @@
         \draw[raltbptr] (#1_r4_3) -- (#1_r3_3);
 
         % trunk 5
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r5_0) [rtag, right=5 of #1_r0_0] {};
         \node (#1_r5_1) [raltb, above=1 of #1_r5_0] {};
         \node (#1_r5_2) [raltr, above=2 of #1_r5_0] {};
@@ -1058,7 +1059,7 @@
         \draw[raltbptr] (#1_r5_4) -- (#1_r3_3);
 
         % trunk 6
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r6_0) [rtag, right=6 of #1_r0_0] {};
         \node (#1_r6_1) [raltb, above=1 of #1_r6_0] {};
         \node (#1_r6_2) [raltr, above=2 of #1_r6_0] {};
@@ -1092,7 +1093,7 @@
         %\node at (#2.center) [rtag] {};
 
         % trunk 7
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#2_r7_0) [rtag, below=2.5 of #2] {};
         \node (#2_r7_1) [raltb, above=1 of #2_r7_0] {};
         \node (#2_r7_2) [raltr, above=2 of #2_r7_0] {};
@@ -1126,7 +1127,7 @@
         %\node at (#2.center) [rtag] {};
 
         % trunk 7
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#2_r7_0) [rtag, below=2.5 of #2] {};
         \node (#2_r7_1) [raltb, above=1 of #2_r7_0] {};
         \node (#2_r7_2) [raltr, above=2 of #2_r7_0] {};
@@ -1163,7 +1164,7 @@
         %\node at (#2.center) [rtag] {};
 
         % trunk 7
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#2_r7_0) [rtag, below left=2.5 and 0.5 of #2] {};
         \node (#2_r7_1) [raltb, above=1 of #2_r7_0] {};
         \node (#2_r7_2) [raltr, above=2 of #2_r7_0] {};
@@ -1180,7 +1181,7 @@
         \draw[raltbptr] (#2_r7_4) -- (#1_r3_3);
 
         % trunk 8
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#2_r8_0) [rtag, right=1 of #2_r7_0] {};
         \node (#2_r8_1) [raltb, above=1 of #2_r8_0] {};
         \node (#2_r8_2) [raltr, above=2 of #2_r8_0] {};
@@ -1217,12 +1218,12 @@
         %\node at (#1.center) [rtag] {};
 
         % trunk 0
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r0_0) [rtag, below left=2.5 and 3 of #1] {};
         \end{scope}
 
         % trunk 1
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
         \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
         \end{scope}
@@ -1230,12 +1231,12 @@
         \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
 
         % trunk 2
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
         \end{scope}
 
         % trunk 3
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r3_0) [rtag, right=3 of #1_r0_0] {};
         \node (#1_r3_1) [raltb, above=1 of #1_r3_0] {};
         \node (#1_r3_2) [raltb, above=2 of #1_r3_0] {};
@@ -1246,12 +1247,12 @@
         \draw[raltbptr] (#1_r3_2) -- (#1_r1_1);
 
         % trunk 4
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r4_0) [rtag, right=4 of #1_r0_0] {};
         \end{scope}
 
         % trunk 5
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r5_0) [rtag, right=5 of #1_r0_0] {};
         \node (#1_r5_1) [raltb, above=1 of #1_r5_0] {};
         \end{scope}
@@ -1259,7 +1260,7 @@
         \draw[raltbptr] (#1_r5_1) -- (#1_r4_0);
 
         % trunk 6
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r6_0) [rtag, right=6 of #1_r0_0] {};
         \node (#1_r6_1) [raltb, above=1 of #1_r6_0] {};
         \node (#1_r6_2) [raltb, above=2 of #1_r6_0] {};
@@ -1289,12 +1290,12 @@
         %\node at (#1.center) [rtag] {};
 
         % trunk 0
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r0_0) [rtag, below left=2.5 and 1.5 of #1] {};
         \end{scope}
 
         % trunk 1
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
         \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
         \end{scope}
@@ -1302,12 +1303,12 @@
         \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
 
         % trunk 2
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
         \end{scope}
 
         % trunk 3
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r3_0) [rtag, right=3 of #1_r0_0] {};
         \node (#1_r3_1) [raltb, above=1 of #1_r3_0] {};
         \node (#1_r3_2) [raltb, above=2 of #1_r3_0, alias=#1_rroot] {};
@@ -1335,12 +1336,12 @@
         %\node at (#1.center) [rtag] {};
 
         % trunk 0
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r0_0) [rtag, below left=2.5 and 1 of #1] {};
         \end{scope}
 
         % trunk 1
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r1_0) [rtag, right=1 of #1_r0_0] {};
         \node (#1_r1_1) [raltb, above=1 of #1_r1_0] {};
         \end{scope}
@@ -1348,7 +1349,7 @@
         \draw[raltbptr] (#1_r1_1) -- (#1_r0_0);
 
         % trunk 2
-        \begin{scope}[on above layer]
+        \begin{scope}[on rtag layer]
         \node (#1_r2_0) [rtag, right=2 of #1_r0_0] {};
         \node (#1_r2_1) [raltb, above=1 of #1_r2_0] {};
         \node (#1_r2_2) [raltb, above=2 of #1_r2_0, alias=#1_rroot] {};
@@ -1413,8 +1414,8 @@
             minimum width=0.5*\get{bnodewidth},
             draw=none,
         ] {};
-        \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
-            (#1_b1_0.south west) rectangle (#1_b1_1.north east);
+        \fill[fglightblue!50!bg]
+            (#1_b1_0.south east) rectangle (#1_b1_1.north west);
         \draw[boutline]
             (#1_b1_0.north east)
             -- (#1_b1_0.north west)
@@ -1437,8 +1438,8 @@
             minimum width=0.5*\get{bnodewidth},
             draw=none,
         ] {};
-        \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
-            (#1_b0_0.south west) rectangle (#1_b0_1.north east);
+        \fill[fglightblue!50!bg]
+            (#1_b0_0.south east) rectangle (#1_b0_1.north west);
         \draw[boutline]
             (#1_b0_0.north east)
             -- (#1_b0_0.north west)
@@ -1514,8 +1515,8 @@
             minimum width=0.5*\get{bnodewidth},
             draw=none,
         ] {};
-        \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
-            (#1_b1_0.south west) rectangle (#1_b1_1.north east);
+        \fill[fglightblue!50!bg]
+            (#1_b1_0.south east) rectangle (#1_b1_1.north west);
         \draw[boutline]
             (#1_b1_0.north east)
             -- (#1_b1_0.north west)
@@ -1600,8 +1601,8 @@
             minimum width=0.5*\get{bnodewidth},
             draw=none,
         ] {};
-        \scoped[on behind layer] \draw[fill=fglightblue!50!bg]
-            (#1_b1_0.south west) rectangle (#1_b1_1.north east);
+        \fill[fglightblue!50!bg]
+            (#1_b1_0.south east) rectangle (#1_b1_1.north west);
         \draw[boutline]
             (#1_b1_0.north east)
             -- (#1_b1_0.north west)
@@ -1655,6 +1656,9 @@
         y=\get{bnodeheight},
         node distance=1,
         on grid,
+        % move to low-priority layer
+        on behind layer,
+        on rtag layer/.style={on layer=above behind},
     ]
         % B-tree nodes
         \node (#1_b0_0) [btree, #2, anchor=south west] {};
@@ -1741,8 +1745,9 @@
             (#1_b0_10_rroot);
 
         % forcefully clip the last extra node so it fits
-        \fill[overlay, bg] ({\linewidth-\get{boffset}}, -0.25)
-            rectangle ({\linewidth+0.5*\get{bnodewidth}}, 1.25);
+        \scoped[on layer=above behind]
+        \fill[overlay, bg] ({\linewidth-\get{boffset}}, -0.125)
+            rectangle ({\linewidth+0.5*\get{bnodewidth}}, 1.125);
 
     \end{scope}
 }
@@ -1775,7 +1780,11 @@
         \rlog{rlog}{right=0.5*\get{rbydwidth} of rorigin};
         \rbyd{rbyd}{right=1.5*\get{rbydwidth} of rorigin};
         \rtree{rtree}{right=2.5*\get{rbydwidth} of rorigin};
+        \scoped[on above layer] % force 2-3-4 tree on top of split bubble
         \riiiiiiv{riiiiiiv}{right=3.5*\get{rbydwidth} of rorigin};
+        \scoped[on layer=behind above] % force clip split bubble
+        \fill[overlay, bg] ($(riiiiiiv_r0_6.south west)-(0,0.33em)$)
+            rectangle ($(riiiiiiv_r0_6.north east)+(0.33em,0.33em)$);
 
         \draw[rbydbubbleptr] (rlog_rtrunk) -- (rbyd_rtrunk);
         \draw[rbydbubbleptr] (rbyd_rtrunk) -- (rtree_rtrunk);

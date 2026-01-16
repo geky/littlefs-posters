@@ -41,14 +41,24 @@
 \RequirePackage{tabularx}
 \RequirePackage{multirow}
 
+% need more layers!
+\pgfdeclarelayer{behind behind}
+\pgfdeclarelayer{above behind}
+\pgfdeclarelayer{behind above}
+\pgfdeclarelayer{above above}
+
 % give ourselves a few more layers, requires some fudging with tikzposter
 \RequirePackage{tikz-layers}
 \pgfsetlayers{
     backgroundlayer, % tikzposter
     background, % tikz-layers
+    behind behind,
     behind, % tikz-layers
+    above behind,
     main,
+    behind above,
     above, % tikz-layers
+    above above,
     glass, % tikz-layers
     notelayer % tikzposter
 }
