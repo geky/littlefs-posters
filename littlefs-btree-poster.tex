@@ -1894,21 +1894,21 @@
 
 
 % Results
-\block{Simulated results}{\Large
-    \begin{minipage}[t]{0.25\linewidth}
+\block{Simulated results (NOR flash)}{\Large
+    \begin{minipage}[t]{0.23\linewidth}
         \vspace{0pt}
         Implemented in littlefs3 (unstable):
         \begin{itemize}
             \item Replaces append-only CTZ skip-lists.
             \item Provides efficient random writes.
             \item Flexibility leads to code reuse (mtree,
-                block map). However, upfront cost is high.
+                gbmap). However, upfront cost is high.
         \end{itemize}
         \vspace{16pt}
         \begin{center}
             % Code/RAM sizes
             % TODO recalculate these?
-            \begin{tabular}{l@{\qquad}r@{\quad}r@{\quad}r}
+            \begin{tabular}{l@{\qquad\quad}r@{\quad}r@{\quad}r}
                 \toprule
                 & code & ctx & stack \\
                 \midrule
