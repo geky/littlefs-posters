@@ -6,52 +6,9 @@
 #include "benches/bench_helpers.h"
 
 
-
-// get simulated time in nanoseconds since start of bench
-//
-// this is derived form the current read/prog/erase ops
-uint64_t bench_helpers_simtime(const struct lfs3_cfg *cfg) {
-    uint64_t time = 0;
-    #ifdef BENCH_KIWIBD
-    time += lfs3_kiwibd_readed(cfg) * READ_TIME;
-    time += lfs3_kiwibd_proged(cfg) * PROG_TIME;
-    time += lfs3_kiwibd_erased(cfg) * ERASE_TIME;
-    #else
-    time += lfs3_emubd_readed(cfg) * READ_TIME;
-    time += lfs3_emubd_proged(cfg) * PROG_TIME;
-    time += lfs3_emubd_erased(cfg) * ERASE_TIME;
-    #endif
-    return time;
-}
-
-// reset the current time
-//
-// yes this just resets emubd/kiwibd's read/prog/erase trackers
-void bench_helpers_simreset(const struct lfs3_cfg *cfg) {
-    #ifdef BENCH_KIWIBD
-    lfs3_kiwibd_setreaded(cfg, 0);
-    lfs3_kiwibd_setproged(cfg, 0);
-    lfs3_kiwibd_seterased(cfg, 0);
-    #else
-    lfs3_emubd_setreaded(cfg, 0);
-    lfs3_emubd_setproged(cfg, 0);
-    lfs3_emubd_seterased(cfg, 0);
-    #endif
-}
-
-// is the current bench stuck? not making progress?
-bool bench_helpers_simstuck(const struct lfs3_cfg *cfg, uint64_t n) {
-    // ok if we've read/progged more than 4x the runtime we're
-    // definitely stuck, note these aren't even the same units
-    uint64_t time = bench_helpers_simtime(cfg);
-    if (n > 4*time) {
-        LFS3_WARN("uh oh, sim is stuck! %jd > 4 * %jd", n, time);
-        return true;
-    }
-
-    return false;
-}
-
+// allow benches to skip warmup, but default to warming up
+__attribute__((weak))
+intmax_t SKIP_WARMUP = false;
 
 
 // warm up the filesystem
@@ -194,7 +151,7 @@ static int bench_helpers_usage_cb(void *ctx, lfs3_block_t block) {
 }
 #endif
 
-// find disk usage
+// find tight disk usage
 //
 // this is a bit different for each filesystem
 //

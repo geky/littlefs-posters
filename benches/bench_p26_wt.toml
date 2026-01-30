@@ -18,6 +18,8 @@ defines.FILE_COUNT = '(SIZE+(FILE_SIZE-1)) / lfs3_max(FILE_SIZE, 1)'
 defines.SIM_TIME = '60000000000ULL' # 1 minute
 # simulation size in bytes
 defines.SIM_SIZE = 0
+# set this to true to skip bench warmup
+defines.SKIP_WARMUP = false
 
 # don't fruncate, this is logging specific
 defines.NO_FRUNCATE = 0
@@ -83,10 +85,10 @@ code = '''
     uint32_t prng = SEED;
 
     // reset our timer
-    bench_helpers_simreset(CFG);
+    lfs3_kiwibd_simreset(CFG);
 
     // open a file
-    BENCH_START("write", 0);
+    BENCH_START("write");
     #if defined(LFS3)
     lfs3_file_t file;
     lfs3_file_open(&lfs3, &file, "bench_linear",
@@ -105,10 +107,8 @@ code = '''
     #endif
     lfs3_off_t size = 0;
     uint64_t written = 0;
-    while (!(SIM_SIZE
-                && written >= (uint64_t)SIM_SIZE)
-            && !(SIM_TIME
-                && bench_helpers_simtime(CFG) >= (uint64_t)SIM_TIME)) {
+    while (!(SIM_SIZE && written >= (uint64_t)SIM_SIZE)
+            && !(SIM_TIME && lfs3_kiwibd_simtime(CFG) >= SIM_TIME)) {
         // arguably we should just rewind and continue writing to the
         // front of the file when we hit the end, but this overly
         // penalizes littlefs2, so instead we truncate
@@ -146,11 +146,6 @@ code = '''
 
         size += CHUNK;
         written += CHUNK;
-
-        // bail if we get stuck
-        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
-            return;
-        }
     }
     #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
@@ -161,17 +156,11 @@ code = '''
     #elif defined(YAFFS2)
     yaffs_close(fd) => 0;
     #endif
-    BENCH_STOP("write");
-
-    // it's a bit awkward, but this reports the amount written to
-    // result scripts
-    // TODO we should really move n to BENCH_STOP
-    BENCH_START("write", written);
-    BENCH_STOP("write");
+    // report the amount we managed to write
+    BENCH_STOP("write", written);
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
-    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
 
     // find the total disk usage after the benchmark
@@ -255,10 +244,10 @@ code = '''
     uint32_t prng = SEED;
 
     // reset our timer
-    bench_helpers_simreset(CFG);
+    lfs3_kiwibd_simreset(CFG);
 
     // open a file
-    BENCH_START("write", 0);
+    BENCH_START("write");
     #if defined(LFS3)
     lfs3_file_t file;
     lfs3_file_open(&lfs3, &file, "bench_random",
@@ -277,10 +266,8 @@ code = '''
     #endif
     lfs3_off_t size = 0;
     uint64_t written = 0;
-    while (!(SIM_SIZE
-                && written >= (uint64_t)SIM_SIZE)
-            && !(SIM_TIME
-                && bench_helpers_simtime(CFG) >= (uint64_t)SIM_TIME)) {
+    while (!(SIM_SIZE && written >= (uint64_t)SIM_SIZE)
+            && !(SIM_TIME && lfs3_kiwibd_simtime(CFG) >= SIM_TIME)) {
         // seek to a random location
         lfs3_off_t pos = BENCH_PRNG(&prng) % SIZE;
         #if defined(LFS3)
@@ -317,11 +304,6 @@ code = '''
 
         size = lfs3_max(size, pos + CHUNK);
         written += CHUNK;
-
-        // bail if we get stuck
-        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
-            return;
-        }
     }
     #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
@@ -332,17 +314,11 @@ code = '''
     #elif defined(YAFFS2)
     yaffs_close(fd) => 0;
     #endif
-    BENCH_STOP("write");
-
-    // it's a bit awkward, but this reports the amount written to
-    // result scripts
-    // TODO we should really move n to BENCH_STOP
-    BENCH_START("write", written);
-    BENCH_STOP("write");
+    // report the amount we managed to write
+    BENCH_STOP("write", written);
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
-    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
 
     // find the total disk usage after the benchmark
@@ -431,15 +407,13 @@ code = '''
     uint32_t prng = SEED;
 
     // reset our timer
-    bench_helpers_simreset(CFG);
+    lfs3_kiwibd_simreset(CFG);
 
     // open a file
-    BENCH_START("write", 0);
+    BENCH_START("write");
     uint64_t written = 0;
-    while (!(SIM_SIZE
-                && written >= (uint64_t)SIM_SIZE)
-            && !(SIM_TIME
-                && bench_helpers_simtime(CFG) >= (uint64_t)SIM_TIME)) {
+    while (!(SIM_SIZE && written >= (uint64_t)SIM_SIZE)
+            && !(SIM_TIME && lfs3_kiwibd_simtime(CFG) >= SIM_TIME)) {
         // choose a random filename
         lfs3_off_t pos = BENCH_PRNG(&prng) % FILE_COUNT;
         char name[256];
@@ -489,8 +463,7 @@ code = '''
             written += d;
 
             // taking too long?
-            if (SIM_TIME
-                    && bench_helpers_simtime(CFG) >= (uint64_t)SIM_TIME) {
+            if (SIM_TIME && lfs3_kiwibd_simtime(CFG) >= SIM_TIME) {
                 break;
             }
         }
@@ -509,23 +482,12 @@ code = '''
         #elif defined(YAFFS2)
         yaffs_close(fd) => 0;
         #endif
-
-        // bail if we get stuck
-        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
-            return;
-        }
     }
-    BENCH_STOP("write");
-
-    // it's a bit awkward, but this reports the amount written to
-    // result scripts
-    // TODO we should really move n to BENCH_STOP
-    BENCH_START("write", written);
-    BENCH_STOP("write");
+    // report the amount we managed to write
+    BENCH_STOP("write", written);
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
-    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
 
     // find the total disk usage after the benchmark
@@ -610,10 +572,10 @@ code = '''
     uint32_t prng = SEED;
 
     // reset our timer
-    bench_helpers_simreset(CFG);
+    lfs3_kiwibd_simreset(CFG);
 
     // open a file
-    BENCH_START("write", 0);
+    BENCH_START("write");
     #if defined(LFS3)
     lfs3_file_t file;
     lfs3_file_open(&lfs3, &file, "bench_log",
@@ -632,10 +594,8 @@ code = '''
     assert(fd >= 0);
     #endif
     uint64_t written = 0;
-    while (!(SIM_SIZE
-                && written >= (uint64_t)SIM_SIZE)
-            && !(SIM_TIME
-                && bench_helpers_simtime(CFG) >= (uint64_t)SIM_TIME)) {
+    while (!(SIM_SIZE && written >= (uint64_t)SIM_SIZE)
+            && !(SIM_TIME && lfs3_kiwibd_simtime(CFG) >= SIM_TIME)) {
         // append to log
         uint8_t wbuf[CHUNK];
         for (lfs3_size_t j = 0; j < CHUNK; j++) {
@@ -723,11 +683,6 @@ code = '''
         #endif
 
         written += CHUNK;
-
-        // bail if we get stuck
-        if (!SIM_SIZE && bench_helpers_simstuck(CFG, written)) {
-            return;
-        }
     }
     #if defined(LFS3)
     lfs3_file_close(&lfs3, &file) => 0;
@@ -738,17 +693,11 @@ code = '''
     #elif defined(YAFFS2)
     yaffs_close(fd) => 0;
     #endif
-    BENCH_STOP("write");
-
-    // it's a bit awkward, but this reports the amount written to
-    // result scripts
-    // TODO we should really move n to BENCH_STOP
-    BENCH_START("write", written);
-    BENCH_STOP("write");
+    // report the amount we managed to write
+    BENCH_STOP("write", written);
 
     // report the total stack/heap usage after the benchmark
     BENCH_RESULT("stack", written, BENCH_STACK());
-    BENCH_RESULT("ctx", written, BENCH_CTX());
     BENCH_RESULT("heap", written, BENCH_HEAP());
 
     // find the total disk usage after the benchmark

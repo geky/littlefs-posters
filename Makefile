@@ -75,6 +75,17 @@ endif
 # these estimates are at the byte-level, so the block size doesn't
 # actual change anything
 #
+# readed=31ns/B taken from w25n01gv, read time
+# progged=156ns/B taken from w25n01gv, prog time + erase time
+# erased=0ns/B noop
+#
+# reads=15872ns taken from w25n01gv (31 ns/B * 512)
+# progs=79872ns taken from w25n01gv (156 ns/B * 512)
+# erases=0ns noop
+# readed=0ns/B (no per-byte cost)
+# progged=0ns/B (no per-byte cost)
+# erased=0ns/B noop
+#
 EMMC_READ_SIZE  ?= 512
 EMMC_PROG_SIZE  ?= 512
 EMMC_ERASE_SIZE ?= 512
@@ -83,16 +94,42 @@ EMMC_LFS3NB_BLOCK_SIZE ?= 512
 EMMC_LFS2_BLOCK_SIZE ?= 512
 EMMC_SPIFFS_BLOCK_SIZE ?= 1024
 EMMC_YAFFS2_BLOCK_SIZE ?= 1024
-EMMC_READ_TIME  ?= 31   # taken from w25n01gv, read time
-EMMC_PROG_TIME  ?= 156  # taken from w25n01gv, prog time + erase time
-EMMC_ERASE_TIME ?= 0    # noop
+ifdef SIMPLE
+EMMC_READS_TIMING   ?= 0
+EMMC_PROGS_TIMING   ?= 0
+EMMC_ERASES_TIMING  ?= 0
+EMMC_READED_TIMING  ?= 31
+EMMC_PROGGED_TIMING ?= 156
+EMMC_ERASED_TIMING  ?= 0
+else
+EMMC_READS_TIMING   ?= 15872
+EMMC_PROGS_TIMING   ?= 79872
+EMMC_ERASES_TIMING  ?= 0
+EMMC_READED_TIMING  ?= 0
+EMMC_PROGGED_TIMING ?= 0
+EMMC_ERASED_TIMING  ?= 0
+endif
 
 # nor flash - based on w25q64jv
 #
-# https://www.winbond.com/resource-files/W25Q256JV%20SPI%20RevQ%2002072025%20Plus.pdf
+# https://www.winbond.com/resource-files/
+# W25Q256JV%20SPI%20RevQ%2002072025%20Plus.pdf
+#
+# note one thing unique to NOR flash is the extreme erase cost
 #
 # FR=104 MHz, quad prog (9.6 ns * 8/4)
 # => +~19 ns for bus (not read!)
+#
+# readed=40ns/B fR=50 MHz, quad read (20 ns * 8/4)
+# progged=1582ns/B tPP=0.4 ms, page=256 (0.4 ms / 256 + bus)
+# erased=10986ns/B tSE=45 ms, sector=4096 (45 ms / 4096)
+#
+# reads=0ns (no transaction cost)
+# progs=400000ns tPP=0.4 ms, page=256
+# erases=45000000ns tSE=45 ms, sector=4096
+# readed=40ns/B fR=50 MHz, quad read (20 ns * 8/4)
+# progged=1484ns/B tPP=0.4 ms (((4096/256)*0.4ms - 0.4ms)/4096 + bus)
+# erased=0ns/B (no per-byte cost)
 #
 NOR_READ_SIZE  ?= 1
 NOR_PROG_SIZE  ?= 1
@@ -102,9 +139,21 @@ NOR_LFS3NB_BLOCK_SIZE ?= 4096
 NOR_LFS2_BLOCK_SIZE ?= 4096
 NOR_SPIFFS_BLOCK_SIZE ?= 4096
 NOR_YAFFS2_BLOCK_SIZE ?= 4096
-NOR_READ_TIME  ?= 40    # fR=50 MHz, quad read (20 ns * 8/4)
-NOR_PROG_TIME  ?= 1582  # tPP=0.4 ms, page=256 (0.4 ms / 256 + bus)
-NOR_ERASE_TIME ?= 10986 # tSE=45 ms, sector=4096 (45 ms / 4096)
+ifdef SIMPLE
+NOR_READS_TIMING   ?= 0
+NOR_PROGS_TIMING   ?= 0
+NOR_ERASES_TIMING  ?= 0
+NOR_READED_TIMING  ?= 40
+NOR_PROGGED_TIMING ?= 1582
+NOR_ERASED_TIMING  ?= 10986
+else
+NOR_READS_TIMING   ?= 0
+NOR_PROGS_TIMING   ?= 400000
+NOR_ERASES_TIMING  ?= 45000000
+NOR_READED_TIMING  ?= 40
+NOR_PROGGED_TIMING ?= 1484
+NOR_ERASED_TIMING  ?= 0
+endif
 
 # nand flash - based on w25n01gv
 #
@@ -112,6 +161,17 @@ NOR_ERASE_TIME ?= 10986 # tSE=45 ms, sector=4096 (45 ms / 4096)
 #
 # FR=104 MHz, quad read/prog (9.6 ns * 8/4)
 # => +~19 ns for bus
+#
+# readed=31ns/B tRD1=25 us, p=2048, s=512 (25 us / 2048 + bus)
+# progged=141ns/B tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
+# erased=15ns/B tBE=2 ms, block=131072 (2 ms / 131072)
+#
+# reads=25000ns tRD1=25 us, p=2048, s=512
+# progs=250000ns tPP=250 us, p=2048, s=512
+# erases=2000000ns tBE=2 ms, block=131072
+# readed=31ns/B tRD1=25 us (((131072/2048)*25us - 25us)/131072 + bus)
+# progged=139ns/B tPP=250 us (((131072/2048)*250us - 250us)/131072 + bus)
+# erased=0ns/B (no per-byte cost)
 #
 NAND_READ_SIZE  ?= 1
 NAND_PROG_SIZE  ?= 512
@@ -121,9 +181,21 @@ NAND_LFS3NB_BLOCK_SIZE ?= 131072
 NAND_LFS2_BLOCK_SIZE ?= 131072
 NAND_SPIFFS_BLOCK_SIZE ?= 131072
 NAND_YAFFS2_BLOCK_SIZE ?= 131072
-NAND_READ_TIME  ?= 31     # tRD1=25 us, p=2048, s=512 (25 us / 2048 + bus)
-NAND_PROG_TIME  ?= 141    # tPP=250 us, p=2048, s=512 (250 us / 2048 + bus)
-NAND_ERASE_TIME ?= 15     # tBE=2 ms, block=131072 (2 ms / 131072)
+ifdef SIMPLE
+NAND_READS_TIMING   ?= 0
+NAND_PROGS_TIMING   ?= 0
+NAND_ERASES_TIMING  ?= 0
+NAND_READED_TIMING  ?= 31
+NAND_PROGGED_TIMING ?= 141
+NAND_ERASED_TIMING  ?= 15
+else
+NAND_READS_TIMING   ?= 25000
+NAND_PROGS_TIMING   ?= 250000
+NAND_ERASES_TIMING  ?= 2000000
+NAND_READED_TIMING  ?= 31
+NAND_PROGGED_TIMING ?= 139
+NAND_ERASED_TIMING  ?= 0
+endif
 
 
 # filesystems to measure code size
@@ -179,8 +251,8 @@ CODEMAP_LFS3_CI  := $(CODEMAP_LFS3_OBJ:.o=.ci)
 BENCH_LFS3_SRC ?= \
 		$(CODEMAP_LFS3_SRC) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard runners/bench_*.c)) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard benches/*.c))
 BENCH_LFS3_B   := \
 		$(BENCH_LFS3_SRC:%.c=$(BUILDDIR)/%.b.c) \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
@@ -211,8 +283,8 @@ CODEMAP_LFS2_CI  := $(CODEMAP_LFS2_OBJ:.o=.ci)
 BENCH_LFS2_SRC ?= \
 		$(CODEMAP_LFS2_SRC) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard runners/bench_*.c)) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard benches/*.c))
 BENCH_LFS2_B   := \
 		$(BENCH_LFS2_SRC:%.c=$(BUILDDIR)/%.b.c) \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
@@ -240,8 +312,8 @@ CODEMAP_SPIFFS_CI  := $(CODEMAP_SPIFFS_OBJ:.o=.ci)
 BENCH_SPIFFS_SRC ?= \
 		$(CODEMAP_SPIFFS_SRC) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard runners/bench_*.c)) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard benches/*.c))
 BENCH_SPIFFS_B   := \
 		$(BENCH_SPIFFS_SRC:%.c=$(BUILDDIR)/%.b.c) \
 		$(BENCHES:%.toml=$(BUILDDIR)/%.b.c)
@@ -305,13 +377,13 @@ CODEMAP_YAFFS2_CI   := $(CODEMAP_YAFFS2_OBJ:.o=.ci)
 BENCH_YAFFS2_SRC  ?= \
 		$(CODEMAP_YAFFS2_SRC) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard runners/bench_*.c)) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard benches/*.c))
 BENCH_YAFFS2_SRC_ := \
 		$(CODEMAP_YAFFS2_SRC_) \
 		$(filter-out %.t.c %.b.c %.a.c,$(wildcard bd/*.c)) \
-		runners/bench_runner.c \
-		benches/bench_helpers.c
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard runners/bench_*.c)) \
+		$(filter-out %.t.c %.b.c %.a.c,$(wildcard benches/*.c))
 BENCH_YAFFS2_B 	  := \
 		$(patsubst %.c,$(BUILDDIR)/%.b.c,\
 			$(filter-out $(BUILDDIR)/%,$(BENCH_YAFFS2_SRC_))) \
@@ -364,7 +436,10 @@ CFLAGS += -Wno-format-overflow
 # compiler bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101854
 CFLAGS += -Wno-stringop-overflow
 CFLAGS += -ftrack-macro-expansion=0
+# enable stack measurements
+CFLAGS += -DBENCH_YES_STACK
 # wrap malloc/free/realloc for heap measurements
+CFLAGS += -DBENCH_YES_HEAP
 CFLAGS += -Wl,--wrap=malloc
 CFLAGS += -Wl,--wrap=free
 CFLAGS += -Wl,--wrap=realloc
@@ -639,11 +714,12 @@ $(foreach fs, $(CODEMAP_FSS), \
 		$(BUILDDIR)/%.c,$\
 		$(fs))))
 
-$(foreach fs, $(BENCH_RUNNER_FSS), \
-	$(eval $(call BENCH_O_RULE,$\
-		$(BUILDDIR)/%.$(fs).b.o $(BUILDDIR)/%.$(fs).b.ci,$\
-		%.b.c,$\
-		$(fs))))
+# try not to drag in build artifacts from sources
+#$(foreach fs, $(BENCH_RUNNER_FSS), \
+#	$(eval $(call BENCH_O_RULE,$\
+#		$(BUILDDIR)/%.$(fs).b.o $(BUILDDIR)/%.$(fs).b.ci,$\
+#		%.b.c,$\
+#		$(fs))))
 
 $(foreach fs, $(BENCH_RUNNER_FSS), \
 	$(eval $(call BENCH_O_RULE,$\
@@ -651,11 +727,12 @@ $(foreach fs, $(BENCH_RUNNER_FSS), \
 		$(BUILDDIR)/%.b.c,$\
 		$(fs))))
 
-$(foreach fs, $(BENCH_RUNNER_FSS), \
-	$(eval $(call BENCH_O_RULE,$\
-		$(BUILDDIR)/%.$(fs).b.a.o $(BUILDDIR)/%.$(fs).b.a.ci,$\
-		%.b.a.c,$\
-		$(fs))))
+# try not to drag in build artifacts from sources
+#$(foreach fs, $(BENCH_RUNNER_FSS), \
+#	$(eval $(call BENCH_O_RULE,$\
+#		$(BUILDDIR)/%.$(fs).b.a.o $(BUILDDIR)/%.$(fs).b.a.ci,$\
+#		%.b.a.c,$\
+#		$(fs))))
 
 $(foreach fs, $(BENCH_RUNNER_FSS), \
 	$(eval $(call BENCH_O_RULE,$\
@@ -694,8 +771,9 @@ $(BUILDDIR)/%.s: %.c
 $(BUILDDIR)/%.s: $(BUILDDIR)/%.c
 	$(CC) -S $(CFLAGS) $< -o$@
 
-$(BUILDDIR)/%.a.c: %.c
-	$(PRETTYASSERTS) -Plfs_ -Plfs1_ -Plfs2_ -Plfs3_ $< -o$@
+# try not to drag in build artifacts from sources
+#$(BUILDDIR)/%.a.c: %.c
+#	$(PRETTYASSERTS) -Plfs_ -Plfs1_ -Plfs2_ -Plfs3_ $< -o$@
 
 $(BUILDDIR)/%.a.c: $(BUILDDIR)/%.c
 	$(PRETTYASSERTS) -Plfs_ -Plfs1_ -Plfs2_ -Plfs3_ $< -o$@

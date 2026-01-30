@@ -21,6 +21,8 @@ BENCH_WT_SIZE ?= 2097152 # 2 MiB
 # how big a chunk to write?
 BENCH_WT_CHUNK ?= 64
 
+# stick to a simple simulation for now
+SIMPLE ?= 1
 # how many samples?
 ifdef PRECISE
 SAMPLES ?= 16
@@ -85,9 +87,12 @@ $(RESULTSDIR)/bench_p26_poster_rbyd.csv: $(BENCH_LFS3NB_RUNNER)
 		-DFS=$(N_lfs3) \
 		-DSEED="range($(SAMPLES))" \
 		-DN=$(BENCH_RBYD_N) \
-		-DREAD_TIME=$(NOR_READ_TIME) \
-		-DPROG_TIME=$(NOR_PROG_TIME) \
-		-DERASE_TIME=$(NOR_ERASE_TIME) \
+		-DREADS_TIMING=$(NOR_READS_TIMING) \
+		-DPROGS_TIMING=$(NOR_PROGS_TIMING) \
+		-DERASES_TIMING=$(NOR_ERASES_TIMING) \
+		-DREADED_TIMING=$(NOR_READED_TIMING) \
+		-DPROGGED_TIMING=$(NOR_PROGGED_TIMING) \
+		-DERASED_TIMING=$(NOR_ERASED_TIMING) \
 		-o$@)
 
 ## Run btree benchmarks
@@ -101,9 +106,12 @@ $(RESULTSDIR)/bench_p26_poster_btree.csv: $(BENCH_LFS3NB_RUNNER)
 		-DFS=$(N_lfs3) \
 		-DSEED="range($(SAMPLES))" \
 		-DN=$(BENCH_BTREE_N) \
-		-DREAD_TIME=$(NOR_READ_TIME) \
-		-DPROG_TIME=$(NOR_PROG_TIME) \
-		-DERASE_TIME=$(NOR_ERASE_TIME) \
+		-DREADS_TIMING=$(NOR_READS_TIMING) \
+		-DPROGS_TIMING=$(NOR_PROGS_TIMING) \
+		-DERASES_TIMING=$(NOR_ERASES_TIMING) \
+		-DREADED_TIMING=$(NOR_READED_TIMING) \
+		-DPROGGED_TIMING=$(NOR_PROGGED_TIMING) \
+		-DERASED_TIMING=$(NOR_ERASED_TIMING) \
 		-DORDER=2 \
 		-DBLOCK_SIZE="$(BENCH_BTREE_BLOCK_SIZES)" \
 		-o$@)
@@ -131,9 +139,12 @@ $1: $(BENCH_$(U_$2)_RUNNER)
 		-DSIZE=$(BENCH_WT_SIZE) \
 		-DCHUNK=$(BENCH_WT_CHUNK) \
 		-DSIM_TIME=$(SIM_TIME) \
-		-DREAD_TIME=$(NOR_READ_TIME) \
-		-DPROG_TIME=$(NOR_PROG_TIME) \
-		-DERASE_TIME=$(NOR_ERASE_TIME) \
+		-DREADS_TIMING=$(NOR_READS_TIMING) \
+		-DPROGS_TIMING=$(NOR_PROGS_TIMING) \
+		-DERASES_TIMING=$(NOR_ERASES_TIMING) \
+		-DREADED_TIMING=$(NOR_READED_TIMING) \
+		-DPROGGED_TIMING=$(NOR_PROGGED_TIMING) \
+		-DERASED_TIMING=$(NOR_ERASED_TIMING) \
 		-DBLOCK_SIZE="$(or $3,$(BENCH_WT_BLOCK_SIZES))" \
 		-o$$@)
 endef
@@ -148,57 +159,84 @@ $(foreach fs,$(BENCH_FSS),$\
 .PHONY: plot-p26-poster-rbyd
 plot-p26-poster-rbyd: $(PLOTSDIR)/bench_p26_poster_rbyd.svg
 
-$(PLOTSDIR)/bench_p26_poster_rbyd.svg: \
-		$(RESULTSDIR)/bench_p26_poster_rbyd.avg.csv \
-		$(RESULTSDIR)/bench_p26_poster_rbyd.per.avg.csv \
-		$(RESULTSDIR)/bench_p26_poster_rbyd.sim.avg.csv \
-		$(RESULTSDIR)/bench_p26_poster_rbyd.sim.per.avg.csv
-	$(strip ./scripts/plotmpl.py \
+$(PLOTSDIR)/bench_p26_poster_rbyd.csv: \
+		$(RESULTSDIR)/bench_p26_poster_rbyd.csv
+	$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $^ \
-			-fbench_readed_avg \
-			-fbench_readed_bnd=bench_readed_max \
+			-Dprobe=create,delete,lookup \
+			-bprobe -bORDER -bn -bSEED \
+			-fbench_simtime='float(bench_simtime)/1.0e9' \
 			-o-) \
 		<(./scripts/csv.py $^ \
-			-Dbench_readed_avg='*' \
-			-fbench_readed_bnd=bench_readed_min \
+			-Dprobe=fetch \
+			-bprobe='%(probe)s+per' -bORDER -bn -bSEED \
+			-fbench_simtime='float(bench_simtime)/1.0e9/float(n)' \
+			-o-) \
+		<(./scripts/csv.py $^ \
+			-Dprobe=usage \
+			-bprobe='%(probe)s+per' -bORDER -bn -bSEED \
+			-fbench_simtime='float(bench_simtime)/float(n)' \
+			-o-) \
+		-fbench_simtime \
+		-o$@)
+
+$(PLOTSDIR)/bench_p26_poster_rbyd.avg.csv: \
+		$(PLOTSDIR)/bench_p26_poster_rbyd.csv
+	$(strip ./scripts/csv.py $^ \
+		-DSEED='*' \
+		-fbench_simtime_avg='avg(bench_simtime)' \
+		-fbench_simtime_min='min(bench_simtime)' \
+		-fbench_simtime_max='max(bench_simtime)' \
+		-o$@)
+
+$(PLOTSDIR)/bench_p26_poster_rbyd.svg: \
+		$(PLOTSDIR)/bench_p26_poster_rbyd.avg.csv
+	$(strip ./scripts/plotmpl.py \
+		<(./scripts/csv.py $^ \
+			-fbench_simtime_avg \
+			-fbench_simtime_bnd=bench_simtime_max \
+			-o-) \
+		<(./scripts/csv.py $^ \
+			-Dbench_simtime_avg='*' \
+			-fbench_simtime_bnd=bench_simtime_min \
 			-o-) \
 		-W1500 -H350 \
 		--title='rbyd operations' \
 		-bORDER \
 		-xn \
-		-ybench_readed_avg \
-		-ybench_readed_bnd \
+		-ybench_simtime_avg \
+		-ybench_simtime_bnd \
 		--yunits=s \
 		--legend \
-		-L0,bench_readed_avg=inorder \
-		-L1,bench_readed_avg=reversed \
-		-L2,bench_readed_avg=random \
-		-L0,bench_readed_bnd= \
-		-L1,bench_readed_bnd= \
-		-L2,bench_readed_bnd= \
-		-C0,bench_readed_avg=$(C_lfs3) \
-		-C1,bench_readed_avg=$(C_lfs3nb) \
-		-C2,bench_readed_avg=$(C_lfs2) \
-		-C0,bench_readed_bnd=$(C_lfs3:bf=1f) \
-		-C1,bench_readed_bnd=$(C_lfs3nb:bf=1f) \
-		-C2,bench_readed_bnd=$(C_lfs2:bf=1f) \
+		-L0,bench_simtime_avg=inorder \
+		-L1,bench_simtime_avg=reversed \
+		-L2,bench_simtime_avg=random \
+		-L0,bench_simtime_bnd= \
+		-L1,bench_simtime_bnd= \
+		-L2,bench_simtime_bnd= \
+		-C0,bench_simtime_avg=$(C_lfs3) \
+		-C1,bench_simtime_avg=$(C_lfs3nb) \
+		-C2,bench_simtime_avg=$(C_lfs2) \
+		-C0,bench_simtime_bnd=$(C_lfs3:bf=1f) \
+		-C1,bench_simtime_bnd=$(C_lfs3nb:bf=1f) \
+		-C2,bench_simtime_bnd=$(C_lfs2:bf=1f) \
 		--subplot=" \
-			-Dm='create+sim' \
+			-Dprobe=create \
 			--title='create'" \
 		--subplot-right=" \
-			-Dm='delete+sim' \
+			-Dprobe=delete \
 			--title='delete' \
 			-W0.5" \
 		--subplot-right=" \
-			-Dm='fetch+sim+per' \
+			-Dprobe=fetch+per \
 			--title='fetch (per attr)' \
 			-W0.33" \
 		--subplot-right=" \
-			-Dm='lookup+sim' \
+			-Dprobe=lookup \
 			--title='lookup' \
 			-W0.25" \
 		--subplot-right=" \
-			-Dm='usage+per' \
+			-Dprobe=usage+per \
 			--title='usage (per attr)' \
 			--y2 --yunits=B \
 			-W0.2" \
@@ -209,48 +247,84 @@ $(PLOTSDIR)/bench_p26_poster_rbyd.svg: \
 .PHONY: plot-p26-poster-btree
 plot-p26-poster-btree: $(PLOTSDIR)/bench_p26_poster_btree.svg
 
-$(PLOTSDIR)/bench_p26_poster_btree.svg: \
-		$(RESULTSDIR)/bench_p26_poster_btree.avg.csv \
-		$(RESULTSDIR)/bench_p26_poster_btree.per.avg.csv \
-		$(RESULTSDIR)/bench_p26_poster_btree.sim.avg.csv \
-		$(RESULTSDIR)/bench_p26_poster_btree.sim.amor.avg.csv
-	$(strip ./scripts/plotmpl.py \
+$(PLOTSDIR)/bench_p26_poster_btree.csv: \
+		$(RESULTSDIR)/bench_p26_poster_btree.csv
+	$(strip ./scripts/csv.py \
 		<(./scripts/csv.py $^ \
-			-fbench_readed_avg \
-			-fbench_readed_bnd=bench_readed_max \
+			-Dprobe=commit,lookup \
+			-bprobe -bBLOCK_SIZE -bn -bSEED \
+			-fbench_simtime='float(bench_simtime)/1.0e9' \
+			-o-) \
+		<(./scripts/csv.py \
+			<(./scripts/csv.py $^ \
+				-Dprobe=commit \
+				-bprobe -bBLOCK_SIZE -bn -bSEED \
+				-fbench_simtime \
+				-Sn=n \
+				-o-) \
+			-bprobe='%(probe)s+amor' -bBLOCK_SIZE -bn -bSEED \
+			-fbench_simtime=' \
+				accumulate( \
+						float(bench_simtime)/1.0e9, \
+						probe, BLOCK_SIZE, SEED) \
+					/ float(n)' \
 			-o-) \
 		<(./scripts/csv.py $^ \
-			-Dbench_readed_avg='*' \
-			-fbench_readed_bnd=bench_readed_min \
+			-Dprobe=usage \
+			-bprobe='%(probe)s+per' -bBLOCK_SIZE -bn -bSEED \
+			-fbench_simtime='float(bench_simtime)/float(n)' \
+			-o-) \
+		-fbench_simtime \
+		-o$@)
+
+$(PLOTSDIR)/bench_p26_poster_btree.avg.csv: \
+		$(PLOTSDIR)/bench_p26_poster_btree.csv
+	$(strip ./scripts/csv.py $^ \
+		-DSEED='*' \
+		-fbench_simtime_avg='avg(bench_simtime)' \
+		-fbench_simtime_min='min(bench_simtime)' \
+		-fbench_simtime_max='max(bench_simtime)' \
+		-o$@)
+
+$(PLOTSDIR)/bench_p26_poster_btree.svg: \
+		$(PLOTSDIR)/bench_p26_poster_btree.avg.csv
+	$(strip ./scripts/plotmpl.py \
+		<(./scripts/csv.py $^ \
+			-fbench_simtime_avg \
+			-fbench_simtime_bnd=bench_simtime_max \
+			-o-) \
+		<(./scripts/csv.py $^ \
+			-Dbench_simtime_avg='*' \
+			-fbench_simtime_bnd=bench_simtime_min \
 			-o-) \
 		-W1500 -H350 \
 		--title='btree operations' \
 		-bBLOCK_SIZE \
 		-xn \
-		-ybench_readed_avg \
-		-ybench_readed_bnd \
+		-ybench_simtime_avg \
+		-ybench_simtime_bnd \
 		--yunits=s \
 		--legend \
 		$(foreach bs,$(subst $(,), ,$(BENCH_BTREE_BLOCK_SIZES)),$\
-			-L'$(bs),bench_readed_avg=$(bs)' \
-			-L'$(bs),bench_readed_bnd=' \
-			-C'$(bs),bench_readed_avg=$(C_lfs3)' \
-			-C'$(bs),bench_readed_bnd=$(C_lfs3:bf=1f)') \
+			-L'$(bs),bench_simtime_avg=$(bs)' \
+			-L'$(bs),bench_simtime_bnd=' \
+			-C'$(bs),bench_simtime_avg=$(C_lfs3)' \
+			-C'$(bs),bench_simtime_bnd=$(C_lfs3:bf=1f)') \
 		--subplot=" \
-			-Dm='commit+sim' \
+			-Dprobe=commit \
 			--title='commit' \
 			$(if, --ylim-ratio=0.01)" \
 		--subplot-right=" \
-			-Dm='commit+sim+amor' \
+			-Dprobe=commit+amor \
 			--title='commit (amortized)' \
 			$(if, --ylim-ratio=0.01) $(if, --ylim-ratio=0.98) \
 			-W0.5" \
 		--subplot-right=" \
-			-Dm='lookup+sim' \
+			-Dprobe=lookup \
 			--title='lookup' \
 			-W0.33" \
 		--subplot-right=" \
-			-Dm='usage+per' \
+			-Dprobe=usage+per \
 			--title='usage (per attr)' \
 			--y2 --yunits=B \
 			$(if, --ylim-ratio=0.01) $(if, --ylim-ratio=0.98) \
@@ -262,16 +336,25 @@ $(PLOTSDIR)/bench_p26_poster_btree.svg: \
 .PHONY: plot-p26-poster-wt
 plot-p26-poster-wt: $(PLOTSDIR)/bench_p26_poster_wt.svg
 
+$(PLOTSDIR)/bench_p26_poster_wt.%.csv: \
+		$(RESULTSDIR)/bench_p26_poster_wt.%.csv
+	$(strip ./scripts/csv.py $^ \
+		-Dprobe=write \
+		-bFS -bcase -bprobe -bBLOCK_SIZE \
+		-fbench_throughput=' \
+			float(n) / max(float(bench_simtime)/1.0e9, 1.0e-9)' \
+		-o$@)
+
 $(PLOTSDIR)/bench_p26_poster_wt.svg: \
 		$(foreach fs, $(BENCH_FSS), \
-			$(RESULTSDIR)/bench_p26_poster_wt.$(fs).tsim.csv)
+			$(PLOTSDIR)/bench_p26_poster_wt.$(fs).csv)
 	$(strip ./scripts/plotmpl.py $^ \
 		-W1500 -H350 \
 		--title='file write throughput' \
 		-bFS \
 		-xBLOCK_SIZE \
-		-ybench_readed \
-		-Dm=write+tsim \
+		-ybench_throughput \
+		-Dprobe=write \
 		--subplot=" \
 			-Dcase=bench_p26_wt_linear \
 			--title=linear" \
@@ -319,21 +402,17 @@ tikz-p26-poster-rbyd: \
 define TIKZ_P26_POSTER_RBYD_RULE
 $1: $2
 	$$(strip ./scripts/csv.py $$^ \
-		-DORDER=$3 \
-		-Dm=create+sim \
-		-DSEED=0 \
-		-bbench=create \
-		-bORDER \
-		-bn \
-		-Si=n \
-		-ft=bench_readed \
+		-Dprobe=create -DORDER=$3 -DSEED=0 \
+		-bbench=create -bORDER -bn \
+		-Sn=n \
+		-ft=bench_simtime \
 		-o$$@)
 endef
 
 $(foreach order, 0 1 2,$\
 	$(eval $(call TIKZ_P26_POSTER_RBYD_RULE,$\
 		$(TIKZDIR)/tikz_p26_poster_rbyd.$(order).csv,$\
-		$(RESULTSDIR)/bench_p26_poster_rbyd.sim.csv,$\
+		$(RESULTSDIR)/bench_p26_poster_rbyd.csv,$\
 		$(order))))
 
 # filter results
@@ -352,25 +431,30 @@ tikz-p26-poster-btree: \
 
 # $1 - target
 # $2 - source
-# $3 - order
+# $3 - block size
 define TIKZ_P26_POSTER_BTREE_RULE
 $1: $2
-	$$(strip ./scripts/csv.py $$^ \
-		-DORDER=2 \
-		-DBLOCK_SIZE=$3 \
-		-Dm=commit+sim+amor \
-		-bbench=commit \
-		-bBLOCK_SIZE \
-		-bn \
-		-Si=n \
-		-ft=bench_readed_avg \
+	$$(strip ./scripts/csv.py \
+		<(./scripts/csv.py $$^ \
+			-Dprobe=commit -DBLOCK_SIZE=$3 \
+			-bBLOCK_SIZE -bn -bSEED \
+			-fbench_simtime \
+			-Sn=n \
+			-o-) \
+		-bbench=commit -bBLOCK_SIZE -bn \
+		-Sn=n \
+		-ft='avg( \
+			accumulate( \
+					float(bench_simtime)/1.0e9, \
+					BLOCK_SIZE, SEED) \
+				/ float(n))' \
 		-o$$@)
 endef
 
 $(foreach bs,$(subst $(,), ,$(BENCH_BTREE_BLOCK_SIZES)),$\
 	$(eval $(call TIKZ_P26_POSTER_BTREE_RULE,$\
 		$(TIKZDIR)/tikz_p26_poster_btree.$(bs).csv,$\
-		$(RESULTSDIR)/bench_p26_poster_btree.sim.amor.avg.csv,$\
+		$(RESULTSDIR)/bench_p26_poster_btree.csv,$\
 		$(bs))))
 
 ## Generate write-throughput tikz results
@@ -386,35 +470,14 @@ tikz-p26-poster-wt: \
 # $4 - bench
 define TIKZ_P26_POSTER_WT_RULE
 $1: $2
-	$$(strip ./scripts/csv.py \
-		<(./scripts/csv.py $$^ \
-			-fn \
-			-fbench_readed \
-			-fbench_proged \
-			-fbench_erased \
-			-Dbench_creaded='*' \
-			-Dbench_cproged='*' \
-			-Dbench_cerased='*' \
-			-o-) \
-		-Dcase=bench_p26_wt_$4 \
-		-Dm=write,read \
-		-bfs=$3 \
-		-bbench=$4 \
-		-bBLOCK_SIZE \
-		-Si=BLOCK_SIZE \
-		-fthroughput=' \
-			float(n) / max( \
-				(float(bench_readed)*float(READ_TIME) \
-					+ float(bench_proged)*float(PROG_TIME) \
-					+ float(bench_erased)*float(ERASE_TIME) \
-					) / 1.0e9, \
-				1.0e-9)' \
+	$$(strip ./scripts/csv.py $$^ \
+		-Dcase=bench_p26_wt_$4 -Dprobe=write,read \
+		-bfs=$3 -bbench=$4 -bBLOCK_SIZE \
+		-SBLOCK_SIZE=BLOCK_SIZE \
 		-fn \
-		-ft=' \
-			(float(bench_readed)*float(READ_TIME) \
-				+ float(bench_proged)*float(PROG_TIME) \
-				+ float(bench_erased)*float(ERASE_TIME) \
-			) / 1.0e9' \
+		-ft='float(bench_simtime)/1.0e9' \
+		-fthroughput=' \
+			float(n) / max(float(bench_simtime)/1.0e9, 1.0e-9)' \
 		-o$$@)
 endef
 

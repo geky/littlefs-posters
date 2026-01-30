@@ -40,7 +40,7 @@ code = '''
     for (lfs3_size_t i = 0; i < N; i++) {
         // create an attr
         if ((i+1) % STEP == 0) {
-            BENCH_START("create", i+1);
+            BENCH_START("create");
         }
         lfs3_off_t i_
                 = (ORDER == 0) ? i
@@ -54,7 +54,7 @@ code = '''
                 LFS3_RATTR_ARG(wbuf),
                 LFS3_RATTR_NULL)) => 0;
         if ((i+1) % STEP == 0) {
-            BENCH_STOP("create");
+            BENCH_STOP("create", i+1);
         }
     }
 '''
@@ -102,14 +102,14 @@ code = '''
         }
 
         // delete an attr
-        BENCH_START("delete", n+STEP);
+        BENCH_START("delete");
         if (n > 0) {
             lfs3_off_t i_ = BENCH_PRNG(&prng) % n;
             lfs3_rbyd_commit(&lfs3, &rbyd, i_, LFS3_RATTRS(
                     LFS3_RATTR(1, LFS3_tag_RM, -1),
                     LFS3_RATTR_NULL)) => 0;
         }
-        BENCH_STOP("delete");
+        BENCH_STOP("delete", n+STEP);
 
         // test that our delete worked
         assert(rbyd.weight == lfs3_smax(n-1, 0));
@@ -158,11 +158,11 @@ code = '''
 
         if ((i+1) % STEP == 0) {
             // fetch the rbyd
-            BENCH_START("fetch", i+1);
+            BENCH_START("fetch");
             lfs3_rbyd_t rbyd_;
             lfs3_rbyd_fetch(&lfs3, &rbyd_, rbyd.blocks[0], 0) => 0;
             assert(rbyd_.weight == i+1);
-            BENCH_STOP("fetch");
+            BENCH_STOP("fetch", i+1);
         }
     }
 '''
@@ -209,7 +209,7 @@ code = '''
 
         if ((i+1) % STEP == 0) {
             // lookup an attr
-            BENCH_START("lookup", i+1);
+            BENCH_START("lookup");
             i_ = BENCH_PRNG(&prng) % (i+1);
             lfs3_data_t data_;
             lfs3_stag_t tag_ = lfs3_rbyd_lookup(&lfs3, &rbyd,
@@ -217,7 +217,7 @@ code = '''
                     &data_);
             assert(tag_ == LFS3_TAG_DATA);
             assert(lfs3_data_size(&data_) == SIZE);
-            BENCH_STOP("lookup");
+            BENCH_STOP("lookup", i+1);
         }
     }
 '''
