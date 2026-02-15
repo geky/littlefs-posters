@@ -59,6 +59,15 @@ endif
 endif
 endif
 
+#!!! NOTE! TODO!                                                        !!!#
+#!!!                                                                    !!!#
+#!!! These timing measurements are all out-of-date and have been moved  !!!#
+#!!! into the bench runner itself.                                      !!!#
+#!!!                                                                    !!!#
+#!!! The only thing that matters now is the N_* variables that are      !!!#
+#!!! passed to the bench runner (-DDISK_GEOMETRY_$(N_$(sim))). Need to  !!!#
+#!!! clean this up...                                                   !!!#
+#!!!                                                                    !!!#
 
 # configurations that simulate real-world storage
 #
@@ -205,7 +214,7 @@ CODEMAP_RDONLY_FSS ?= lfs3 lfs3nb lfs2 spiffs
 # filesystems/sims to benchmark
 BENCH_FSS ?= lfs3 lfs3nb lfs2 spiffs yaffs2
 BENCH_RUNNER_FSS ?= lfs3 lfs3nb lfs2 spiffs yaffs2
-BENCH_SIMS ?= emmc nor nand
+BENCH_SIMS ?= nor nand # emmc nor nand
 
 # poor man's uppercase
 U_lfs3   = LFS3
@@ -233,6 +242,11 @@ I_lfs2   = 2
 I_lfs1   = 3
 I_spiffs = 4
 I_yaffs2 = 5
+
+N_nor  = 0
+N_nand = 1
+# N_emmc is TODO
+# N_nvram is TODO
 
 
 # find source files

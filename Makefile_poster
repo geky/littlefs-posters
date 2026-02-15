@@ -21,9 +21,13 @@ BENCH_WT_SIZE ?= 2097152 # 2 MiB
 # how big a chunk to write?
 BENCH_WT_CHUNK ?= 64
 
-# stick to a simple simulation for now
-SIMPLE ?= 1
-#NAND ?= 1
+# block sizes for btree benchmarks
+BENCH_BTREE_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
+	262144,524288,1048576
+# block sizes for write-throughput benchmarks
+BENCH_WT_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
+	262144,524288,1048576
+
 # how many samples?
 ifdef PRECISE
 SAMPLES ?= 16
@@ -37,24 +41,17 @@ else
 SIM_TIME ?= 600000000000 # 10 minutes
 endif
 
-# stride of results to filter during tikz processing
-COMB ?= 1
-
-# block sizes for btree benchmarks
-BENCH_BTREE_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
-	262144,524288,1048576
-# block sizes for write-throughput benchmarks
-BENCH_WT_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
-	262144,524288,1048576
+# we only care about littlefs3+nogbmap, +fragmented, and littlefs2
+BENCH_FSS ?= lfs3nb lfs3nbf lfs3nb128 lfs3nb64 lfs3nb32 lfs3nb8 lfs3nb2 lfs2
+# stick to a simple simulation for now
+BENCH_SIM ?= nor
+BENCH_SIMPLE ?= 1
 
 # enable debug to make sure benches work, otherwise asserts are disabled
 #DEBUG ?= 1
 
-
-# we only care about littlefs3+nogbmap, +fragmented, and littlefs2
-BENCH_FSS ?= lfs3nb lfs3nbf lfs3nb128 lfs3nb64 lfs3nb32 lfs3nb8 lfs3nb2 lfs2
-# we only care about NOR for now
-BENCH_SIMS ?= nor
+# stride of results to filter during tikz processing
+COMB ?= 1
 
 
 # extra lfs3nbf config
@@ -182,12 +179,10 @@ bench-p26-poster-rbyd: $(RESULTSDIR)/bench_p26_poster_rbyd.csv
 $(RESULTSDIR)/bench_p26_poster_rbyd.csv: $(BENCH_LFS3NB_RUNNER)
 	$(strip ./scripts/bench.py -R$< -B bench_p26_rbyd \
 		$(BENCHFLAGS) \
-		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_lfs3) \
-		$(if $(SIMPLE),-DDISK_SIM=1) \
-		$(if $(NAND), \
-			-DDISK_GEOMETRY=1, \
-			-DDISK_GEOMETRY=0) \
+		-DDISK_SIZE=$(DISK_SIZE) \
+		-DDISK_GEOMETRY=$(N_$(BENCH_SIM)) \
+		$(if $(BENCH_SIMPLE),-DDISK_SIM=1) \
 		-DSEED="range($(SAMPLES))" \
 		-DN=$(BENCH_RBYD_N) \
 		-x1 \
@@ -200,12 +195,10 @@ bench-p26-poster-btree: $(RESULTSDIR)/bench_p26_poster_btree.csv
 $(RESULTSDIR)/bench_p26_poster_btree.csv: $(BENCH_LFS3NB_RUNNER)
 	$(strip ./scripts/bench.py -R$< -B bench_p26_btree \
 		$(BENCHFLAGS) \
-		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_lfs3) \
-		$(if $(SIMPLE),-DDISK_SIM=1) \
-		$(if $(NAND), \
-			-DDISK_GEOMETRY=1, \
-			-DDISK_GEOMETRY=0) \
+		-DDISK_SIZE=$(DISK_SIZE) \
+		-DDISK_GEOMETRY=$(N_$(BENCH_SIM)) \
+		$(if $(BENCH_SIMPLE),-DDISK_SIM=1) \
 		-DSEED="range($(SAMPLES))" \
 		-DN=$(BENCH_BTREE_N) \
 		-DORDER=2 \
@@ -229,7 +222,6 @@ $1: $(BENCH_$(U_$2)_RUNNER)
 		bench_p26_wt_random \
 		bench_p26_wt_logging \
 		$(BENCHFLAGS) \
-		-DDISK_SIZE=$(DISK_SIZE) \
 		-DFS=$(N_$2) \
 		$(if $(filter lfs3nbf,$2),-DCRYSTAL_THRESH=-1) \
 		$(if $(filter lfs3nb128,$2),-DCRYSTAL_DIV=128) \
@@ -239,11 +231,9 @@ $1: $(BENCH_$(U_$2)_RUNNER)
 		$(if $(filter lfs3nb8,$2),-DCRYSTAL_DIV=8) \
 		$(if $(filter lfs3nb4,$2),-DCRYSTAL_DIV=4) \
 		$(if $(filter lfs3nb2,$2),-DCRYSTAL_DIV=2) \
-		$(if $(SIMPLE),-DDISK_SIM=1) \
-		$(if $(NAND), \
-			-DDISK_GEOMETRY=1, \
-			-DDISK_GEOMETRY=0) \
-		-DSEED="range($(SAMPLES))" \
+		-DDISK_SIZE=$(DISK_SIZE) \
+		-DDISK_GEOMETRY=$(N_$(BENCH_SIM)) \
+		$(if $(BENCH_SIMPLE),-DDISK_SIM=1) \
 		$(if $(SKIP_WARMUP),-DSKIP_WARMUP=$(SKIP_WARMUP)) \
 		-DSIZE=$(BENCH_WT_SIZE) \
 		-DCHUNK=$(BENCH_WT_CHUNK) \
@@ -443,7 +433,7 @@ $(PLOTSDIR)/bench_p26_poster_wt.%.csv: \
 		$(RESULTSDIR)/bench_p26_poster_wt.%.csv
 	$(strip ./scripts/csv.py $^ \
 		-Dprobe=write \
-		-bFS -bcase -bprobe -bBLOCK_SIZE \
+		-bFS -bcase -bBLOCK_SIZE \
 		-fbench_throughput=' \
 			float(n) / max(float(bench_simtime)/1.0e9, 1.0e-9)' \
 		-o$@)
@@ -457,7 +447,6 @@ $(PLOTSDIR)/bench_p26_poster_wt.svg: \
 		-bFS \
 		-xBLOCK_SIZE \
 		-ybench_throughput \
-		-Dprobe=write \
 		--subplot=" \
 			-Dcase=bench_p26_wt_linear \
 			--title=linear" \

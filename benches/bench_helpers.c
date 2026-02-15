@@ -106,9 +106,6 @@ int bench_helpers_warmup(const struct lfs3_cfg *cfg, void *fs) {
 
     for (lfs3_block_t i = 0; i < 2*BLOCK_COUNT; i++) {
         yaffs_lseek(fd, 0, SEEK_SET) => 0;
-        // TODO for some reason yaffs falls apart here when
-        // BLOCK_SIZE >= ~1MiB, not sure why, bug in yaffs? disk too
-        // small for 1MiB blocks with yaffs's gc heuristics?
         lfs3_soff_t d = yaffs_write(fd, wbuf, BLOCK_SIZE);
         if (d != BLOCK_SIZE) {
             // shortened writes are technically allowed by POSIX, but

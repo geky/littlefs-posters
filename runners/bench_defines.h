@@ -200,10 +200,14 @@
     // yaffs2 specific defines
     #elif defined(YAFFS2)
     // this is limited to 512B by struct yaffs_obj_hdr
-    BENCH_DEFINE(YPAGE_TIGHT,           false                               )
     BENCH_DEFINE(YPAGE_SIZE,            LFS3_MAX(
                                             PROG_SIZE,
-                                            (YPAGE_TIGHT) ? 512 : 512)      )
+                                            LFS3_MAX(
+                                                512,
+                                                // and block_size/2^10 due to
+                                                // various 10-bit page address
+                                                // limits!
+                                                BLOCK_SIZE >> 10))          )
     BENCH_DEFINE(RESERVED_BLOCKS,       2                                   )
     // yaffs2's page cache is different from littlefs's cache, let's
     // default to max(3, 3*cache) pages to roughly match littlefs

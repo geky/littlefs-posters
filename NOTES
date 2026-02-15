@@ -1,4 +1,8 @@
 
+For poster:
+
+- Ran with COMB=16 PRECISE=1
+
 Useful flags:
 
 - DEBUG=1 - Does several things:
