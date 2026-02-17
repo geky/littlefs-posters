@@ -291,7 +291,7 @@
             \begin{itemize}
                 \item Naive array insertion: $O(b)$
                 \item Radix array insertion: $O(b \log b)$
-                %\item Rbyd array insertion: $O(\log b)$
+                %\item rbyd array insertion: $O(\log b)$
             \end{itemize}
         \end{itemize}
     \end{minipage}%
@@ -339,10 +339,10 @@
         \item This introduces unreachable branches, which are pruned during
             later appends.
     \end{itemize}
-    Rbyd B-tree nodes support efficient sparse\slash order-statistic keys:
+    rbyd B-tree nodes support efficient sparse\slash order-statistic keys:
     \begin{itemize}
         %\item Order-statistic rbyd array insertion: $O(\log b)$
-        \item Rbyd array insertion: $O(\log b)$
+        \item rbyd array insertion: $O(\log b)$
     \end{itemize}
 }
 \end{columns}
@@ -352,7 +352,7 @@
 \newcommand{\rbydtable}{
     \begin{tabular}{l@{\quad}l@{\quad}r}
         \toprule
-        \multicolumn{3}{r}{Rbyd runtime} \\
+        \multicolumn{3}{r}{rbyd runtime} \\
         \midrule
         \multicolumn{2}{l}{lookup} & $O(\log b)$ \\
         \multicolumn{2}{l}{append} & $O(\log b)$ \\
@@ -371,7 +371,7 @@
 \newcommand{\btreetable}{
     \begin{tabular}{l@{\quad}r}
         \toprule
-        \multicolumn{2}{r}{Rbyd B-tree runtime} \\
+        \multicolumn{2}{r}{rbyd B-tree runtime} \\
         \midrule
             lookup & $O((\log b)(\log_b n))$ \\
             append & $O((\log b)(\log_b^2 n))$ \\
@@ -1785,7 +1785,7 @@
         \coordinate (borigin) at (\get{boffset},0);
         \btree{btree}{right=0 of borigin};
 
-        % Rbyd stuff
+        % rbyd stuff
         \coordinate (rorigin) at (0,{\get{roffset}});
         \rlog{rlog}{right=0.5*\get{rbydwidth} of rorigin};
         \rbyd{rbyd}{right=1.5*\get{rbydwidth} of rorigin};
@@ -1926,9 +1926,9 @@
 % B-tree details
 \begin{columns}
 \column{0.38}
-\block{Rbyd B-trees}{\Large
+\block{rbyd B-trees}{\Large
     \begin{itemize}
-        \item Rbyd leaves point to B-tree nodes, inherting
+        \item rbyd leaves point to B-tree nodes, inherting
             rbyd's sparse\slash order-statistic properties.
         \item Most updates are cheap $O(\log b)$ rbyd appends.
         %\item When logs are full, logs are compacted into new blocks.
