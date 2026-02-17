@@ -30,7 +30,7 @@ BENCH_WT_BLOCK_SIZES ?= 4096,8192,16384,32768,65536,131072,$\
 
 # how many samples?
 ifdef PRECISE
-SAMPLES ?= 16
+SAMPLES ?= 1 # 16 uses too much memory, and doesn't really add much
 else
 SAMPLES ?= 1
 endif
@@ -51,7 +51,7 @@ BENCH_SIMPLE ?= 1
 #DEBUG ?= 1
 
 # stride of results to filter during tikz processing
-COMB ?= 1
+COMB ?= 16
 
 
 # extra lfs3nbf config
@@ -497,7 +497,7 @@ $1: $2
 		-Dprobe=create -DORDER=$3 -DSEED=0 \
 		-bbench=create -bORDER -bn \
 		-Sn=n \
-		-ft=bench_simtime \
+		-ft='float(delta(bench_simtime))/1.0e9' \
 		-o$$@)
 endef
 
@@ -526,20 +526,11 @@ tikz-p26-poster-btree: \
 # $3 - block size
 define TIKZ_P26_POSTER_BTREE_RULE
 $1: $2
-	$$(strip ./scripts/csv.py \
-		<(./scripts/csv.py $$^ \
-			-Dprobe=commit -DBLOCK_SIZE=$3 \
-			-bBLOCK_SIZE -bn -bSEED \
-			-fbench_simtime \
-			-Sn=n \
-			-o-) \
-		-bbench=commit -bBLOCK_SIZE -bn \
+	$$(strip ./scripts/csv.py $$^ \
+		-Dprobe=commit -DBLOCK_SIZE=$3 \
+		-bBLOCK_SIZE -bn \
 		-Sn=n \
-		-ft='avg( \
-			accumulate( \
-					float(bench_simtime)/1.0e9, \
-					BLOCK_SIZE, SEED) \
-				/ float(n))' \
+		-ft='avg((float(bench_simtime)/1.0e9)/float(n))' \
 		-o$$@)
 endef
 
@@ -568,8 +559,7 @@ $1: $2
 		-SBLOCK_SIZE=BLOCK_SIZE \
 		-fn \
 		-ft='float(bench_simtime)/1.0e9' \
-		-fthroughput=' \
-			float(n) / max(float(bench_simtime)/1.0e9, 1.0e-9)' \
+		-fthroughput='float(n) / max(float(bench_simtime)/1.0e9, 1.0e-9)' \
 		-o$$@)
 endef
 
