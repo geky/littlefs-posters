@@ -42,6 +42,8 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{enumitem}
+% hyperref and tikzposter don't get along, so use navigator
+\usepackage{navigator}
 
 \usetikzlibrary{
     positioning,
@@ -50,6 +52,7 @@
 }
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
+
 
 % old habits die hard
 \def\lt{<}
@@ -111,7 +114,9 @@
 \node[anchor=east, align=right] at ($(TP@title.east) +(-48pt,0pt)$) {
     \LARGE Christopher Haster \\
     \LARGE geky@geky.net \\[16pt]
-    \Large github.com/littlefs-project/littlefs
+    \Large \urllink{https://github.com/littlefs-project/littlefs}{
+        github.com/littlefs-project/littlefs
+    }
 };
 
 
@@ -325,7 +330,9 @@
 }
 % link to dhara ftl
 \node at ($(blocktitle.east)-(24pt,0)$) [anchor=east] {\Large
-    github.com/dlbeer/dhara
+    \urllink{https://github.com/dlbeer/dhara}{
+        github.com/dlbeer/dhara
+    }
 };
 \column{0.5}
 \block{Red-black-yellow Dhara (rbyd) trees}{\Large
