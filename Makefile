@@ -112,23 +112,12 @@ help:
 .PHONY: sync-results
 sync-results:
 	mkdir -p $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_1M/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_1G/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_ds/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_bs/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_gs/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_rs/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_ps/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_mr/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_x_n_1G/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_ct/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_fs/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_ss_n/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_ss_mr/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_ls_1G/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_br_gs/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_ct_n/*.csv $(RESULTSDIR)
-	-cp -u $(BENCHMARKSDIR)/tikz_y_cs/*.csv $(RESULTSDIR)
+	-cp -u $(BENCHMARKSDIR)/tikz_poster/*.csv $(RESULTSDIR)
+
+## Diff results from benchmarks
+.PHONY: diff-results
+diff-results:
+	-diff $(BENCHMARKSDIR)/tikz_poster/*.csv --to-file=$(RESULTSDIR)
 
 
 ## Clean everything (except results)
