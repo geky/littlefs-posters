@@ -1,5 +1,7 @@
 ## littlefs: rbyd B-trees: Flexible B-trees when RAM $\ll$ block size
 
+- [littlefs-btree-poster.pdf](build/littlefs-btree-poster.pdf)
+- [littlefs-btree-abstract.pdf](build/littlefs-btree-abstract.pdf)
 
 ### A hopefully helpful little readme
 
