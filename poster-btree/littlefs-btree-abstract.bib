@@ -1,0 +1,542 @@
+
+
+// articles
+@article{ log-structured,
+    author = {Rosenblum, Mendel and Ousterhout, John K.},
+    title = {The design and implementation of a log-structured file system},
+    year = {1992},
+    issue_date = {Feb. 1992},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {10},
+    number = {1},
+    issn = {0734-2071},
+    url = {https://doi.org/10.1145/146941.146943},
+    doi = {10.1145/146941.146943},
+    abstract = {This paper presents a new technique for disk storage management called a log-structured file system. A log-structured file system writes all modifications to disk sequentially in a log-like structure, thereby speeding up both file writing and crash recovery. The log is the only structure on disk; it contains indexing information so that files can be read back from the log efficiently. In order to maintain large free areas on disk for fast writing, we divide the log intosegmentsand use a segment cleaner to compress the live information from heavily fragmented segments. We present a series of simulations that demonstrate the efficiency of a simple cleaning policy based on cost and benefit. We have implemented a prototype  log-structured file system called Sprite LFS; it outperforms current Unix file systems by an order of magnitude for small-file writes while matching or exceeding Unix performance for reads and large writes. Even when the overhead for cleaning is included, Sprite LFS can use 70\% of the disk bandwidth for writing, whereas Unix file systems typically can use only 5–10\%.},
+    journal = {ACM Trans. Comput. Syst.},
+    month = feb,
+    pages = {26–52},
+    numpages = {27},
+    keywords = {logging, log-structured, high write performance, file system performance, file system organization, fast crash recovery, disk storage management, Unix}
+}
+
+@inproceedings{ rbtree,
+    author = {Guibas, Leo J. and Sedgewick, Robert},
+    booktitle = {19th Annual Symposium on Foundations of Computer Science (sfcs 1978)}, 
+    title = {A dichromatic framework for balanced trees}, 
+    year = {1978},
+    volume = {},
+    number = {},
+    pages = {8-21},
+    keywords = {Computer science;Petroleum;Particle measurements;Algorithm design and analysis;Performance analysis},
+    doi = {10.1109/SFCS.1978.3}
+}
+
+@inproceedings{ btree,
+    author = {Bayer, R. and McCreight, E.},
+    title = {Organization and maintenance of large ordered indices},
+    year = {1970},
+    isbn = {9781450379410},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/1734663.1734671},
+    doi = {10.1145/1734663.1734671},
+    abstract = {Organization and maintenance of an index for a dynamic random access file is considered. It is assumed that the index must be kept on some pseudo random access backup store like a disc or a drum. The index organization described allows retrieval, insertion, and deletion of keys in time proportional to logk I where I is the size of the index and k is a device dependent natural number such that the performance of the scheme becomes near optimal. Storage utilization is at least 50\% but generally much higher. The pages of the index are organized in a special data-structure, so-called B-trees. The scheme is analyzed, performance bounds are obtained, and a near optimal k is computed. Experiments have been performed with indices up to 100,000 keys. An index of size 15,000 (100,000) can be maintained with an average of 9 (at least 4) transactions per second on an IBM 360/44 with a 2311 disc.},
+    booktitle = {Proceedings of the 1970 ACM SIGFIDET (Now SIGMOD) Workshop on Data Description, Access and Control},
+    pages = {107–141},
+    numpages = {35},
+    keywords = {random access files, paging, key retrieval, key insertion, key deletion, information retrieval, dynamic index maintenance, data structures},
+    location = {Houston, Texas},
+    series = {SIGFIDET '70}
+}
+
+@article{ ubiquitous-btree,
+    author = {Comer, Douglas},
+    title = {Ubiquitous {B}-Tree},
+    year = {1979},
+    issue_date = {June 1979},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {11},
+    number = {2},
+    issn = {0360-0300},
+    url = {https://doi.org/10.1145/356770.356776},
+    doi = {10.1145/356770.356776},
+    journal = {ACM Comput. Surv.},
+    month = jun,
+    pages = {121–137},
+    numpages = {17}
+}
+
+@article{ modern-btree,
+    author = {Graefe, Goetz},
+    title = {Modern {B}-Tree Techniques},
+    year = {2011},
+    issue_date = {April 2011},
+    publisher = {Now Publishers Inc.},
+    address = {Hanover, MA, USA},
+    volume = {3},
+    number = {4},
+    issn = {1931-7883},
+    url = {https://doi.org/10.1561/1900000028},
+    doi = {10.1561/1900000028},
+    abstract = {Invented about 40 years ago and called ubiquitous less than 10 years later, B-tree indexes have been used in a wide variety of computing systems from handheld devices to mainframes and server farms. Over the years, many techniques have been added to the basic design in order to improve efficiency or to add functionality. Examples include separation of updates to structure or contents, utility operations such as non-logged yet transactional index creation, and robust query processing such as graceful degradation during index-to-index navigation.This survey reviews the basics of B-trees and of B-tree indexes in databases, transactional techniques and query processing techniques related to B-trees, B-tree utilities essential for database operations, and many optimizations and improvements. It is intended both as a survey and as a reference, enabling researchers to compare index innovations with advanced B-tree techniques and enabling professionals to select features, functions, and tradeoffs most appropriate for their data management challenges.},
+    journal = {Found. Trends Databases},
+    month = apr,
+    pages = {203–402},
+    numpages = {200}
+}
+
+@article{ flashlight,
+    author = {Kim, Jaegeuk and Shim, Hyotaek and Park, Seon-Yeong and Maeng, Seungryoul and Kim, Jin-Soo},
+    title = {FlashLight: A Lightweight Flash File System for Embedded Systems},
+    year = {2012},
+    issue_date = {June 2012},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {11S},
+    number = {1},
+    issn = {1539-9087},
+    url = {https://doi.org/10.1145/2180887.2180895},
+    doi = {10.1145/2180887.2180895},
+    abstract = {A very promising approach for using NAND flash memory as a storage medium is a flash file system. In order to design a higher-performance flash file system, two issues should be considered carefully. One issue is the design of an efficient index structure that contains the locations of both files and data in the flash memory. For large-capacity storage, the index structure must be stored in the flash memory to realize low memory consumption; however, this may degrade the system performance. The other issue is the design of a novel garbage collection (GC) scheme that reclaims obsolete pages. This scheme can induce considerable additional read and write operations while identifying and migrating valid pages. In this article, we present a novel flash file system that has the following features: (i) a lightweight index structure that introduces the hybrid indexing scheme and intra-inode index logging, and (ii) an efficient GC scheme that adopts a dirty list with an on-demand GC approach as well as fine-grained data separation and erase-unit data allocation. We implemented FlashLight in a Linux OS with kernel version 2.6.21 on an embedded device. The experimental results obtained using several benchmark programs confirm that FlashLight improves the performance by up to 27.4\% over UBIFS by alleviating index management and GC overheads by up to 33.8\%.},
+    journal = {ACM Trans. Embed. Comput. Syst.},
+    month = jun,
+    articleno = {18},
+    numpages = {23},
+    keywords = {index structure, garbage collection, flash file system, NAND flash memory}
+}
+
+@article{ tombstoning,
+    author = {Sen, Siddhartha and Tarjan, Robert E. and Kim, David Hong Kyun},
+    title = {Deletion Without Rebalancing in Binary Search Trees},
+    year = {2016},
+    issue_date = {September 2016},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {12},
+    number = {4},
+    issn = {1549-6325},
+    url = {https://doi.org/10.1145/2903142},
+    doi = {10.1145/2903142},
+    abstract = {We address the vexing issue of deletions in balanced trees. Rebalancing after a deletion is generally more complicated than rebalancing after an insertion. Textbooks neglect deletion rebalancing, and many B-tree--based database systems do not do it. We describe a relaxation of AVL trees in which rebalancing is done after insertions but not after deletions, yet worst-case access time remains logarithmic in the number of insertions. For any application of balanced trees in which the number of updates is polynomial in the tree size, our structure offers performance competitive with that of classical balanced trees. With the addition of periodic rebuilding, the performance of our structure is theoretically superior to that of many, if not all, classic balanced tree structures. Our structure needs lg lg m+ 1 bits of balance information per node, where m is the number of insertions and lg is the base-two logarithm, or lg lg n+ O(1) with periodic rebuilding, where n is the number of nodes. An insertion takes up to two rotations and O(1) amortized time, not counting the time to find the insertion position. This is the same as in standard AVL trees. Using an analysis that relies on an exponential potential function, we show that rebalancing steps occur with a frequency that is exponentially small in the height of the affected node. Our techniques apply to other types of balanced trees, notably B-trees, as we show in a companion article, and particularly red-black trees, which can be viewed as a special case of B-trees.},
+    journal = {ACM Trans. Algorithms},
+    month = sep,
+    articleno = {57},
+    numpages = {31},
+    keywords = {Balanced trees, algorithm, amortized complexity, data structure, database access methods, exponential potential function}
+}
+
+@inproceedings{ jffs,
+    author = {Woodhouse, David},
+    _organization = {Red Hat, Inc.},
+    booktitle = {Proceedings of the Ottawa Linux Symposium}, 
+    title = {{JFFS}: The journaling flash file system}, 
+    year = {2001},
+    _volume = {},
+    _number = {},
+    _pages = {},
+    _doi = {}
+}
+
+@inproceedings{ logfs,
+    author = {Engel, J\"orn and Mertens, Robert},
+    booktitle = {Proceedings of the International Linux System Technology Conference}, 
+    title = {{LogFS} - finally a scalable flash file system}, 
+    year = {2005},
+    _volume = {},
+    _number = {},
+    _pages = {},
+    _doi = {}
+}
+
+@inproceedings { f2fs,
+    author = {Changman Lee and Dongho Sim and Jooyoung Hwang and Sangyeun Cho},
+    title = {{F2FS}: A New File System for Flash Storage},
+    booktitle = {13th USENIX Conference on File and Storage Technologies (FAST 15)},
+    year = {2015},
+    isbn = {978-1-931971-201},
+    address = {Santa Clara, CA},
+    pages = {273--286},
+    url = {https://www.usenix.org/conference/fast15/technical-sessions/presentation/lee},
+    publisher = {USENIX Association},
+    month = feb,
+}
+
+@inproceedings{ loffs,
+    author={Zhang, Runyu and Liu, Duo and Chen, Xianzhang and She, Xiongxiong and Yang, Chaoshu and Tan, Yujuan and Shen, Zhaoyan and Shao, Zili},
+    booktitle={2020 57th ACM/IEEE Design Automation Conference (DAC)}, 
+    title={{LOFFS}: A Low-Overhead File System for Large Flash Memory on Embedded Devices}, 
+    year={2020},
+    volume={},
+    number={},
+    pages={1-6},
+    keywords={Metadata;Indexes;Performance evaluation;Hardware;Booting;File systems;Flash memories;embedded;NAND flash;file system},
+    doi={10.1109/DAC18072.2020.9218635}
+}
+
+@article{ elofs,
+    author={Zhang, Runyu and Liu, Duo and Chen, Xianzhang and She, Xiongxiong and Yang, Chaoshu and Tan, Yujuan and Shen, Zhaoyan and Shao, Zili and Qiao, Lei},
+    journal={IEEE Transactions on Computers}, 
+    title={{ELOFS}: An Extensible Low-Overhead Flash File System for Resource-Scarce Embedded Devices}, 
+    year={2022},
+    volume={71},
+    number={9},
+    pages={2327-2340},
+    keywords={Ash;Performance evaluation;Random access memory;Metadata;Hardware;Memory management;Sensors;Embedded file systems;memory efficient;NAND flash},
+    doi={10.1109/TC.2022.3152079}
+}
+
+@inproceedings{ dhifs,
+    author={Jiang, Jingjing and Yang, Mengfei and Qiao, Lei and Wang, Tingyu and Liu, Hongbiao and Nian, Jiawei},
+    booktitle={2023 IEEE International Conference on High Performance Computing \& Communications, Data Science \& Systems, Smart City \& Dependability in Sensor, Cloud \& Big Data Systems \& Application (HPCC/DSS/SmartCity/DependSys)}, 
+    title={{DHIFS}: A Dynamic and Hybrid Index Method with Low Memory Overhead and Efficient File Access}, 
+    year={2023},
+    volume={},
+    number={},
+    pages={417-426},
+    keywords={Performance evaluation;Costs;File systems;Memory management;Frequency conversion;Indexes;Flash memories;Flash file system;adaptive index;tradeoff;low memory overhead;query performance},
+    doi={10.1109/HPCC-DSS-SmartCity-DependSys60770.2023.00064}
+}
+
+@inproceedings{ betrfs,
+    author = {Jannen, William and Yuan, Jun and Zhan, Yang and Akshintala, Amogh and Esmet, John and Jiao, Yizheng and Mittal, Ankur and Pandey, Prashant and Reddy, Phaneendra and Walsh, Leif and Bender, Michael and Farach-Colton, Martin and Johnson, Rob and Kuszmaul, Bradley C. and Porter, Donald E.},
+    title = {{BetrFS}: a right-optimized write-optimized file system},
+    year = {2015},
+    isbn = {9781931971201},
+    publisher = {USENIX Association},
+    address = {USA},
+    abstract = {The Bε-tree File System, or BetrFS, (pronounced "better eff ess") is the first in-kernel file system to use a write-optimized index. Write optimized indexes (WOIs) are promising building blocks for storage systems because of their potential to implement both microwrites and large scans efficiently.Previous work on WOI-based file systems has shown promise but has also been hampered by several open problems, which this paper addresses. For example, FUSE issues many queries into the file system, superimposing read-intensive workloads on top of write-intensive ones, thereby reducing the effectiveness of WOIs. Moving to an in-kernel implementation can address this problem by providing finer control of reads. This paper also contributes several implementation techniques to leverage kernel infrastructure without throttling write performance.Our results show that BetrFS provides good performance for both arbitrary microdata operations, which include creating small files, updating metadata, and small writes into large or small files, and for large sequential I/O. On one microdata benchmark, BetrFS provides more than 4\texttimes{} the performance of ext4 or XFS. BetrFS is an ongoing prototype effort, and requires additional data-structure tuning to match current general-purpose file systems on some operations such as deletes, directory renames, and large sequential writes. Nonetheless, many applications realize significant performance improvements. For instance, an in-place rsync of the Linux kernel source realizes roughly 1.6-22\texttimes{} speedup over other commodity file systems.},
+    booktitle = {Proceedings of the 13th USENIX Conference on File and Storage Technologies},
+    pages = {301–315},
+    numpages = {15},
+    location = {Santa Clara, CA},
+    series = {FAST'15}
+}
+
+@article{ bepsilontree,
+    title={An Introduction to {B$^{\epsilon}$}-trees and Write-Optimization},
+    author={Michael A. Bender and Mart{\'i}n Farach-Colton and William K. Jannen and Rob Johnson and Bradley C. Kuszmaul and Donald E. Porter and Jun Yuan and Yang Zhan},
+    journal={{USENIX ;login:}},
+    year={2015},
+    volume={40},
+    url={https://api.semanticscholar.org/CorpusID:2305387}
+}
+
+@conference { zfs,
+    author = {Matt Ahrens and Jeff Bonwick and Val Henson and Mark Maybee and Mark Shellenbaum},
+    title = {The Zettabyte File System},
+    year = {2003},
+    address = {San Francisco, CA},
+    publisher = {USENIX Association},
+    month = mar,
+}
+
+@article{ btrfs,
+    author = {Rodeh, Ohad and Bacik, Josef and Mason, Chris},
+    title = {{BTRFS}: The Linux {B}-Tree Filesystem},
+    year = {2013},
+    issue_date = {August 2013},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    volume = {9},
+    number = {3},
+    issn = {1553-3077},
+    url = {https://doi.org/10.1145/2501620.2501623},
+    doi = {10.1145/2501620.2501623},
+    abstract = {BTRFS is a Linux filesystem that has been adopted as the default filesystem in some popular versions of Linux. It is based on copy-on-write, allowing for efficient snapshots and clones. It uses B-trees as its main on-disk data structure. The design goal is to work well for many use cases and workloads. To this end, much effort has been directed to maintaining even performance as the filesystem ages, rather than trying to support a particular narrow benchmark use-case.Linux filesystems are installed on smartphones as well as enterprise servers. This entails challenges on many different fronts.---Scalability. The filesystem must scale in many dimensions: disk space, memory, and CPUs.---Data integrity. Losing data is not an option, and much effort is expended to safeguard the content. This includes checksums, metadata duplication, and RAID support built into the filesystem.---Disk diversity. The system should work well with SSDs and hard disks. It is also expected to be able to use an array of different sized disks, which poses challenges to the RAID and striping mechanisms.This article describes the core ideas, data structures, and algorithms of this filesystem. It sheds light on the challenges posed by defragmentation in the presence of snapshots, and the tradeoffs required to maintain even performance in the face of a wide spectrum of workloads.},
+    journal = {ACM Trans. Storage},
+    month = aug,
+    articleno = {9},
+    numpages = {32},
+    keywords = {snapshots, shadowing, filesystem, copy-on-write, concurrency, RAID, B-trees}
+}
+
+
+
+
+// github projects
+@misc{ littlefs,
+    title = {The design of {littlefs}},
+    author = {Haster, Christopher},
+    _year = {2017},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/blob/master/DESIGN.md}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ littlefs2,
+    title = {The design of {littlefs[2]}},
+    author = {Haster, Christopher},
+    _year = {2017},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/blob/v2/DESIGN.md}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ ctz-skip-list,
+    title = {{CTZ} skip-lists},
+    author = {Haster, Christopher},
+    _year = {2017},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/blob/master/DESIGN.md#ctz-skip-lists}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ dhara,
+    title = {{Dhara} map internals},
+    author = {Beer, Daniel},
+    _year = {2013},
+    howpublished = {\url{https://github.com/dlbeer/dhara/blob/master/map_internals.txt}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ spiffs,
+    title = {{SPIFFS} Design},
+    author = {Andersson, Peter},
+    _year = {2013},
+    howpublished = {\url{https://github.com/pellepl/spiffs/blob/master/docs/TECH_SPEC}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ sequential-storage,
+    title = {Sequential-storage - A crate for storing data in flash with minimal erase cycles},
+    author = {Dokter, Dion},
+    howpublished = {\url{https://github.com/tweedegolf/sequential-storage}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ ekv,
+    title = {{ekv} - Key-value database for embedded systems, for raw NOR flash, using an LSM-Tree},
+    author = {Nieuwenhuis, Dario},
+    howpublished = {\url{https://github.com/embassy-rs/ekv}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ tickv,
+    key = {TicKV},
+    title = {{TicKV} - Tiny circular key value},
+    howpublished = {\url{https://github.com/tock/tock/tree/master/libraries/tickv}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ tdbstore,
+    title = {{TDBStore} - Tiny Database Storage},
+    author = {Saada, David},
+    howpublished = {\url{https://github.com/ARMmbed/mbed-os/blob/master/storage/docs/TDBStore/TDBStore_design.md}},
+    note = {Accessed 2025-09-12},
+}
+
+// datasheets
+@misc{ wnor,
+    author = {Winbond},
+    organization = {Winbond},
+    title = {{W25Q64JV}},
+    subtitle = {3V 256M-bit Serial Flash Memory with Dual/Quad SPI},
+    _year = {2025},
+    edition = {Revision Q},
+    howpublished = {\url{https://www.winbond.com/resource-files/W25Q64JV%20RevM%2012242024%20Plus.pdf}},
+    note = {Accessed 2025-09-12},
+}
+
+@misc{ wnand,
+    author = {Winbond},
+    organization = {Winbond},
+    title = {{W25N01GV}},
+    subtitle = {3V 1G-bit Serial SLC NAND Flash Memory with Dual/Quad SPI Buffer Read & Continuous Read},
+    _year = {2023},
+    edition = {Revision R},
+    howpublished = {\url{https://www.winbond.com/resource-files/W25N01GV%20Rev%20R%20070323.pdf}},
+    note = {Accessed 2025-09-12},
+}
+
+// misc
+@misc{ os1,
+    title = {Counted {B}-Trees},
+    author = {Tatham, Simon},
+    howpublished = {\url{https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html}},
+    note = {Accessed 2025-09-12},
+}
+
+@book{ os2,
+    author = {Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L. and Stein, Clifford},
+    title = {Introduction to Algorithms, Third Edition},
+    year = {2009},
+    isbn = {0262033844},
+    publisher = {The MIT Press},
+    edition = {3rd},
+    abstract = {If you had to buy just one text on algorithms, Introduction to Algorithms is a magnificent choice. The book begins by considering the mathematical foundations of the analysis of algorithms and maintains this mathematical rigor throughout the work. The tools developed in these opening sections are then applied to sorting, data structures, graphs, and a variety of selected algorithms including computational geometry, string algorithms, parallel models of computation, fast Fourier transforms (FFTs), and more. This book's strength lies in its encyclopedic range, clear exposition, and powerful analysis. Pseudo-code explanation of the algorithms coupled with proof of their accuracy makes this book is a great resource on the basic tools used to analyze the performance of algorithms.},
+    chapter = {14.1},
+    pages = {339-347},
+}
+
+@misc{ wandering-tree,
+    title = {{JFFS3} design issues},
+    author = {Bityutskiy, Artem B.},
+    year = {2005},
+    howpublished = {\url{http://www.linux-mtd.infradead.org/tech/JFFS3design.pdf}},
+    note = {Accessed 2025-09-16},
+}
+
+@misc{ yaffs,
+    title = {{YAFFS} - Yet another flash file system},
+    author = {Manning, Charles},
+    _organization = {Aleph One, Ltd.},
+    _year = {2002},
+    howpublished = {\url{https://www.yaffs.net}},
+    note = {Accessed 2025-09-16},
+}
+
+@misc{ bcachefs,
+    title = {{bcachefs} - The {COW} filesystem for {Linux} that won't eat your data},
+    author = {Overstreet, Kent},
+    howpublished = {\url{https://bcachefs.org}},
+    note = {Accessed 2025-09-16},
+}
+
+@misc{ ubifs,
+    key = {UBIFS},
+    title = {{UBIFS} - Unsorted Block Image File-System},
+    howpublished = {\url{http://www.linux-mtd.infradead.org/doc/ubifs.html}},
+    note = {Accessed 2025-09-16},
+}
+
+@misc{ nvs,
+    key = {NVS},
+    title = {{NVS} - Non-Volatile Storage},
+    howpublished = {\url{https://docs.zephyrproject.org/latest/services/storage/nvs/nvs.html}},
+    note = {Accessed 2025-09-16},
+}
+
+@misc{ zms,
+    key = {ZMS},
+    title = {{ZMS} - {Zephyr} Memory Storage},
+    howpublished = {\url{https://docs.zephyrproject.org/latest/services/storage/zms/zms.html}},
+    note = {Accessed 2025-09-16},
+}
+
+
+
+//// littlefs issues ////
+
+// the infamouse metadata max!
+@misc{ li-m-502,
+    key = {zz-00502},
+    title = {Add {metadata\_max} config to help performance on devices with large blocks},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/pull/502}},
+    note = {Accessed 2025-09-16},
+}
+
+// O(n^2) compaction - best!
+@misc{ li-c-783,
+    key = {zz-00783},
+    title = {Open speed and cache sizes},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/783}},
+    note = {Accessed 2025-09-16},
+}
+// O(n^2) compaction - second best
+@misc{ li-c-523,
+    key = {zz-00523},
+    title = {{API} to allow explicit compaction/garbage collection},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/523}},
+    note = {Accessed 2025-09-16},
+}
+@misc{ li-c-203,
+    key = {zz-00203},
+    title = {{LFSv2}: inline files performance drop},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/203}},
+    note = {Accessed 2025-09-16},
+}
+// O(n^3) compaction - third best
+@misc{ li-c-797,
+    key = {zz-00797},
+    title = {{Little FS} Reading the same addresses over and over, causing {1min+} delay in program},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/797}},
+    note = {Accessed 2025-09-16},
+}
+@misc{ li-c-940,
+    key = {zz-00940},
+    title = {Metadata can't be compacted below {block\_size/2}},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/940}},
+    note = {Accessed 2025-09-16},
+}
+
+// sync-padding - best!
+@misc{ li-s-334,
+    key = {zz-00334},
+    title = {Recover un-synced data after reboot},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/344}},
+    note = {Accessed 2025-09-16},
+}
+// sync-padding - second best
+@misc{ li-s-374,
+    key = {zz-00374},
+    title = {{lfs} is erasing a block on every append},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/374}},
+    note = {Accessed 2025-09-16},
+}
+
+// inline files - best!
+@misc{ li-i-661,
+    key = {zz-00661},
+    title = {{littlefs} storage utilization},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/661}},
+    note = {Accessed 2025-09-16},
+}
+// inline files - second best
+@misc{ li-i-778,
+    key = {zz-00778},
+    title = {Our {NAND} part has {HUGE} blocks.. {256K}. This means a {1K} file wastes {99.6\%} of the block},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/778}},
+    note = {Accessed 2025-09-16},
+}
+
+// big disk - best!
+@misc{ li-d-75,
+    key = {zz-00075},
+    title = {Question about scalability and large files},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/75}},
+    note = {Accessed 2025-09-16},
+}
+// big disk - second best
+@misc{ li-d-214,
+    key = {zz-00214},
+    title = {Open and Close File Performance},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/214}},
+    note = {Accessed 2025-09-16},
+}
+
+// random writes - best!
+@misc{ li-r-27,
+    key = {zz-00027},
+    title = {Rewrite of file header slows down as file size increases},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/27}},
+    note = {Accessed 2025-09-16},
+}
+// random writes - second best
+@misc{ li-r-862,
+    key = {zz-00862},
+    title = {Too inefficient way to append file content, when i need to save file immediately},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/862}},
+    note = {Accessed 2025-09-16},
+}
+// random writes - third best
+@misc{ li-r-852,
+    key = {zz-00852},
+    title = {Suboptimal behavior when updating file without changing size},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/852}},
+    note = {Accessed 2025-09-16},
+}
+@misc{ li-r-528,
+    key = {zz-00528},
+    title = {Performance issue when overwriting},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/528}},
+    note = {Accessed 2025-09-16},
+}
+
+// O(n) open - best!
+@misc{ li-o-721,
+    key = {zz-000721},
+    title = {Do open duration depends on number of files in folder?},
+    howpublished = {\url{https://github.com/littlefs-project/littlefs/issues/721}},
+    note = {Accessed 2025-09-16},
+}
+

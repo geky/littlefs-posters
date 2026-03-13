@@ -1,0 +1,332 @@
+%
+%
+%
+\begin{tikzpicture}
+\pgfplotsset{
+    % group stuff
+    group/group name=top group,
+    group style={
+        group size=3 by 1,
+        horizontal sep=1.8em,
+        vertical sep=1.8em,
+    },
+    total width/.initial=(\linewidth-3.6em),
+    total height/.initial=15em,
+    width=(1/3)*\pgfkeysvalueof{/pgfplots/total width},
+    height=\pgfkeysvalueof{/pgfplots/total height},
+    % parse csvs
+    table/col sep=comma,
+    % some common tick stuff
+    unbounded coords=jump,
+    scaled ticks=false,
+    log ticks with fixed point,
+    % y-axis
+    ymin=0,
+    yticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/precision=5,
+        /pgf/number format/skip 0.,
+        font=\normalsize,
+    },
+    ylabel style={
+        font=\normalsize,
+        align=center,
+        anchor=base,
+        at={(-1.8em,0.5)},
+    },
+    explicit ylabel/.style={
+        font=\normalsize,
+        anchor=base,
+        align=center,
+        rotate=90,
+    },
+    % x-axis
+    xticklabel style={
+        /pgf/number format/fixed,
+        /pgf/number format/precision=5,
+        /pgf/number format/skip 0.,
+        font=\normalsize,
+    },
+    xlabel style={
+        font=\normalsize,
+        align=center,
+        anchor=base,
+        at={(0.5,-1.6em)},
+    },
+    % legend stuff
+    legend style={
+        font=\normalsize,
+        legend cell align=left,
+        legend image code/.code={
+            \draw [mark repeat=2,mark phase=2,##1]
+                plot coordinates {
+                    (0pt,0pt)       % was (0cm,0cm)
+                    (18pt,0pt)      % was (0.3cm,0cm)
+                    (36pt,0pt)      % was (0.6cm,0cm)
+                };
+        },
+    },
+    % axis stuff
+    every axis/.append style={
+        ultra thick,
+        %tick style={ultra thick},
+        tick style={thick},
+        %major tick length=6pt,
+        major tick length=9pt,
+    },
+    axis background/.style={
+        fill=bg,
+    },
+    % throughput axis stuff
+    throughput/.style={
+        xmode=log,
+        log basis x=2,
+    },
+    % styles
+    inorder/.style={fgdarkblue},
+    reversed/.style={fgdarkgreen},
+    random/.style={fgdarkpurple},
+    bs4KiB/.style={fgdarkblue},
+    bs16KiB/.style={fgdarkgreen},
+    bs64KiB/.style={fgdarkpurple},
+    bs256KiB/.style={fgdarkyellow},
+    lfs3/.style={fgdarkblue, mark=o, mark size=6pt},
+    lfs2/.style={fgdarkgreen, mark=triangle, mark size=6pt},
+}
+
+
+% x minor log ticks hack
+\newcommand{\xminorlogticks}[1][tb]{
+    % get jump/div
+    \pgfkeysgetvalue{/pgfplots/xminorlogtick jump}{\xjump}
+    \pgfkeysgetvalue{/pgfplots/xminorlogtick div}{\xdiv}
+    % generate xminorlogticks
+    \foreach[expand list=true] \x in {
+            \pgfkeysvalueof{/pgfplots/xminorlogticks}}
+        \foreach[parse=true] \i in {1,2,...,2^\xdiv-2^(\xdiv-\xjump)-1} {
+            % tick locations
+            \def\xi{(2^\x)*(1-\i/2^\xdiv)}
+            % bottom ticks
+            \IfSubStr{#1}{b}{
+                \edef\expanded{\noexpand
+                    \draw[style={thick,gray}]
+                        ({{\xi},0})
+                        -- ([yshift=+6pt]{{\xi},0});
+                }
+                \expanded
+            }{}
+            % top ticks
+            \IfSubStr{#1}{t}{
+                \edef\expanded{\noexpand
+                    \draw[style={thick,gray}]
+                        ({{\xi},0} |- current axis.north)
+                        -- ([yshift=-6pt]{{\xi},0} |- current axis.north);
+                }
+                \expanded
+            }{}
+    }
+}
+
+
+% top group
+\begin{groupplot}
+
+% rbyd append plot
+\nextgroupplot[
+    title={rbyd append},
+    ylabel={Runtime (ms)},
+    xmin=0,
+    xmax=8192,
+    xlabel=Entries,
+    % tick style
+    xtick={0,1000,...,8192},
+    %xticklabels={0,1K,2K,3K,4K,5K,6K,7K,8K},
+    xticklabels={{$0$},{$1$}K,{$2$}K,{$3$}K,{$4$}K,{$5$}K,{$6$}K,{$7$}K,{$8$}K},
+    % legend stuff
+    legend pos=south east,
+]
+    \addplot[inorder] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_rbyd.0.comb.csv};
+    \addplot[reversed] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_rbyd.1.comb.csv};
+    \addplot[random] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_rbyd.2.comb.csv};
+
+    \addlegendentry{in-order}
+    \addlegendentry{reversed}
+    \addlegendentry{random}
+
+% B-tree append plot
+\nextgroupplot[
+    title={rbyd B-tree append (amortized)},
+    xmin=0,
+    xmax=8192,
+    xlabel=Entries,
+    % tick style
+    xtick={0,1000,...,8192},
+    %xticklabels={0,1K,2K,3K,4K,5K,6K,7K,8K},
+    xticklabels={{$0$},{$1$}K,{$2$}K,{$3$}K,{$4$}K,{$5$}K,{$6$}K,{$7$}K,{$8$}K},
+    % legend stuff
+    legend pos=south east,
+]
+    \addplot[bs4KiB] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_btree.4096.comb.csv};
+    \addplot[bs16KiB] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_btree.16384.comb.csv};
+    \addplot[bs64KiB] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_btree.65536.comb.csv};
+    \addplot[bs256KiB] table[
+        x expr=(\thisrow{n}),
+        y expr=(\thisrow{t}*1000),
+    ] {results/tikz_p26_poster_btree.262144.comb.csv};
+
+    \addlegendentry{{$4$}KiB blocks}
+    \addlegendentry{{$16$}KiB blocks}
+    \addlegendentry{{$64$}KiB blocks}
+    \addlegendentry{{$256$}KiB blocks}
+
+% Write-throughput plot group
+\nextgroupplot[
+    group/horizontal sep=3.6em,
+    group/empty plot,
+]
+
+\end{groupplot}
+
+
+% Write-throughput group
+\begin{groupplot}[
+    % group stuff
+    group/group name=wt group,
+    group style={
+        group size=1 by 3,
+        horizontal sep=1.8em,
+        vertical sep=0.6em,
+    },
+    width=(1/3)*\pgfkeysvalueof{/pgfplots/total width},
+    height=(1/3)*(\pgfkeysvalueof{/pgfplots/total height})+0.53em,
+]
+
+\nextgroupplot[
+    at={(top group c3r1.north)},
+    anchor=north,
+    title={File write throughput},
+    % x-axis
+    xmode=log,
+    log basis x=2,
+    xticklabels={},
+    %ylabel=Sequential,
+    %ylabel style={at={(-3.3em,0.5)}},
+    % tick style
+    xtickten={12,14,...,20},
+    xminorlogticks/.initial={12,14,...,20},
+    xminorlogtick jump/.initial=4,
+    xminorlogtick div/.initial=4,
+]
+    \xminorlogticks
+
+    \addplot[lfs3] table[
+        x expr=(\thisrow{BLOCK_SIZE}),
+        y expr=(\thisrow{throughput}/1024),
+    ] {results/tikz_p26_poster_wt.lfs3nb.linear.csv};
+    \addplot[lfs2] table[
+        x expr=(\thisrow{BLOCK_SIZE}),
+        y expr=(\thisrow{throughput}/1024),
+    ] {results/tikz_p26_poster_wt.lfs2.linear.csv};
+
+\nextgroupplot[
+    % x-axis
+    xmode=log,
+    log basis x=2,
+    xticklabels={},
+    %ylabel={Random\\Throughput (KiB/s)},
+    %ylabel style={at={(-3.3em,0.5)}},
+    ylabel={Throughput (KiB/s)},
+    ylabel style={at={(-1.5em,0.5)}},
+    % tick style
+    xtickten={12,14,...,20},
+    xminorlogticks/.initial={12,14,...,20},
+    xminorlogtick jump/.initial=4,
+    xminorlogtick div/.initial=4,
+    % legend stuff
+    legend pos=north east,
+]
+    \xminorlogticks
+
+    \addplot[lfs3] table[
+        x expr=(\thisrow{BLOCK_SIZE}),
+        y expr=(\thisrow{throughput}/1024),
+    ] {results/tikz_p26_poster_wt.lfs3nb.random.csv};
+    \addplot[lfs2] table[
+        x expr=(\thisrow{BLOCK_SIZE}),
+        y expr=(\thisrow{throughput}/1024),
+    ] {results/tikz_p26_poster_wt.lfs2.random.csv};
+
+    \addlegendentry{littlefs3}
+    \addlegendentry{littlefs2}
+
+\nextgroupplot[
+    % x-axis
+    xmode=log,
+    log basis x=2,
+    %ylabel=Logging,
+    %ylabel style={at={(-3.3em,0.5)}},
+    xlabel=Block size,
+    % tick style
+    xtickten={12,14,...,20},
+    %xticklabels={4KiB,16KiB,64KiB,256KiB,1MiB},
+    xticklabels={{$4$}KiB,{$16$}KiB,{$64$}KiB,{$256$}KiB,{$1$}MiB},
+    xminorlogticks/.initial={12,14,...,20},
+    xminorlogtick jump/.initial=4,
+    xminorlogtick div/.initial=4,
+]
+    \xminorlogticks
+
+    \addplot[lfs3] table[
+        x expr=(\thisrow{BLOCK_SIZE}),
+        y expr=(\thisrow{throughput}/1024),
+    ] {results/tikz_p26_poster_wt.lfs3nb.logging.csv};
+    \addplot[lfs2] table[
+        x expr=(\thisrow{BLOCK_SIZE}),
+        y expr=(\thisrow{throughput}/1024),
+    ] {results/tikz_p26_poster_wt.lfs2.logging.csv};
+
+\end{groupplot}
+
+
+\node at ($(wt group c1r1.west)-(2.4em,0)$) [/pgfplots/explicit ylabel]
+    {Sequential};
+\node at ($(wt group c1r2.west)-(2.4em,0)$) [/pgfplots/explicit ylabel]
+    {Random};
+\node at ($(wt group c1r3.west)-(2.4em,0)$) [/pgfplots/explicit ylabel]
+    {Logging};
+
+
+% forcefully shove our plots up via bounding box, that title isn't
+% doing anything
+\coordinate (bounding box south west)
+    at ($(current bounding box.south west)
+        +(0,96pt)$);
+\coordinate (bounding box north east)
+    at ($(current bounding box.north east)
+        -(0,96pt)$);
+\pgfresetboundingbox
+\useasboundingbox (bounding box south west)
+    rectangle (bounding box north east);
+%\draw (bounding box south west)
+%    rectangle (bounding box north east);
+
+
+\end{tikzpicture}%
