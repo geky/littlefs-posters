@@ -50,6 +50,38 @@ HEIGHT = 350
 FONT = ['sans-serif']
 FONT_SIZE = 10
 
+SI_PREFIXES = {
+    18:  'E',
+    15:  'P',
+    12:  'T',
+    9:   'G',
+    6:   'M',
+    3:   'K',
+    0:   '',
+    -3:  'm',
+    -6:  'u',
+    -9:  'n',
+    -12: 'p',
+    -15: 'f',
+    -18: 'a',
+}
+
+SI2_PREFIXES = {
+    60:  'Ei',
+    50:  'Pi',
+    40:  'Ti',
+    30:  'Gi',
+    20:  'Mi',
+    10:  'Ki',
+    0:   '',
+    -10: 'mi',
+    -20: 'ui',
+    -30: 'ni',
+    -40: 'pi',
+    -50: 'fi',
+    -60: 'ai',
+}
+
 
 # open with '-' for stdin/stdout
 def openio(path, mode='r', buffering=-1):
@@ -91,7 +123,9 @@ def dat(x, *args):
         else:
             raise
 
-def collect(csv_paths, defines=[]):
+def collect(csv_paths, *,
+        defines=[],
+        undefines=[]):
     # collect results from CSV files
     fields = []
     results = []
@@ -108,22 +142,34 @@ def collect(csv_paths, defines=[]):
                                 for v in vs)
                             for k, vs in defines):
                         continue
+                    if any(any(fnmatch.fnmatchcase(r.get(k, ''), v)
+                                for v in vs)
+                            for k, vs in undefines):
+                        continue
 
                     results.append(r)
+
         except FileNotFoundError:
             pass
 
     return fields, results
 
-def fold(results, by=None, fields=None, defines=[]):
+def fold(results, by=None, fields=None, *,
+        defines=[],
+        undefines=[]):
     # filter by matching defines
-    if defines:
+    if defines or undefines:
         results_ = []
         for r in results:
-            if all(any(fnmatch.fnmatchcase(r.get(k, ''), v)
+            if not all(any(fnmatch.fnmatchcase(r.get(k, ''), v)
                         for v in vs)
                     for k, vs in defines):
-                results_.append(r)
+                continue
+            if any(any(fnmatch.fnmatchcase(r.get(k, ''), v)
+                        for v in vs)
+                    for k, vs in defines):
+                continue
+            results_.append(r)
         results = results_
 
     if by:
@@ -339,6 +385,38 @@ class CsvAttr:
 
         return len(self.keyed)
 
+# SI-prefix formatter
+def si(x):
+    if x == 0:
+        return '0'
+    # figure out prefix and scale
+    p = 3*mt.floor(mt.log(abs(x), 10**3))
+    p = min(18, max(-18, p))
+    # format with 3 digits of precision
+    s = '%.3f' % (abs(x) / (10.0**p))
+    s = s[:3+1]
+    # truncate but only digits that follow the dot
+    if '.' in s:
+        s = s.rstrip('0')
+        s = s.rstrip('.')
+    return '%s%s%s' % ('-' if x < 0 else '', s, SI_PREFIXES[p])
+
+# SI-prefix formatter for powers-of-two
+def si2(x):
+    if x == 0:
+        return '0'
+    # figure out prefix and scale
+    p = 10*mt.floor(mt.log(abs(x), 2**10))
+    p = min(30, max(-30, p))
+    # format with 3 digits of precision
+    s = '%.3f' % (abs(x) / (2.0**p))
+    s = s[:3+1]
+    # truncate but only digits that follow the dot
+    if '.' in s:
+        s = s.rstrip('0')
+        s = s.rstrip('.')
+    return '%s%s%s' % ('-' if x < 0 else '', s, SI2_PREFIXES[p])
+
 # parse %-escaped strings
 #
 # attrs can override __getitem__ for lazy attr generation
@@ -349,7 +427,7 @@ def punescape(s, attrs=None):
             '|' '%u....'
             '|' '%U........'
             '|' '%\((?P<field>[^)]*)\)'
-                '(?P<format>[+\- #0-9\.]*[sdboxXfFeEgG])')
+                '(?P<format>[+\- #0-9\.]*[siIdboxXfFeEgG])')
     def unescape(m):
         if m.group()[1] == '%': return '%'
         elif m.group()[1] == 'n': return '\n'
@@ -369,10 +447,16 @@ def punescape(s, attrs=None):
                 if isinstance(v, str):
                     v = dat(v, 0)
                 v = int(v)
-            elif f[-1] in 'fFeEgG':
+            elif f[-1] in 'iIfFeEgG':
                 if isinstance(v, str):
                     v = dat(v, 0)
                 v = float(v)
+                if f[-1] in 'iI':
+                    v = (si if 'i' in f[-1] else si2)(v)
+                    f = f.replace('i', 's').replace('I', 's')
+                    if '+' in f and not v.startswith('-'):
+                        v = '+'+v
+                    f = f.replace('+', '').replace('-', '')
             else:
                 f = ('<' if '-' in f else '>') + f.replace('-', '')
                 v = str(v)
@@ -638,6 +722,7 @@ def main(csv_paths, output, *,
         by=None,
         fields=None,
         defines=[],
+        undefines=[],
         labels=[],
         colors=[],
         width=None,
@@ -691,7 +776,9 @@ def main(csv_paths, output, *,
         height_ = HEIGHT
 
     # first collect results from CSV files
-    fields_, results = collect(csv_paths, defines)
+    fields_, results = collect(csv_paths,
+            defines=defines,
+            undefines=undefines)
 
     if not by and not fields:
         print("error: needs --by or --fields to figure out fields",
@@ -702,16 +789,20 @@ def main(csv_paths, output, *,
     if not by:
         by = [k for k in fields_
                 if k not in (fields or [])
-                    and not any(k == k_ for k_, _ in defines)]
+                    and not any(k == k_ for k_, _ in defines)
+                    and not any(k == k_ for k_, _ in undefines)]
 
     # if fields not specified, guess it's anything not in by/labels/defines
     if not fields:
         fields = [k for k in fields_
                 if k not in (by or [])
-                    and not any(k == k_ for k_, _ in defines)]
+                    and not any(k == k_ for k_, _ in defines)
+                    and not any(k == k_ for k_, _ in undefines)]
 
     # then extract the requested dataset
-    datasets, dataattrs = fold(results, by, fields, defines)
+    datasets, dataattrs = fold(results, by, fields,
+            defines=defines,
+            undefines=undefines)
 
     # build tile heirarchy
     children = []
@@ -877,10 +968,10 @@ def main(csv_paths, output, *,
 
     # create svg file
     with openio(output, 'w') as f:
-        def writeln(s=''):
-            f.write(s)
-            f.write('\n')
-        f.writeln = writeln
+        def writeln(self, s=''):
+            self.write(s)
+            self.write('\n')
+        f.writeln = writeln.__get__(f)
 
         # yes this is svg
         f.write('<svg '
@@ -1048,6 +1139,17 @@ if __name__ == "__main__":
             help="Only include results where this field is this value. May "
                 "include comma-separated options and globs.")
     parser.add_argument(
+            '-U', '--undefine',
+            dest='undefines',
+            action='append',
+            type=lambda x: (
+                lambda k, vs: (
+                    k.strip(),
+                    {v.strip() for v in vs.split(',')})
+                )(*x.split('=', 1)),
+            help="Don't include results where this field is this value. May "
+                "include comma-separated options and globs.")
+    parser.add_argument(
             '-L', '--add-label',
             dest='labels',
             action='append',
@@ -1150,7 +1252,7 @@ if __name__ == "__main__":
                     if ':' in x else float(x)),
             help="Aspect ratio to use with --to-scale. Defaults to 1:1.")
     parser.add_argument(
-            '-t', '--tiny',
+            '--tiny',
             action='store_true',
             help="Tiny mode, alias for --to-scale=1, --no-header, and "
                 "--no-label.")
