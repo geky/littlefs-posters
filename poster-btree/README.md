@@ -28,3 +28,13 @@ To build poster + abstract:
 ``` bash
 make
 ```
+
+Note resolving all of the references in the abstract requires running
+pdflatex multiple times:
+
+``` bash
+make
+make -B
+make -B
+make -B
+```
